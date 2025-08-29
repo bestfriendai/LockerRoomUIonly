@@ -39,9 +39,7 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
   }
 
   // Mock like handler
-  const handleLike = async (e: any) => {
-    e.stopPropagation();
-    
+  const handleLike = async () => {
     if (isLiking) return;
     
     try {
@@ -66,9 +64,7 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
     }
   };
   
-  const handleShare = async (e: any) => {
-    e.stopPropagation();
-    
+  const handleShare = async () => {
     if (isSharing) return;
     
     try {
@@ -208,7 +204,7 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
           )}
 
           {/* Stats */}
-          <View style={styles.stats}>
+          <View style={styles.stats} pointerEvents="box-none">
             <TouchableOpacity 
               style={styles.statItem}
               onPress={handleLike}

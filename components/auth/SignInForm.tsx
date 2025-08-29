@@ -16,7 +16,7 @@ import { useAuth } from '@/providers/AuthProvider';
 export default function SignInForm() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { signIn } = useAuth();
+  const { signIn, demoLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,14 +34,36 @@ export default function SignInForm() {
 
     try {
       if (step === 'signIn') {
-        await signIn(email, password);
-        router.replace('/(tabs)');
+        const success = await signIn(email, password);
+        if (success) {
+          router.replace('/(tabs)');
+        } else {
+          setError('Sign in failed');
+        }
       } else {
         // For sign up, redirect to the full signup screen
         router.push('/(auth)/signup');
       }
     } catch (err: any) {
       setError(err.message || `Failed to ${step === 'signIn' ? 'sign in' : 'sign up'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const success = await demoLogin();
+      if (success) {
+        router.replace('/(tabs)');
+      } else {
+        setError('Demo login failed');
+      }
+    } catch (err: any) {
+      setError('Demo login failed');
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +154,32 @@ export default function SignInForm() {
             </Text>
           )}
         </TouchableOpacity>
+
+        {step === 'signIn' && (
+          <TouchableOpacity
+            style={[
+              styles.demoButton,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.primary,
+              },
+            ]}
+            onPress={handleDemoLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Text
+                variant="body"
+                weight="semibold"
+                style={{ color: colors.primary }}
+              >
+                Demo Login
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.switchContainer}>
@@ -163,6 +211,14 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 20,
+  },
+  demoButton: {
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 16,
   },
   errorContainer: {
     borderRadius: 8,

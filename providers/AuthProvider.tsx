@@ -43,6 +43,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   updateUser: (userData: Partial<User>) => Promise<void>;
+  demoLogin: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -73,23 +74,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       
       // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Find user in mock data
-      const foundUser = mockUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      // For mock app: Accept any email/password combination
+      // Use first mock user as default or create a demo user
+      let userToLogin;
       
-      if (foundUser) {
-        // In a real app, you'd verify the password here
-        const userWithEmail = { ...foundUser, email };
-        await AsyncStorage.setItem('user', JSON.stringify(userWithEmail));
-        setUser(userWithEmail);
-        return true;
+      if (email && mockUsers.length > 0) {
+        // Try to find user by email first
+        const foundUser = mockUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        userToLogin = foundUser || mockUsers[0]; // Use first mock user as fallback
+      } else {
+        // Create a demo user if no email provided or no mock users available
+        userToLogin = {
+          id: 'demo-user',
+          name: 'Demo User',
+          email: email || 'demo@mocktrae.com',
+          age: 25,
+          bio: 'Demo user for MockTrae app',
+          photos: [],
+          location: 'Demo City',
+          interests: ['Demo', 'Testing'],
+          verified: true,
+          lastActive: new Date().toISOString(),
+        };
       }
       
-      return false;
+      const userWithEmail = { ...userToLogin, email: email || userToLogin.email };
+      await AsyncStorage.setItem('user', JSON.stringify(userWithEmail));
+      setUser(userWithEmail);
+      return true;
     } catch (error) {
-      // Sign in error
-      return false;
+      // Even on error, allow login for demo purposes
+      const demoUser = {
+        id: 'demo-user-fallback',
+        name: 'Demo User',
+        email: email || 'demo@mocktrae.com',
+        age: 25,
+        bio: 'Demo user for MockTrae app',
+        photos: [],
+        location: 'Demo City',
+        interests: ['Demo', 'Testing'],
+        verified: true,
+        lastActive: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+      setUser(demoUser);
+      return true;
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +167,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const demoLogin = async (): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      
+      // Use first mock user or create a demo user
+      const demoUser = mockUsers.length > 0 ? mockUsers[0] : {
+        id: 'demo-user',
+        name: 'Demo User',
+        email: 'demo@mocktrae.com',
+        age: 25,
+        bio: 'Demo user exploring MockTrae',
+        photos: [],
+        location: 'Demo City',
+        interests: ['Demo', 'Testing'],
+        verified: true,
+        lastActive: new Date().toISOString(),
+      };
+      
+      await AsyncStorage.setItem('user', JSON.stringify(demoUser));
+      setUser(demoUser);
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const updateProfile = async (userData: Partial<User>): Promise<void> => {
     try {
       if (user) {
@@ -156,6 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     updateProfile,
     updateUser: updateProfile, // Alias for updateProfile
+    demoLogin,
   };
 
   return (

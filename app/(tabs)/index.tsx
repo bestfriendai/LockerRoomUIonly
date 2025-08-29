@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, memo, useMemo } from "react";
-import { View, StyleSheet, RefreshControl, ScrollView, Platform, Pressable, Modal } from "react-native";
+import { View, StyleSheet, RefreshControl, ScrollView, Platform, Pressable, Modal, TextInput, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MapPin, ChevronDown, Search, Bell, Target } from "lucide-react-native";
+import { MapPin, ChevronDown, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
 import { MasonryFlashList } from "@shopify/flash-list";
 import { useAuth } from "@/providers/AuthProvider";
 import { MasonryReviewCard } from "@/components/MasonryReviewCard";
@@ -61,12 +61,14 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [useRadiusFilter, setUseRadiusFilter] = useState(true);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const [searchRadius, setSearchRadius] = useState(25);
-  const [currentLocation] = useState({
+  const [currentLocation, setCurrentLocation] = useState({
     city: "Washington",
     state: "DC",
     coords: { latitude: 38.9072, longitude: -77.0369 }
   });
+  const [locationInput, setLocationInput] = useState("");
 
   // Filter reviews based on selected category
   const filteredReviews = useMemo(() => {
@@ -87,11 +89,58 @@ export default function HomeScreen() {
     setSelectedCategory(id);
   }, []);
 
+  const handleCurrentLocation = useCallback(async () => {
+    try {
+      // Request location permissions
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is required to use current location.');
+        return;
+      }
+
+      // Get current location
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      // Reverse geocode to get city and state
+      const reverseGeocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+      if (reverseGeocode.length > 0) {
+        const { city, region } = reverseGeocode[0];
+        setCurrentLocation({
+          city: city || 'Unknown',
+          state: region || 'Unknown',
+          coords: { latitude, longitude }
+        });
+      }
+      setShowLocationModal(false);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get current location. Please try again.');
+    }
+  }, []);
+
+  const handleManualLocation = useCallback(() => {
+    if (locationInput.trim()) {
+      // Simple parsing for "City, State" format
+      const parts = locationInput.split(',').map(part => part.trim());
+      if (parts.length >= 2) {
+        setCurrentLocation({
+          city: parts[0],
+          state: parts[1],
+          coords: { latitude: 0, longitude: 0 } // Would need geocoding API for real coords
+        });
+        setLocationInput('');
+        setShowLocationModal(false);
+      } else {
+        Alert.alert('Invalid Format', 'Please enter location as "City, State"');
+      }
+    }
+  }, [locationInput]);
+
   const renderReviewItem = useCallback(({ item, index }: { item: Review; index: number }) => (
     <View style={{ marginBottom: 16 }}>
       <MasonryReviewCard
         review={item}
-        onPress={() => router.push(`/review/${item._id}`)}
+        onPress={() => router.push(`/review/${item.id}`)}
       />
     </View>
   ), [router]);
@@ -131,10 +180,21 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Title */}
-      <Text variant="h1" style={styles.title}>
-        Discover
-      </Text>
+      {/* Title with Location Button */}
+      <View style={styles.titleContainer}>
+        <Text variant="h1" style={styles.title}>
+          Discover
+        </Text>
+        <Pressable
+          onPress={() => setShowLocationModal(true)}
+          style={[styles.locationButton, { backgroundColor: colors.surfaceElevated }]}
+        >
+          <MapPin size={16} color={colors.primary} strokeWidth={1.5} />
+          <Text variant="bodySmall" style={{ color: colors.primary, marginLeft: 4 }}>
+            Location
+          </Text>
+        </Pressable>
+      </View>
 
       {/* Category Filter */}
       <ScrollView
@@ -248,6 +308,64 @@ export default function HomeScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Location Selection Modal */}
+      <Modal
+        visible={showLocationModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLocationModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowLocationModal(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+            <Text variant="h3" style={styles.modalTitle}>
+              Change Location
+            </Text>
+            
+            {/* Current Location Button */}
+            <Pressable
+              onPress={handleCurrentLocation}
+              style={[styles.locationOption, { backgroundColor: colors.surfaceElevated }]}
+            >
+              <Navigation size={20} color={colors.primary} strokeWidth={1.5} />
+              <Text variant="body" style={{ color: colors.text, marginLeft: 12 }}>
+                Use Current Location
+              </Text>
+            </Pressable>
+
+            {/* Manual Location Input */}
+            <View style={styles.manualLocationContainer}>
+              <Edit3 size={20} color={colors.textSecondary} strokeWidth={1.5} />
+              <TextInput
+                style={[styles.locationInput, { 
+                  color: colors.text,
+                  borderColor: colors.border,
+                  backgroundColor: colors.surfaceElevated
+                }]}
+                placeholder="Enter City, State"
+                placeholderTextColor={colors.textSecondary}
+                value={locationInput}
+                onChangeText={setLocationInput}
+                onSubmitEditing={handleManualLocation}
+              />
+            </View>
+            
+            {locationInput.trim() && (
+              <Pressable
+                onPress={handleManualLocation}
+                style={[styles.confirmButton, { backgroundColor: colors.primary }]}
+              >
+                <Text variant="body" weight="medium" style={{ color: colors.surface }}>
+                  Set Location
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -337,5 +455,46 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 20,
+  },
+  titleContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  locationButton: {
+    alignItems: "center",
+    borderRadius: 16,
+    flexDirection: "row",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  locationOption: {
+    alignItems: "center",
+    borderRadius: 12,
+    flexDirection: "row",
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  manualLocationContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  locationInput: {
+    borderRadius: 8,
+    borderWidth: 1,
+    flex: 1,
+    fontSize: 16,
+    marginLeft: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  confirmButton: {
+    alignItems: "center",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 });

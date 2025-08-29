@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/Input";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { signIn, isLoading } = useAuth();
+  const { signIn, demoLogin, isLoading } = useAuth();
   const { colors } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,12 +34,29 @@ export default function SignInScreen() {
     }
     
     try {
-      await signIn(email, password);
-      Alert.alert("Success", "Welcome back!", [
-        { text: "OK", onPress: () => router.replace("/(tabs)") }
-      ]);
+      const success = await signIn(email, password);
+      if (success) {
+        router.replace("/(tabs)");
+      } else {
+        setError("Sign in failed");
+      }
     } catch (err: any) {
       setError(err.message || "Sign in failed");
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setError("");
+    
+    try {
+      const success = await demoLogin();
+      if (success) {
+        router.replace("/(tabs)");
+      } else {
+        setError("Demo login failed");
+      }
+    } catch (err: any) {
+      setError("Demo login failed");
     }
   };
 
@@ -128,6 +145,26 @@ export default function SignInScreen() {
                 </Text>
               )}
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.demoButton,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.primary,
+                }
+              ]}
+              onPress={handleDemoLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
+                  Demo Login
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
 
           <View style={styles.signUpContainer}>
@@ -166,6 +203,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  demoButton: {
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 16,
   },
   errorContainer: {
     borderRadius: 8,

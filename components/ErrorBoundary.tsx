@@ -119,7 +119,24 @@ const DefaultErrorFallback: React.FC<{
   showGoHome?: boolean;
   retryable?: boolean;
 }> = ({ error, resetError, showGoHome, retryable }) => {
-  const { colors } = useTheme();
+  // Use a try-catch to handle cases where ThemeProvider is not available
+  let colors;
+  try {
+    const theme = useTheme();
+    colors = theme.colors;
+  } catch {
+    // Fallback colors when ThemeProvider is not available
+    colors = {
+      surface: '#ffffff',
+      surfaceElevated: '#f8f9fa',
+      errorContainer: '#ffebee',
+      error: '#d32f2f',
+      textSecondary: '#6c757d',
+      border: '#e0e0e0',
+      onPrimary: '#ffffff',
+      text: '#212529'
+    };
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from "react";
 import { View, StyleSheet, ScrollView, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Camera, Image as ImageIcon, MapPin, X, Plus, Star, ChevronDown, Check } from "lucide-react-native";
+import { Camera, Image as ImageIcon, MapPin, X, Plus, Star, ChevronDown, Check, Flag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -30,13 +30,7 @@ type LocationSuggestion = {
   };
 };
 
-const categories = [
-  { id: 'dating', label: 'Dating', emoji: '💕' },
-  { id: 'social', label: 'Social', emoji: '👥' },
-  { id: 'professional', label: 'Professional', emoji: '💼' },
-  { id: 'social_media', label: 'Social Media', emoji: '📱' },
-  { id: 'app', label: 'App/Platform', emoji: '💻' },
-];
+const categories = ['Men', 'Women', 'LGBT'];
 
 const platforms = [
   'Tinder', 'Bumble', 'Hinge', 'Instagram', 'Snapchat', 'WhatsApp', 'LinkedIn', 'Facebook', 'Twitter', 'Other'
@@ -52,14 +46,14 @@ export default function CreateReviewScreen() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [rating, setRating] = useState<number>(0);
+  const [flag, setFlag] = useState<'green' | 'red' | null>(null);
   const [platform, setPlatform] = useState("");
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [location, setLocation] = useState<string>("");
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Validation state
@@ -196,12 +190,11 @@ export default function CreateReviewScreen() {
 
     if (!content.trim()) {
       newErrors.content = 'Review content is required';
-    } else if (content.trim().length < 50) {
-      newErrors.content = 'Review must be at least 50 characters long';
+    } else if (content.length < 10) {
+      newErrors.content = "Review must be at least 10 characters long";
     }
-
-    if (rating === 0) {
-      newErrors.rating = 'Rating is required';
+    if (!flag) {
+      newErrors.flag = "Please select a flag (green or red)";
     }
 
     setErrors(newErrors);
@@ -233,11 +226,11 @@ export default function CreateReviewScreen() {
               setSelectedCategories([]);
               setTitle("");
               setContent("");
-              setRating(0);
+              setFlag(null);
               setPlatform("");
               setMedia([]);
               setLocation("");
-              setIsAnonymous(false);
+              setIsAnonymous(true);
               setErrors({});
               
               // Navigate back to home
@@ -253,23 +246,64 @@ export default function CreateReviewScreen() {
     }
   };
 
-  const renderStarRating = () => {
+  const renderFlagOptions = () => {
     return (
-      <View style={styles.starContainer}>
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Pressable
-            key={star}
-            onPress={() => setRating(star)}
-            style={styles.starButton}
+      <View style={styles.flagContainer}>
+        <Pressable
+          onPress={() => setFlag('green')}
+          style={[
+            styles.flagButton,
+            {
+              backgroundColor: flag === 'green' ? '#10B981' : colors.surfaceElevated,
+              borderColor: flag === 'green' ? '#10B981' : colors.border,
+            }
+          ]}
+        >
+          <Flag
+            size={24}
+            color={flag === 'green' ? '#FFFFFF' : '#10B981'}
+            fill={flag === 'green' ? '#FFFFFF' : 'none'}
+            strokeWidth={1.5}
+          />
+          <Text
+            variant="body"
+            weight="medium"
+            style={{
+              color: flag === 'green' ? '#FFFFFF' : '#10B981',
+              marginLeft: 8
+            }}
           >
-            <Star
-              size={32}
-              color={star <= rating ? colors.warning : colors.textSecondary}
-              fill={star <= rating ? colors.warning : 'transparent'}
-              strokeWidth={1.5}
-            />
-          </Pressable>
-        ))}
+            Green Flag
+          </Text>
+        </Pressable>
+        
+        <Pressable
+          onPress={() => setFlag('red')}
+          style={[
+            styles.flagButton,
+            {
+              backgroundColor: flag === 'red' ? '#EF4444' : colors.surfaceElevated,
+              borderColor: flag === 'red' ? '#EF4444' : colors.border,
+            }
+          ]}
+        >
+          <Flag
+            size={24}
+            color={flag === 'red' ? '#FFFFFF' : '#EF4444'}
+            fill={flag === 'red' ? '#FFFFFF' : 'none'}
+            strokeWidth={1.5}
+          />
+          <Text
+            variant="body"
+            weight="medium"
+            style={{
+              color: flag === 'red' ? '#FFFFFF' : '#EF4444',
+              marginLeft: 8
+            }}
+          >
+            Red Flag
+          </Text>
+        </Pressable>
       </View>
     );
   };
@@ -323,11 +357,11 @@ export default function CreateReviewScreen() {
             )}
             <View style={styles.categoriesGrid}>
               {categories.map((category) => {
-                const isSelected = selectedCategories.includes(category.id);
+                const isSelected = selectedCategories.includes(category);
                 return (
                   <Pressable
-                    key={category.id}
-                    onPress={() => toggleCategory(category.id)}
+                    key={category}
+                    onPress={() => toggleCategory(category)}
                     style={[
                       styles.categoryChip,
                       {
@@ -336,16 +370,14 @@ export default function CreateReviewScreen() {
                       }
                     ]}
                   >
-                    <Text style={styles.categoryEmoji}>{category.emoji}</Text>
                     <Text
-                      variant="bodySmall"
-                      weight={isSelected ? "medium" : "normal"}
+                      variant="body"
+                      weight="medium"
                       style={{
-                        color: isSelected ? colors.surface : colors.text,
-                        marginLeft: 6
+                        color: isSelected ? colors.onPrimary : colors.text
                       }}
                     >
-                      {category.label}
+                      {category}
                     </Text>
                   </Pressable>
                 );
@@ -353,20 +385,18 @@ export default function CreateReviewScreen() {
             </View>
           </Card>
 
-          {/* Rating */}
+          {/* Flag Selection */}
           <Card style={styles.section}>
             <Text variant="body" weight="medium" style={styles.sectionTitle}>
-              Overall Rating
+              Flag Type *
             </Text>
-            {errors.rating && (
-              <Text variant="caption" style={{ color: colors.error, marginBottom: 8 }}>
-                {errors.rating}
-              </Text>
-            )}
-            {renderStarRating()}
-            {rating > 0 && (
-              <Text variant="bodySmall" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
-                {rating === 1 ? 'Poor' : rating === 2 ? 'Fair' : rating === 3 ? 'Good' : rating === 4 ? 'Very Good' : 'Excellent'}
+            <Text variant="bodySmall" style={{ color: colors.textSecondary, marginBottom: 12 }}>
+              Choose whether this is a positive (green flag) or negative (red flag) experience
+            </Text>
+            {renderFlagOptions()}
+            {errors.flag && (
+              <Text variant="caption" style={{ color: colors.error, marginTop: 8 }}>
+                {errors.flag}
               </Text>
             )}
           </Card>
@@ -749,15 +779,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 12,
   },
-  starButton: {
-    padding: 4,
-  },
-  starContainer: {
+  flagContainer: {
     flexDirection: 'row',
-    gap: 8,
-    justifyContent: 'center',
-    marginVertical: 8,
+    gap: 12,
   },
+  flagButton: {
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 2,
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+
   submitButton: {
     marginTop: 8,
   },

@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Alert, Share, Dimensions, Animated } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Alert, Share, Dimensions, Animated, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Eye, Calendar, MapPin, User, Camera, Play } from "lucide-react-native";
+import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Calendar, MapPin, User, Camera, Play } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import Text from "@/components/ui/Text";
@@ -46,7 +46,7 @@ interface CommentItemProps {
 
 const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
   const { colors } = useTheme();
-  const commenter = mockUsers.find(u => u._id === comment.userId);
+  const commenter = mockUsers.find(u => u.id === comment.userId);
   
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -86,7 +86,7 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
         </Text>
         <View style={styles.commentActions}>
           <Pressable
-            onPress={() => onLike(comment._id)}
+            onPress={() => onLike(comment.id)}
             style={styles.commentAction}
           >
             <ThumbsUp
@@ -137,7 +137,7 @@ export default function ReviewDetailScreen() {
 
   // Find the review
   const review = useMemo(() => {
-    const found = mockReviews.find(r => r._id === id);
+    const found = mockReviews.find(r => r.id === id);
     if (found) {
       setLikesCount(found.likesCount || 0);
       setIsLiked(found.isLiked || false);
@@ -147,17 +147,17 @@ export default function ReviewDetailScreen() {
 
   // Find reviewer and reviewee
   const reviewer = useMemo(() => {
-    return mockUsers.find(u => u._id === review?.reviewerId);
+    return mockUsers.find(u => u.id === review?.reviewerId);
   }, [review?.reviewerId]);
 
   const reviewee = useMemo(() => {
-    return mockUsers.find(u => u._id === review?.revieweeId);
-  }, [review?.revieweeId]);
+    return mockUsers.find(u => u.id === review?.reviewedUserId);
+  }, [review?.reviewedUserId]);
 
   // Mock comments for this review
   const comments = useMemo(() => {
-    return mockComments.filter((c: any) => c.reviewId === review?._id);
-  }, [review?._id]);
+    return mockComments.filter((c: any) => c.reviewId === review?.id);
+  }, [review?.id]);
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -182,7 +182,7 @@ export default function ReviewDetailScreen() {
     try {
       await Share.share({
         message: `Check out this review: "${review.title}" - ${review.content?.substring(0, 100) || review.comment.substring(0, 100)}...`,
-        url: `https://app.example.com/review/${review._id || review.id}`,
+        url: `https://app.example.com/review/${review.id}`,
       });
     } catch (error) {
       console.error('Error sharing:', error);
@@ -205,7 +205,7 @@ export default function ReviewDetailScreen() {
   }, []);
 
   const handleMoreOptions = useCallback(() => {
-    const isOwnReview = currentUser?._id === review?.reviewerId;
+    const isOwnReview = currentUser?.id === review?.reviewerId;
     
     const options = [
       { text: 'Share Review', onPress: handleShare },
@@ -224,7 +224,7 @@ export default function ReviewDetailScreen() {
 
   const handleCommentReply = useCallback((comment: Comment) => {
     setReplyingTo(comment);
-    console.log('Reply to comment:', comment._id);
+    console.log('Reply to comment:', comment.id);
   }, []);
 
   const handleMediaPress = useCallback((uri: string, type: 'image' | 'video') => {
@@ -332,7 +332,7 @@ export default function ReviewDetailScreen() {
         <Card style={styles.reviewCard}>
           {/* Reviewer Info */}
           <Pressable
-            onPress={() => handleUserPress(reviewer?._id || '')}
+            onPress={() => handleUserPress(reviewer?.id || '')}
             style={styles.reviewerInfo}
           >
             <Avatar
@@ -378,7 +378,7 @@ export default function ReviewDetailScreen() {
           {/* Reviewee Info */}
           {reviewee && (
             <Pressable
-              onPress={() => handleUserPress(reviewee._id || reviewee.id)}
+              onPress={() => handleUserPress(reviewee.id)}
               style={styles.revieweeInfo}
             >
               <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
@@ -431,20 +431,25 @@ export default function ReviewDetailScreen() {
             </View>
           )}
 
-          {/* Media */}
-          {review.media && review.media.length > 0 && (
+          {/* Images */}
+          {review.images && review.images.length > 0 && (
             <View style={styles.mediaContainer}>
               <Text variant="body" weight="medium" style={styles.mediaTitle}>
-                Attachments
+                Images
               </Text>
               <View style={styles.mediaGrid}>
-                {review.media.map((media, index) => (
-                  <MediaItem
+                {review.images.map((imageUrl, index) => (
+                  <Pressable
                     key={index}
-                    uri={media.url}
-                    type={media.type}
-                    onPress={() => handleMediaPress(media.url, media.type)}
-                  />
+                    style={styles.mediaItem}
+                    onPress={() => handleMediaPress(imageUrl, 'image')}
+                  >
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.mediaImage}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -486,13 +491,6 @@ export default function ReviewDetailScreen() {
                 Share
               </Text>
             </Pressable>
-
-            <View style={styles.viewsContainer}>
-              <Eye size={16} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
-                {review.viewsCount || 0} views
-              </Text>
-            </View>
           </View>
         </Card>
 
@@ -514,7 +512,7 @@ export default function ReviewDetailScreen() {
               <View style={styles.commentsList}>
                 {comments.map((comment: Comment) => (
                   <CommentItem
-                    key={comment._id}
+                    key={comment.id}
                     comment={comment}
                     onReply={handleCommentReply}
                     onLike={handleCommentLike}
@@ -620,6 +618,12 @@ const styles = StyleSheet.create({
   mediaItem: {
     aspectRatio: 1,
     width: (screenWidth - 80) / 3,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  mediaImage: {
+    width: '100%',
+    height: '100%',
   },
   mediaPlaceholder: {
     alignItems: 'center',
