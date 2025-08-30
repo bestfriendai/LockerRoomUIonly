@@ -13,13 +13,19 @@ export default function IndexScreen() {
 
   useEffect(() => {
     if (!isLoading) {
+      console.log('Auth loading complete. User:', user ? user.id : 'null');
+
       if (user) {
         // User is authenticated, redirect to main app
+        console.log('Redirecting authenticated user to main app');
         router.replace('/(tabs)');
       } else {
         // User is not authenticated, redirect to onboarding/signin
+        console.log('Redirecting unauthenticated user to auth flow');
         router.replace('/(auth)');
       }
+    } else {
+      console.log('Auth still loading...');
     }
   }, [user, isLoading, router]);
 

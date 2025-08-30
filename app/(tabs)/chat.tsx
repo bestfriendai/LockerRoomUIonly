@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { View, StyleSheet, TextInput, Pressable, RefreshControl, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -8,9 +8,8 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import { mockChatRooms, mockUsers } from "@/data/mockData";
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { db } from "@/utils/firebase";
 import type { ChatRoom } from "@/types/index";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
@@ -28,7 +27,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   const { colors } = useTheme();
   const { user } = useAuth();
 
-  const isOwner = room.createdBy === user?._id;
+  const isOwner = room.createdBy === user?.id;
   const memberCount = room.memberIds?.length || 0;
   const lastMessage = room.lastMessage;
   const isPrivate = room.type === 'private';
@@ -112,7 +111,10 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
               <View style={styles.lastMessage}>
                 <Clock size={12} color={colors.textSecondary} strokeWidth={1.5} />
                 <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
-                  {formatTime(lastMessage.timestamp)}
+                  {typeof lastMessage === 'string'
+                    ? formatTime(room.lastMessageTime)
+                    : formatTime(lastMessage.timestamp)
+                  }
                 </Text>
               </View>
             )}
@@ -121,8 +123,14 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           {lastMessage && (
             <View style={styles.lastMessageContent}>
               <Text variant="caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
-                <Text weight="medium">{lastMessage.senderName}: </Text>
-                {lastMessage.content}
+                {typeof lastMessage === 'string' ? (
+                  lastMessage
+                ) : (
+                  <>
+                    <Text weight="medium">{lastMessage.senderName || 'Unknown'}: </Text>
+                    {lastMessage.content}
+                  </>
+                )}
               </Text>
             </View>
           )}
@@ -167,9 +175,7 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<ChatTab>('all');
   const [refreshing, setRefreshing] = useState(false);
-  const [joinedRooms, setJoinedRooms] = useState<Set<string>>(new Set([
-    'room1', 'room2', 'room3' // Mock joined rooms
-  ]));
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
 
   const tabs = [
     { id: 'all' as ChatTab, label: 'All Rooms', icon: Globe },
@@ -177,17 +183,36 @@ export default function ChatScreen() {
     { id: 'my_rooms' as ChatTab, label: 'My Rooms', icon: Crown },
   ];
 
+  useEffect(() => {
+    fetchChatRooms();
+  }, []);
+
+  const fetchChatRooms = async () => {
+    setRefreshing(true);
+    try {
+      const roomsCollection = collection(db, "chatRooms");
+      const roomsSnapshot = await getDocs(roomsCollection);
+      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() } as ChatRoom));
+      setChatRooms(roomsList);
+    } catch (error) {
+      console.error("Error fetching chat rooms: ", error);
+      Alert.alert("Error", "Could not fetch chat rooms.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Filter and search rooms
   const filteredRooms = useMemo(() => {
-    let rooms = mockChatRooms;
+    let rooms = chatRooms;
 
     // Filter by tab
     switch (activeTab) {
       case 'joined':
-        rooms = rooms.filter(room => joinedRooms.has(room._id));
+        rooms = rooms.filter(room => room.memberIds?.includes(user?.id || ''));
         break;
       case 'my_rooms':
-        rooms = rooms.filter(room => room.createdBy === user?._id);
+        rooms = rooms.filter(room => room.createdBy === user?.id);
         break;
       case 'all':
       default:
@@ -199,46 +224,57 @@ export default function ChatScreen() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       rooms = rooms.filter(room =>
-        room.name.toLowerCase().includes(query) ||
+        room.name?.toLowerCase().includes(query) ||
         room.description?.toLowerCase().includes(query)
       );
     }
 
     // Sort by last activity
     return rooms.sort((a, b) => {
-      const aTime = a.lastMessage?.timestamp || a._creationTime;
-      const bTime = b.lastMessage?.timestamp || b._creationTime;
+      const aTime = (typeof a.lastMessage === 'object' && a.lastMessage?.timestamp) || a.lastMessageTime || a._creationTime;
+      const bTime = (typeof b.lastMessage === 'object' && b.lastMessage?.timestamp) || b.lastMessageTime || b._creationTime;
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-  }, [activeTab, searchQuery, joinedRooms, user?._id]);
+  }, [activeTab, searchQuery, chatRooms, user?.id]);
 
   // Handlers
   const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
+    await fetchChatRooms();
   }, []);
 
   const handleRoomPress = useCallback((room: ChatRoom) => {
     router.push(`/chat/${room._id}`);
   }, [router]);
 
-  const handleJoinRoom = useCallback((roomId: string) => {
-    setJoinedRooms(prev => new Set([...prev, roomId]));
-    // Simulate API call
-    Alert.alert('Success', 'You have joined the room!');
-  }, []);
+  const handleJoinRoom = useCallback(async (roomId: string) => {
+    if (!user?.id) return;
+    try {
+      const roomRef = doc(db, "chatRooms", roomId);
+      await updateDoc(roomRef, {
+        memberIds: arrayUnion(user.id)
+      });
+      await fetchChatRooms();
+      Alert.alert('Success', 'You have joined the room!');
+    } catch (error) {
+      console.error("Error joining room: ", error);
+      Alert.alert('Error', 'Could not join the room. Please try again.');
+    }
+  }, [user?.id]);
 
-  const handleLeaveRoom = useCallback((roomId: string) => {
-    setJoinedRooms(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(roomId);
-      return newSet;
-    });
-    // Simulate API call
-    Alert.alert('Success', 'You have left the room.');
-  }, []);
+  const handleLeaveRoom = useCallback(async (roomId: string) => {
+    if (!user?.id) return;
+    try {
+      const roomRef = doc(db, "chatRooms", roomId);
+      await updateDoc(roomRef, {
+        memberIds: arrayRemove(user.id)
+      });
+      await fetchChatRooms();
+      Alert.alert('Success', 'You have left the room.');
+    } catch (error) {
+      console.error("Error leaving room: ", error);
+      Alert.alert('Error', 'Could not leave the room. Please try again.');
+    }
+  }, [user?.id]);
 
   const handleCreateRoom = useCallback(() => {
     Alert.alert(
@@ -249,15 +285,19 @@ export default function ChatScreen() {
   }, []);
 
   const renderRoomItem = ({ item }: { item: ChatRoom }) => {
-    const isJoined = joinedRooms.has(item._id);
-    const isMember = isJoined || item.createdBy === user?._id;
+    const userId = user?.id;
+    if (!userId) return null;
+
+    const isJoined = item.memberIds?.includes(userId) || false;
+    const isOwner = item.createdBy === userId;
+    const isMember = isJoined || isOwner;
 
     return (
       <ChatRoomItem
         room={item}
         onPress={() => handleRoomPress(item)}
-        onJoin={() => handleJoinRoom(item._id)}
-        onLeave={() => handleLeaveRoom(item._id)}
+        onJoin={() => handleJoinRoom(item._id || item.id)}
+        onLeave={() => handleLeaveRoom(item._id || item.id)}
         isJoined={isJoined}
         isMember={isMember}
       />
@@ -375,7 +415,7 @@ export default function ChatScreen() {
           estimatedItemSize={120}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item) => item._id || item.id}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -413,85 +453,84 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  joinButton: {
-    paddingHorizontal: 16,
-  },
-  lastMessage: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  lastMessageContent: {
-    marginTop: 4,
-  },
-  leaveButton: {
-    paddingHorizontal: 16,
-  },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
-  memberCount: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  moreButton: {
-    padding: 4,
-  },
-  roomActions: {
-    alignItems: 'flex-end',
-    gap: 8,
+  roomItem: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 12,
   },
   roomHeader: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    padding: 16,
+    justifyContent: 'space-between',
+  },
+  roomInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  roomTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   roomIcon: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 99,
     height: 24,
     justifyContent: 'center',
     marginRight: 8,
     width: 24,
   },
-  roomInfo: {
-    flex: 1,
-  },
-  roomItem: {
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 12,
-    overflow: 'hidden',
+  roomName: {
+    flexShrink: 1,
+    marginRight: 8,
   },
   roomMeta: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 16,
     marginTop: 8,
   },
-  roomName: {
-    flex: 1,
-    marginRight: 8,
-  },
-  roomTitleRow: {
+  memberCount: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: 4,
+  },
+  lastMessage: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginLeft: 16,
+  },
+  lastMessageContent: {
+    marginTop: 8,
+  },
+  roomActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  joinButton: {
+    paddingHorizontal: 12,
+  },
+  leaveButton: {
+    paddingHorizontal: 12,
+  },
+  moreButton: {
+    marginLeft: 4,
+    padding: 4,
   },
   searchBar: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 99,
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Inter_400Regular',
     fontSize: 16,
+    marginLeft: 12,
   },
   tab: {
     alignItems: 'center',
-    borderBottomColor: 'transparent',
     borderBottomWidth: 2,
     flex: 1,
     flexDirection: 'row',
@@ -499,7 +538,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   tabsContainer: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });

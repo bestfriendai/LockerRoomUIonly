@@ -150,11 +150,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     tokens,
   };
 
-  // Don't render until theme is loaded to prevent flash
-  if (!isLoaded) {
-    return null;
-  }
-
+  // Always provide context, even during loading
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}

@@ -34,12 +34,9 @@ export default function SignInForm() {
 
     try {
       if (step === 'signIn') {
-        const success = await signIn(email, password);
-        if (success) {
-          router.replace('/(tabs)');
-        } else {
-          setError('Sign in failed');
-        }
+        await signIn(email, password);
+        // signIn doesn't return a value, so we assume success if no error is thrown
+        router.replace('/(tabs)');
       } else {
         // For sign up, redirect to the full signup screen
         router.push('/(auth)/signup');
@@ -56,11 +53,11 @@ export default function SignInForm() {
     setError('');
 
     try {
-      const success = await demoLogin();
-      if (success) {
+      if (demoLogin) {
+        await demoLogin();
         router.replace('/(tabs)');
       } else {
-        setError('Demo login failed');
+        setError('Demo login not available');
       }
     } catch (err: any) {
       setError('Demo login failed');

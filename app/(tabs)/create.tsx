@@ -6,11 +6,13 @@ import { Camera, Image as ImageIcon, MapPin, X, Plus, Star, ChevronDown, Check, 
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
-import { mockUsers } from "@/data/mockData";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/utils/firebase";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ export default function CreateReviewScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
+  const { user } = useAuth();
 
   // Form state
   const [personName, setPersonName] = useState("");
@@ -208,11 +211,33 @@ export default function CreateReviewScreen() {
       return;
     }
 
+    if (!user) {
+      Alert.alert("Authentication Error", "You must be logged in to submit a review.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const reviewData = {
+        userId: user.id,
+        targetId: personName, // Assuming personName is the targetId for now
+        targetType: 'user',
+        rating: flag === 'green' ? 5 : 1, // Simple mapping from flag to rating
+        title,
+        content,
+        timestamp: serverTimestamp(),
+        likes: 0,
+        dislikes: 0,
+        comments: [],
+        media: media.map(m => m.uri), // Storing URIs for now, will need to implement upload
+        verified: false,
+        category: selectedCategories.join(', '),
+        platform,
+        isAnonymous,
+      };
+
+      await addDoc(collection(db, "reviews"), reviewData);
 
       Alert.alert(
         'Review Submitted!',

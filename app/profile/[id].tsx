@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
 import { ReviewCard } from "@/components/ReviewCard";
-import { mockReviews, mockUsers } from "@/data/mockData";
+import { getUserById } from "@/services/userService";
+import { ReviewService } from "@/services/reviewService";
 import type { Review, User as UserType } from "@/types";
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -160,20 +161,40 @@ export default function UserProfileScreen() {
   const [activeTab, setActiveTab] = useState<ProfileTab>('reviews');
   const [refreshing, setRefreshing] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [user, setUser] = useState<UserType | null>(null);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
+  const [receivedReviews, setReceivedReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Find the user
-  const user = useMemo(() => {
-    return mockUsers.find(u => u._id === id);
+  // Load user data
+  React.useEffect(() => {
+    if (!id) return;
+    
+    const loadUserData = async () => {
+      setLoading(true);
+      try {
+        // Fetch user
+        const userData = await getUserById(id as string);
+        if (userData) {
+          setUser(userData);
+          
+          // Fetch reviews by user
+          const givenReviews = await ReviewService.getReviewsByUser(userData.id);
+          setUserReviews(givenReviews);
+          
+          // Fetch reviews about user
+          const aboutReviews = await ReviewService.getReviewsAboutUser(userData.id);
+          setReceivedReviews(aboutReviews);
+        }
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadUserData();
   }, [id]);
-
-  // Mock data
-  const userReviews = useMemo(() => {
-    return mockReviews.filter(review => review.reviewerId === user?._id);
-  }, [user?._id]);
-
-  const receivedReviews = useMemo(() => {
-    return mockReviews.filter(review => review.revieweeId === user?._id);
-  }, [user?._id]);
 
   const mockActivities: ActivityItemProps[] = [
     {
@@ -229,10 +250,29 @@ export default function UserProfileScreen() {
   }, [router]);
 
   const handleRefresh = useCallback(async () => {
+    if (!id) return;
+    
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
-  }, []);
+    try {
+      // Fetch user
+      const userData = await getUserById(id as string);
+      if (userData) {
+        setUser(userData);
+        
+        // Fetch reviews by user
+        const givenReviews = await ReviewService.getReviewsByUser(userData.id);
+        setUserReviews(givenReviews);
+        
+        // Fetch reviews about user
+        const aboutReviews = await ReviewService.getReviewsAboutUser(userData.id);
+        setReceivedReviews(aboutReviews);
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [id]);
 
   const handleTabPress = useCallback((tab: ProfileTab, index: number) => {
     setActiveTab(tab);
@@ -407,7 +447,10 @@ export default function UserProfileScreen() {
                         Age Range
                       </Text>
                       <Text variant="body">
-                        {user.datingPreferences.ageRange.min} - {user.datingPreferences.ageRange.max} years
+                        {Array.isArray(user.datingPreferences.ageRange)
+                          ? `${user.datingPreferences.ageRange[0]} - ${user.datingPreferences.ageRange[1]} years`
+                          : `${user.datingPreferences.ageRange.min} - ${user.datingPreferences.ageRange.max} years`
+                        }
                       </Text>
                     </View>
                   )}
@@ -431,6 +474,30 @@ export default function UserProfileScreen() {
         return null;
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleBack}
+            leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
+          />
+        </View>
+        <View style={styles.emptyState}>
+          <User size={48} color={colors.textSecondary} strokeWidth={1} />
+          <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+            Loading Profile...
+          </Text>
+          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+            Please wait while we load the user profile.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!user) {
     return (

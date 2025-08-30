@@ -8,6 +8,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { ChatProvider } from "@/providers/ChatProvider";
+import { NotificationProvider } from "@/providers/NotificationProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -38,7 +40,9 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemeProvider>
             <AuthProvider>
-              <StatusBar style="auto" />
+              <NotificationProvider>
+                <ChatProvider>
+                  <StatusBar style="auto" />
               <Stack
                 screenOptions={{
                   headerShown: false,
@@ -123,7 +127,9 @@ export default function RootLayout() {
                     headerShown: false 
                   }} 
                 />
-              </Stack>
+                  </Stack>
+                </ChatProvider>
+              </NotificationProvider>
             </AuthProvider>
           </ThemeProvider>
         </SafeAreaProvider>

@@ -1,72 +1,182 @@
 export interface ChatRoom {
-  _id: string;
-  id?: string;
-  name: string;
-  description?: string;
-  type: 'public' | 'private';
-  createdBy: string;
-  memberIds?: string[];
-  memberCount?: number;
-  lastMessage?: {
-    content: string;
-    timestamp: string;
-    senderName: string;
-    senderId: string;
+  id: string;
+  _id?: string; // For compatibility with existing code
+  participants: string[];
+  memberIds?: string[]; // Alternative property name used in code
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
+  _creationTime?: any; // Alternative timestamp property
+  lastMessage: ChatMessage | string | null; // Can be either a ChatMessage object or string
+  lastMessageTime: any | null; // Firestore Timestamp
+  unreadCount?: {
+    [userId: string]: number;
   };
-  _creationTime: string;
+  blockedUsers?: string[];
   isActive?: boolean;
-  tags?: string[];
+  name?: string;
+  description?: string;
+  type?: 'direct' | 'group' | 'public' | 'private'; // Added 'private' type
+  createdBy?: string;
+  memberCount?: number;
 }
 
 export interface ChatMessage {
-  _id: string;
-  id?: string;
+  id: string;
+  _id?: string; // For compatibility with existing code
+  roomId: string;
+  chatRoomId?: string; // Alternative property name
   senderId: string;
-  receiverId?: string;
-  chatRoomId?: string;
   content: string;
-  _creationTime: string;
-  timestamp?: string;
-  read: boolean;
-  type: 'text' | 'image' | 'emoji';
+  messageType: 'text' | 'image' | 'emoji';
+  type?: 'text' | 'image' | 'emoji'; // Alternative property name for compatibility
+  timestamp: any; // Firestore Timestamp
+  _creationTime?: any; // Alternative timestamp property
+  isRead: boolean;
+  read?: boolean; // Alternative property name for compatibility
+  isDelivered: boolean;
+  readBy?: string[]; // Users who have read this message
+  receiverId?: string; // For direct messages
+  senderName?: string; // Sender display name
 }
 
 export interface User {
-  _id?: string;
   id: string;
+  _id?: string; // For compatibility with existing code
   name: string;
+  username?: string;
+  displayName?: string;
   email: string;
   profilePicture?: string;
+  photoURL?: string; // Alternative property name
+  photos?: string[];
   age?: number;
   location?: string;
   bio?: string;
+  interests?: string[];
+  occupation?: string;
+  education?: string;
+  height?: string;
+  relationshipGoals?: string;
   verified?: boolean;
-  lastSeen?: string;
+  profileComplete?: boolean;
+  lastSeen?: any; // Firestore Timestamp
+  lastActive?: any; // Alternative property name
   isOnline?: boolean;
-  _creationTime?: string;
+  isActive?: boolean;
+  createdAt?: any; // Firestore Timestamp
+  updatedAt?: any; // Firestore Timestamp
+  _creationTime?: any; // Alternative timestamp property
+  reviewsCount?: number;
+  matchesCount?: number;
+  rating?: number;
+  gender?: string;
+  phone?: string;
+  datingPreferences?: {
+    ageRange?: [number, number] | { min: number; max: number };
+    min?: number; // For backward compatibility
+    max?: number; // For backward compatibility
+    maxDistance?: number;
+    interestedIn?: string[];
+    gender?: string;
+  };
 }
 
 export interface Review {
   id: string;
-  userId: string;
-  targetId: string;
-  targetType: 'user' | 'place' | 'event';
+  _id?: string; // For compatibility with existing code
+  authorId: string;
+  reviewerId?: string; // Alternative property name
+  targetUserId: string;
+  reviewedUserId?: string; // Alternative property name
+  userId: string; // Made required since it's used extensively in mockData
   rating: number;
-  title: string;
   content: string;
-  timestamp: string;
+  comment?: string; // Alternative property name
+  title?: string;
+  createdAt: any; // Firestore Timestamp
+  updatedAt: any; // Firestore Timestamp
+  timestamp?: any; // Alternative timestamp property
+  _creationTime?: any; // Another alternative timestamp property
   likes: number;
-  dislikes: number;
-  comments?: Comment[];
+  helpfulCount?: number; // Alternative property name
+  likedBy?: string[];
+  comments: string[]; // Array of comment IDs
+  isAnonymous?: boolean;
+  category?: string;
+  categories?: string[]; // Alternative property name
   media?: string[];
-  verified?: boolean;
+  images?: string[]; // Alternative property name
+  platform?: string;
+  location?: string;
+  tags?: string[];
+  author?: {
+    username: string;
+    isVerified: boolean;
+  };
+  // Additional properties used in mockData
+  personName?: string;
+  photos?: string[];
 }
 
 export interface Comment {
   id: string;
-  userId: string;
+  reviewId: string;
+  authorId: string;
+  userId?: string; // Alternative property name
   content: string;
-  timestamp: string;
-  likes: number;
-  replies?: Comment[];
+  createdAt: any; // Firestore Timestamp
+  timestamp?: any; // Alternative timestamp property
+  _creationTime?: any; // Another alternative timestamp property
+  likes?: number;
+  likesCount?: number; // Alternative property name
+  likedBy?: string[];
+  isLiked?: boolean; // Whether current user has liked this comment
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+  isRead: boolean;
+  read?: boolean; // Alternative property name
+  createdAt: any; // Firestore Timestamp
+  readAt?: any; // Firestore Timestamp
+  timestamp?: any; // Alternative timestamp property
+}
+
+// Context types for providers
+export interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (userData: Partial<User> & { email: string; password: string }) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>; // Required since it's being used
+  resetPassword: (email: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  demoLogin: () => Promise<void>; // Required since it's being used
+}
+
+export interface ChatContextType {
+  chatRooms: ChatRoom[];
+  messages: ChatMessage[];
+  users?: User[]; // Made optional to match provider implementation
+  isLoading?: boolean; // Made optional to match provider implementation
+  sendMessage: (roomId: string, content: string) => Promise<void>;
+  createChatRoom?: (participants: string[]) => Promise<ChatRoom>; // Made optional
+  joinChatRoom?: (roomId: string) => Promise<void>; // Made optional
+  leaveChatRoom?: (roomId: string) => Promise<void>; // Made optional
+}
+
+export interface NotificationContextType {
+  notifications: Notification[];
+  unreadCount: number;
+  markAsRead: (notificationId: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  clearAllNotifications: () => Promise<void>; // Required since it's being used
+  addNotification: (notification: any) => Promise<void>; // Simplified type to avoid conflicts
 }

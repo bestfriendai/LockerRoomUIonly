@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Animated, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Settings, Edit3, Star, Activity, User, MessageCircle, Heart, Eye, Calendar, MapPin, LogOut, Share } from "lucide-react-native";
+import { Settings, Edit3, Star, Activity, MessageCircle, Heart, Eye, Calendar, MapPin, LogOut, Share, User as UserIcon } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
@@ -11,8 +11,9 @@ import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
 import { ReviewCard } from "@/components/ReviewCard";
-import { mockReviews, mockUsers } from "@/data/mockData";
-import type { Review } from "@/data/mockData";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/utils/firebase";
+import type { Review, User } from "@/types";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -106,7 +107,7 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
       case 'room_joined':
         return <MessageCircle size={16} color={colors.primary} strokeWidth={1.5} />;
       case 'profile_updated':
-        return <User size={16} color={colors.success} strokeWidth={1.5} />;
+        return <UserIcon size={16} color={colors.success} strokeWidth={1.5} />;
       default:
         return <Activity size={16} color={colors.textSecondary} strokeWidth={1.5} />;
     }
@@ -158,47 +159,52 @@ export default function ProfileScreen() {
   // State
   const [activeTab, setActiveTab] = useState<ProfileTab>('reviews');
   const [refreshing, setRefreshing] = useState(false);
+  const [userReviews, setUserReviews] = useState<Review[]>([]);
+  const [receivedReviews, setReceivedReviews] = useState<Review[]>([]);
+  const [activities, setActivities] = useState<ActivityItemProps[]>([]);
 
-  // Mock data
-  const userReviews = useMemo(() => {
-    return mockReviews.filter(review => review.reviewerId === user?._id);
-  }, [user?._id]);
+  const fetchReviews = useCallback(async () => {
+    if (!user) return;
+    setRefreshing(true);
 
-  const receivedReviews = useMemo(() => {
-    return mockReviews.filter(review => review.revieweeId === user?._id);
-  }, [user?._id]);
+    try {
+      // Fetch reviews written by the user
+      const userReviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.id));
+      const userReviewsSnapshot = await getDocs(userReviewsQuery);
+      const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as Review));
+      setUserReviews(userReviewsData);
 
-  const mockActivities: ActivityItemProps[] = [
-    {
-      type: 'review_given',
-      title: 'Reviewed Sarah Johnson',
-      description: 'Left a 5-star review for great communication',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      type: 'review_received',
-      title: 'Received review from Mike Chen',
-      description: 'Got a 4-star review for professional behavior',
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      type: 'room_joined',
-      title: 'Joined "Dating Tips & Advice"',
-      description: 'Started participating in community discussions',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      type: 'profile_updated',
-      title: 'Updated profile information',
-      description: 'Added new bio and profile picture',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    },
-  ];
+      // Fetch reviews received by the user
+      const receivedReviewsQuery = query(collection(db, "reviews"), where("targetId", "==", user.id));
+      const receivedReviewsSnapshot = await getDocs(receivedReviewsQuery);
+      const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as Review));
+      setReceivedReviews(receivedReviewsData);
+
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchReviews();
+    // Activities will be implemented with a proper activity tracking system later
+    setActivities([]);
+  }, [fetchReviews]);
+
+  const onRefresh = useCallback(() => {
+    fetchReviews();
+  }, [fetchReviews]);
+
+  const memoizedUserReviews = useMemo(() => userReviews, [userReviews]);
+  const memoizedReceivedReviews = useMemo(() => receivedReviews, [receivedReviews]);
+  const memoizedActivities = useMemo(() => activities, [activities]);
 
   const tabs = [
     { id: 'reviews' as ProfileTab, label: 'Reviews', icon: Star },
     { id: 'activity' as ProfileTab, label: 'Activity', icon: Activity },
-    { id: 'about' as ProfileTab, label: 'About', icon: User },
+    { id: 'about' as ProfileTab, label: 'About', icon: UserIcon },
   ];
 
   // Calculate stats
@@ -244,7 +250,6 @@ export default function ProfileScreen() {
   }, [signOut]);
 
   const handleShare = useCallback(() => {
-    // Implement share functionality
     console.log('Share profile');
   }, []);
 
@@ -253,9 +258,9 @@ export default function ProfileScreen() {
       case 'reviews':
         const allReviews = [...userReviews, ...receivedReviews].sort(
           (a, b) => {
-            const dateA = new Date(a._creationTime || 0).getTime();
-            const dateB = new Date(b._creationTime || 0).getTime();
-            return dateB - dateA;
+            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            return timeB - timeA;
           }
         );
         
@@ -279,19 +284,19 @@ export default function ProfileScreen() {
             renderItem={({ item }) => (
               <ReviewCard
                 review={item}
-                onPress={() => router.push(`/review/${item._id}`)}
+                onPress={() => router.push(`/review/${item.id}`)}
                 style={{ marginBottom: 12 }}
               />
             )}
             estimatedItemSize={200}
             contentContainerStyle={styles.tabContent}
             showsVerticalScrollIndicator={false}
-            keyExtractor={(item) => item._id || item.id}
+            keyExtractor={(item) => item.id}
           />
         );
 
       case 'activity':
-        if (mockActivities.length === 0) {
+        if (activities.length === 0) {
           return (
             <View style={styles.emptyState}>
               <Activity size={48} color={colors.textSecondary} strokeWidth={1} />
@@ -311,7 +316,7 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.tabContent}
             showsVerticalScrollIndicator={false}
           >
-            {mockActivities.map((activity, index) => (
+            {activities.map((activity, index) => (
               <ActivityItem key={index} {...activity} />
             ))}
           </ScrollView>
@@ -355,7 +360,7 @@ export default function ProfileScreen() {
                   </View>
                 )}
                 <View style={styles.detailItem}>
-                  <User size={16} color={colors.textSecondary} strokeWidth={1.5} />
+                  <UserIcon size={16} color={colors.textSecondary} strokeWidth={1.5} />
                   <Text variant="body" style={{ marginLeft: 12 }}>
                     Member since {new Date(Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </Text>
@@ -374,7 +379,10 @@ export default function ProfileScreen() {
                       Age Range
                     </Text>
                     <Text variant="body">
-                      {user.datingPreferences.ageRange.min} - {user.datingPreferences.ageRange.max} years
+                      {Array.isArray(user.datingPreferences.ageRange)
+                        ? `${user.datingPreferences.ageRange[0]} - ${user.datingPreferences.ageRange[1]} years`
+                        : `${user.datingPreferences.ageRange.min} - ${user.datingPreferences.ageRange.max} years`
+                      }
                     </Text>
                   </View>
                 )}
@@ -402,7 +410,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.emptyState}>
-          <User size={48} color={colors.textSecondary} strokeWidth={1} />
+          <UserIcon size={48} color={colors.textSecondary} strokeWidth={1} />
           <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
             Not Signed In
           </Text>

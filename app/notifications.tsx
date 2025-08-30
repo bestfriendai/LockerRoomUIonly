@@ -5,20 +5,21 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, Bell, Heart, MessageCircle, Users, Star, Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import { useNotifications } from "@/providers/NotificationProvider";
 import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
-import { mockUsers, mockReviews } from "@/data/mockData";
+import { getUserById } from "@/services/userService";
 
 type NotificationType = 'message' | 'review' | 'match' | 'like' | 'comment' | 'system';
 
-interface Notification {
+interface LocalNotification {
   id: string;
   type: NotificationType;
   title: string;
   message: string;
-  timestamp: Date;
+  timestamp: any;
   read: boolean;
   userId?: string;
   reviewId?: string;
@@ -26,88 +27,10 @@ interface Notification {
   actionUrl?: string;
 }
 
-// Mock notifications data
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'message',
-    title: 'New Message',
-    message: 'Sarah sent you a message',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-    read: false,
-    userId: '2',
-    chatRoomId: '1',
-  },
-  {
-    id: '2',
-    type: 'review',
-    title: 'New Review',
-    message: 'Mike left you a 5-star review',
-    timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-    read: false,
-    userId: '3',
-    reviewId: '1',
-  },
-  {
-    id: '3',
-    type: 'match',
-    title: 'New Match!',
-    message: 'You and Emma have matched',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    read: true,
-    userId: '4',
-  },
-  {
-    id: '4',
-    type: 'like',
-    title: 'Someone liked your review',
-    message: 'Alex liked your review about "Great Coffee Date"',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000), // 4 hours ago
-    read: true,
-    userId: '5',
-    reviewId: '2',
-  },
-  {
-    id: '5',
-    type: 'comment',
-    title: 'New Comment',
-    message: 'Jessica commented on your review',
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000), // 6 hours ago
-    read: true,
-    userId: '6',
-    reviewId: '3',
-  },
-  {
-    id: '6',
-    type: 'system',
-    title: 'Profile Update',
-    message: 'Your profile has been successfully updated',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-    read: true,
-  },
-  {
-    id: '7',
-    type: 'message',
-    title: 'New Message',
-    message: 'David sent you a message',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
-    read: true,
-    userId: '7',
-    chatRoomId: '2',
-  },
-  {
-    id: '8',
-    type: 'review',
-    title: 'Review Reminder',
-    message: 'Don\'t forget to review your recent date with Lisa',
-    timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-    read: true,
-    userId: '8',
-  },
-];
+
 
 interface NotificationItemProps {
-  notification: Notification;
+  notification: LocalNotification;
   onPress: () => void;
   onMarkAsRead: () => void;
   onDelete: () => void;
@@ -116,8 +39,15 @@ interface NotificationItemProps {
 function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: NotificationItemProps) {
   const { colors } = useTheme();
   const [showActions, setShowActions] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
-  const user = notification.userId ? mockUsers.find(u => u.id === notification.userId) : null;
+  React.useEffect(() => {
+    if (notification.userId) {
+      getUserById(notification.userId)
+        .then(userData => setUser(userData))
+        .catch(error => console.error('Error fetching user:', error));
+    }
+  }, [notification.userId]);
 
   const getNotificationIcon = () => {
     const iconProps = { size: 20, strokeWidth: 1.5 };
@@ -140,9 +70,10 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     }
   };
 
-  const formatTimestamp = (timestamp: Date) => {
+  const formatTimestamp = (timestamp: any) => {
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -151,7 +82,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
-    return timestamp.toLocaleDateString();
+    return date.toLocaleDateString();
   };
 
   return (
@@ -267,8 +198,8 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
   const { user } = useAuth();
+  const { notifications, markAsRead, deleteNotification, markAllAsRead, clearAllNotifications } = useNotifications();
 
-  const [notifications, setNotifications] = useState(mockNotifications);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
@@ -279,16 +210,16 @@ export default function NotificationsScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Notifications are automatically updated via real-time listeners
+    await new Promise(resolve => setTimeout(resolve, 500));
     setRefreshing(false);
   }, []);
 
-  const handleNotificationPress = useCallback((notification: Notification) => {
+  const handleNotificationPress = useCallback((notification: LocalNotification) => {
     // Mark as read
-    setNotifications(prev =>
-      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-    );
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
 
     // Navigate based on notification type
     switch (notification.type) {
@@ -313,25 +244,23 @@ export default function NotificationsScreen() {
         // Handle other notification types
         break;
     }
-  }, [router]);
+  }, [router, markAsRead]);
 
   const handleMarkAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
-    );
-  }, []);
+    markAsRead(notificationId);
+  }, [markAsRead]);
 
   const handleDelete = useCallback((notificationId: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== notificationId));
-  }, []);
+    deleteNotification(notificationId);
+  }, [deleteNotification]);
 
   const handleMarkAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  }, []);
+    markAllAsRead();
+  }, [markAllAsRead]);
 
   const handleClearAll = useCallback(() => {
-    setNotifications([]);
-  }, []);
+    clearAllNotifications();
+  }, [clearAllNotifications]);
 
   // Computed values
   const filteredNotifications = useMemo(() => {
@@ -429,8 +358,8 @@ export default function NotificationsScreen() {
             {filteredNotifications.map((notification) => (
               <NotificationItem
                 key={notification.id}
-                notification={notification}
-                onPress={() => handleNotificationPress(notification)}
+                notification={notification as LocalNotification}
+                onPress={() => handleNotificationPress(notification as LocalNotification)}
                 onMarkAsRead={() => handleMarkAsRead(notification.id)}
                 onDelete={() => handleDelete(notification.id)}
               />

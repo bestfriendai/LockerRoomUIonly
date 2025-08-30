@@ -15,6 +15,10 @@ import Text from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useTheme } from '@/providers/ThemeProvider';
+import { app } from '@/utils/firebase';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+
+const auth = getAuth(app);
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -33,8 +37,7 @@ export default function ForgotPasswordScreen() {
     setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await sendPasswordResetEmail(auth, email);
       
       Alert.alert(
         'Reset Email Sent',

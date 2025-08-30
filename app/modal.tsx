@@ -9,7 +9,7 @@ import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
-import { mockUsers, mockReviews } from "@/data/mockData";
+// Removed mock data imports - using real data from props
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -24,7 +24,7 @@ interface ModalContentProps {
 function UserActionsModal({ data, onClose }: { data: any; onClose: () => void }) {
   const { colors } = useTheme();
   const router = useRouter();
-  const user = data?.user || mockUsers[1];
+  const user = data?.user;
 
   const handleAction = useCallback((action: string) => {
     switch (action) {
@@ -121,7 +121,7 @@ function UserActionsModal({ data, onClose }: { data: any; onClose: () => void })
 function ReviewActionsModal({ data, onClose }: { data: any; onClose: () => void }) {
   const { colors } = useTheme();
   const router = useRouter();
-  const review = data?.review || mockReviews[0];
+  const review = data?.review;
 
   const handleAction = useCallback((action: string) => {
     switch (action) {

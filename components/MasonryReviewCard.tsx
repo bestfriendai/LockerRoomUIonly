@@ -111,8 +111,7 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <Pressable
-        onPress={handleCardPress}
+      <View
         style={[
           styles.card,
           {
@@ -126,11 +125,13 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
             elevation: 4,
           },
         ]}
-        accessibilityRole="button"
-        accessibilityLabel={`Open review ${review.title}`}
       >
         {/* Image or Avatar */}
-        <View style={[styles.imageContainer, { height: imageHeight }]}>
+        <TouchableOpacity 
+          style={[styles.imageContainer, { height: imageHeight }]}
+          onPress={handleCardPress}
+          activeOpacity={0.8}
+        >
           {review.images && review.images[0] ? (
             <Image
               source={{ uri: review.images[0] }}
@@ -160,10 +161,14 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
               {review.categories?.[0]?.toUpperCase() || "REVIEW"}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         {/* Content */}
-        <View style={styles.content}>
+        <TouchableOpacity 
+          style={styles.content}
+          onPress={handleCardPress}
+          activeOpacity={0.8}
+        >
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {review.title || 'Untitled Review'}
           </Text>
@@ -244,20 +249,20 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
               </Text>
             </View>
           </View>
+        </TouchableOpacity>
 
-          {/* Author info */}
-          {!review.isAnonymous && review.author && (
-            <View style={styles.authorInfo}>
-              <Text style={[styles.authorText, { color: colors.textSecondary }]}>
-                by {review.author.username}
-              </Text>
-              {review.author.isVerified && (
-                <Text style={styles.verifiedBadge}>✓</Text>
-              )}
-            </View>
-          )}
-        </View>
-      </Pressable>
+        {/* Author info */}
+        {!review.isAnonymous && review.author && (
+          <View style={styles.authorInfo}>
+            <Text style={[styles.authorText, { color: colors.textSecondary }]}>
+              by {review.author.username}
+            </Text>
+            {review.author.isVerified && (
+              <Text style={styles.verifiedBadge}>✓</Text>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 };

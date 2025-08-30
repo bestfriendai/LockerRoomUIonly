@@ -1,266 +1,177 @@
-import React, { useState } from 'react';
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
-  ActivityIndicator,
   ScrollView,
   Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, User, Calendar, Users } from 'lucide-react-native';
-import Text from '@/components/ui/Text';
-import { Input } from '@/components/ui/Input';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
-
-type Gender = 'male' | 'female' | 'non-binary' | 'prefer-not-to-say';
-type DatingPreference = 'men' | 'women' | 'everyone';
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, User, Cake, Book, Camera } from "lucide-react-native";
+import { useTheme } from "@/providers/ThemeProvider";
+import { useAuth } from "@/providers/AuthProvider";
+import Text from "@/components/ui/Text";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
+  const { user, updateProfile, isLoading } = useAuth();
   const { colors } = useTheme();
-  const { user, updateProfile } = useAuth();
-  const [displayName, setDisplayName] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState<Gender>('prefer-not-to-say');
-  const [datingPreference, setDatingPreference] = useState<DatingPreference>('everyone');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const genderOptions: { value: Gender; label: string }[] = [
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
-    { value: 'non-binary', label: 'Non-binary' },
-    { value: 'prefer-not-to-say', label: 'Prefer not to say' },
-  ];
+  const [name, setName] = useState(user?.name || "");
+  const [age, setAge] = useState(user?.age?.toString() || "");
+  const [bio, setBio] = useState(user?.bio || "");
+  const [photos, setPhotos] = useState<string[]>(user?.photos || []);
+  const [error, setError] = useState("");
 
-  const datingPreferenceOptions: { value: DatingPreference; label: string }[] = [
-    { value: 'men', label: 'Men' },
-    { value: 'women', label: 'Women' },
-    { value: 'everyone', label: 'Everyone' },
-  ];
+  const handleImagePick = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
 
-  const handleSaveProfile = async () => {
-    if (!displayName.trim()) {
-      setError('Please enter a display name');
+    if (!result.canceled) {
+      setPhotos([...photos, result.assets[0].uri]);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name || !age || !bio) {
+      setError("Please fill in all fields.");
       return;
     }
-
-    if (!age || parseInt(age) < 18 || parseInt(age) > 100) {
-      setError('Please enter a valid age (18-100)');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update user profile
       await updateProfile({
-        displayName: displayName.trim(),
+        name,
         age: parseInt(age),
-        gender,
-        datingPreferences: { gender: datingPreference, ageRange: { min: 18, max: 50 } },
+        bio,
+        photos,
         profileComplete: true,
       });
-
-      router.replace('/(tabs)');
+      Alert.alert("Success", "Profile updated successfully!", [
+        { text: "OK", onPress: () => router.replace("/(tabs)") },
+      ]);
     } catch (err: any) {
-      setError(err.message || 'Failed to save profile');
-    } finally {
-      setIsLoading(false);
+      setError(err.message || "Failed to update profile.");
     }
   };
 
-  const handleSkip = () => {
-    Alert.alert(
-      'Skip Profile Setup?',
-      'You can complete your profile later in settings.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Skip',
-          onPress: () => router.replace('/(tabs)'),
-        },
-      ]
-    );
-  };
-
-  const renderOptionButton = (
-    value: string,
-    label: string,
-    selectedValue: string,
-    onSelect: (value: any) => void
-  ) => (
-    <TouchableOpacity
-      key={value}
-      style={[
-        styles.optionButton,
-        {
-          backgroundColor: selectedValue === value ? colors.primary : colors.chipBg,
-          borderColor: selectedValue === value ? colors.primary : colors.border,
-        },
-      ]}
-      onPress={() => onSelect(value)}
-    >
-      <Text
-        variant="body"
-        weight={selectedValue === value ? 'semibold' : 'normal'}
-        style={{
-          color: selectedValue === value ? colors.onPrimary : colors.text,
-        }}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboardView}
       >
-        <View style={styles.header}>
-          <Pressable
+        <View style={[styles.header, { borderBottomColor: colors.divider }]}>
+          <TouchableOpacity
             onPress={() => router.back()}
-            style={({ pressed }) => [
-              styles.backButton,
-              { opacity: pressed ? 0.5 : 1 },
-            ]}
+            style={styles.backButton}
           >
-            <ArrowLeft color={colors.text} size={24} strokeWidth={1.5} />
-          </Pressable>
-          
-          <Pressable
-            onPress={handleSkip}
-            style={({ pressed }) => [
-              styles.skipButton,
-              { opacity: pressed ? 0.5 : 1 },
-            ]}
-          >
-            <Text variant="body" weight="medium" style={{ color: colors.primary }}>
-              Skip for now
-            </Text>
-          </Pressable>
+            <ArrowLeft color={colors.text} size={24} />
+          </TouchableOpacity>
+          <Text variant="h3" weight="semibold" style={{ color: colors.text }}>
+            Setup Your Profile
+          </Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.content}>
-            <View style={styles.welcomeSection}>
-              <Text
-                variant="h2"
-                weight="semibold"
-                style={{ color: colors.text, marginBottom: 8 }}
-              >
-                Complete Your Profile
-              </Text>
-              <Text variant="body" style={{ color: colors.textSecondary }}>
-                Help others get to know you better
-              </Text>
-            </View>
-
             {error ? (
-              <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-                <Text variant="bodySmall" style={{ color: colors.error }}>
-                  {error}
-                </Text>
+              <View
+                style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}
+              >
+                <Text style={{ color: colors.error }}>{error}</Text>
               </View>
             ) : null}
 
-            <View style={styles.formContainer}>
-              <Input
-                label="Display Name"
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="How should others see you?"
-                leftIcon={<User size={18} color={colors.textSecondary} strokeWidth={1.5} />}
-                containerStyle={{ marginBottom: 24 }}
-              />
+            <Input
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="Your full name"
+              leftIcon={<User size={18} color={colors.textSecondary} />}
+              containerStyle={{ marginBottom: 16 }}
+            />
 
-              <Input
-                label="Age"
-                value={age}
-                onChangeText={setAge}
-                placeholder="Your age"
-                keyboardType="number-pad"
-                leftIcon={<Calendar size={18} color={colors.textSecondary} strokeWidth={1.5} />}
-                containerStyle={{ marginBottom: 24 }}
-              />
+            <Input
+              label="Age"
+              value={age}
+              onChangeText={setAge}
+              placeholder="Your age"
+              keyboardType="number-pad"
+              leftIcon={<Cake size={18} color={colors.textSecondary} />}
+              containerStyle={{ marginBottom: 16 }}
+            />
 
-              <View style={styles.sectionContainer}>
-                <Text
-                  variant="body"
-                  weight="medium"
-                  style={{ color: colors.text, marginBottom: 12 }}
-                >
-                  Gender
-                </Text>
-                <View style={styles.optionsContainer}>
-                  {genderOptions.map(option =>
-                    renderOptionButton(option.value, option.label, gender, setGender)
-                  )}
-                </View>
-              </View>
+            <Input
+              label="Bio"
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell us about yourself"
+              multiline
+              numberOfLines={4}
+              leftIcon={<Book size={18} color={colors.textSecondary} />}
+              containerStyle={{ marginBottom: 24 }}
+            />
 
-              <View style={styles.sectionContainer}>
-                <Text
-                  variant="body"
-                  weight="medium"
-                  style={{ color: colors.text, marginBottom: 12 }}
-                >
-                  Interested in
-                </Text>
-                <View style={styles.optionsContainer}>
-                  {datingPreferenceOptions.map(option =>
-                    renderOptionButton(
-                      option.value,
-                      option.label,
-                      datingPreference,
-                      setDatingPreference
-                    )
-                  )}
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.buttonSection}>
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  {
-                    backgroundColor: !displayName.trim() || !age
-                      ? colors.chipBg
-                      : colors.primary,
-                  },
-                ]}
-                onPress={handleSaveProfile}
-                disabled={isLoading || !displayName.trim() || !age}
+            <View style={styles.photosContainer}>
+              <Text
+                variant="h4"
+                weight="semibold"
+                style={{ color: colors.text, marginBottom: 12 }}
               >
-                {isLoading ? (
-                  <ActivityIndicator color={colors.onPrimary} size="small" />
-                ) : (
-                  <Text
-                    variant="body"
-                    weight="semibold"
-                    style={{ color: colors.onPrimary }}
+                Your Photos
+              </Text>
+              <View style={styles.photoGrid}>
+                {photos.map((photo, index) => (
+                  <View key={index} style={styles.photoWrapper}>
+                    <Text>Photo {index + 1}</Text>
+                  </View>
+                ))}
+                {photos.length < 5 && (
+                  <TouchableOpacity
+                    style={[
+                      styles.addPhoto,
+                      {
+                        backgroundColor: colors.surface,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={handleImagePick}
                   >
-                    Complete Profile
-                  </Text>
+                    <Camera size={24} color={colors.textSecondary} />
+                    <Text variant="bodySmall" style={{ color: colors.textSecondary, marginTop: 8 }}>
+                      Add Photo
+                    </Text>
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
+              </View>
             </View>
+
+            <Button
+              onPress={handleSave}
+              loading={isLoading}
+              style={{ marginTop: 32 }}
+            >
+              <Text weight="semibold" style={{ color: colors.onPrimary }}>
+                Save and Continue
+              </Text>
+            </Button>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -269,70 +180,57 @@ export default function ProfileSetupScreen() {
 }
 
 const styles = StyleSheet.create({
-  backButton: {
-    alignItems: 'center',
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  buttonSection: {
-    marginBottom: 32,
-  },
   container: {
     flex: 1,
-  },
-  content: {
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
-  errorContainer: {
-    borderRadius: 8,
-    marginBottom: 20,
-    padding: 12,
-  },
-  formContainer: {
-    marginBottom: 32,
-  },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
   },
   keyboardView: {
     flex: 1,
   },
-  optionButton: {
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
-    marginRight: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  saveButton: {
-    alignItems: 'center',
-    borderRadius: 10,
-    justifyContent: 'center',
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
     paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    padding: 4,
   },
   scrollView: {
     flex: 1,
   },
-  sectionContainer: {
+  content: {
+    padding: 20,
+  },
+  errorContainer: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  photosContainer: {
     marginBottom: 24,
   },
-  skipButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
-  welcomeSection: {
-    marginBottom: 32,
-    marginTop: 20,
+  photoWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addPhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

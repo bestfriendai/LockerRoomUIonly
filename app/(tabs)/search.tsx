@@ -2,14 +2,17 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { View, StyleSheet, TextInput, Keyboard, ScrollView, Pressable, Platform } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search as SearchIcon, X, TrendingUp, Clock, User, SlidersHorizontal, MapPin, Star, Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
+import { Search as SearchIcon, X, TrendingUp, Clock, Users, SlidersHorizontal, MapPin, Star, Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import Text from "@/components/ui/Text";
-import { mockReviews, mockUsers, mockChatRooms } from "@/data/mockData";
+import { useChat } from "@/providers/ChatProvider";
+import { reviewService } from "@/services/reviewService";
+import { searchUsers } from "@/services/userService";
 import { ReviewCard } from "@/components/ReviewCard";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
+import type { Review, User as UserType, ChatRoom } from "@/types";
 
 type SearchTab = 'reviews' | 'users' | 'rooms';
 type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
@@ -17,7 +20,13 @@ type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
 export default function SearchScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
+  const { chatRooms } = useChat();
   const searchInputRef = useRef<TextInput>(null);
+
+  // Data state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,7 +68,7 @@ export default function SearchScreen() {
   ];
   const tabs: { value: SearchTab; label: string; icon: any }[] = [
     { value: 'reviews', label: 'Reviews', icon: Star },
-    { value: 'users', label: 'Users', icon: User },
+    { value: 'users', label: 'Users', icon: Users },
     { value: 'rooms', label: 'Rooms', icon: MessageCircle }
   ];
 
@@ -71,30 +80,51 @@ export default function SearchScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Load data when search query changes
+  useEffect(() => {
+    const loadSearchData = async () => {
+      if (debouncedQuery.length < 2) {
+        setReviews([]);
+        setUsers([]);
+        return;
+      }
+
+      setIsLoadingData(true);
+      try {
+        const [reviewsData, usersData] = await Promise.all([
+          reviewService.searchReviews(debouncedQuery),
+          searchUsers(debouncedQuery)
+        ]);
+        setReviews(reviewsData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error('Error loading search data:', error);
+        setReviews([]);
+        setUsers([]);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadSearchData();
+  }, [debouncedQuery]);
+
   // Search results based on active tab and query
   const searchResults = useMemo(() => {
     if (debouncedQuery.length < 2) return [];
 
-    const query = debouncedQuery.toLowerCase();
-
     let results: any[] = [];
     switch (activeTab) {
       case 'reviews':
-        results = mockReviews.filter(review =>
-          review.content?.toLowerCase().includes(query) ||
-          review.title?.toLowerCase().includes(query) ||
-          review.category?.toLowerCase().includes(query)
-        );
+        results = [...reviews];
         break;
       case 'users':
-        results = mockUsers.filter(user =>
-          user.username?.toLowerCase().includes(query) ||
-          user.bio?.toLowerCase().includes(query)
-        );
+        results = [...users];
         break;
       case 'rooms':
-        results = mockChatRooms.filter(room =>
-          room.name.toLowerCase().includes(query) ||
+        const query = debouncedQuery.toLowerCase();
+        results = chatRooms.filter(room =>
+          room.name || 'Unnamed Room'.toLowerCase().includes(query) ||
           room.description?.toLowerCase().includes(query)
         );
         break;
@@ -125,7 +155,7 @@ export default function SearchScreen() {
           if (activeTab === 'reviews') {
             return (b.helpfulCount || 0) - (a.helpfulCount || 0);
           } else if (activeTab === 'rooms') {
-            return (b.memberIds?.length || 0) - (a.memberIds?.length || 0);
+            return (b.memberCount || 0) - (a.memberCount || 0);
           }
           return 0;
         case 'relevance':
@@ -135,7 +165,7 @@ export default function SearchScreen() {
     });
 
     return results;
-  }, [debouncedQuery, activeTab, selectedCategory, selectedRating, sortBy]);
+  }, [debouncedQuery, activeTab, selectedCategory, selectedRating, sortBy, reviews, users, chatRooms]);
 
   const handleSearchSubmit = useCallback((query: string) => {
     if (query.trim() !== "" && !recentSearches.includes(query)) {

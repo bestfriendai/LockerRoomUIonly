@@ -8,7 +8,7 @@ import AnimatedPressable from "@/components/ui/AnimatedPressable";
 import Text from "@/components/ui/Text";
 import { useTheme } from "@/providers/ThemeProvider";
 import { SHADOWS } from "@/constants/shadows";
-import { Review, ReviewFlag } from "@/data/mockData";
+import type { Review } from "@/types";
 
 type ReviewCardProps = {
   review: Review;
@@ -19,10 +19,10 @@ type ReviewCardProps = {
 export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
   const { colors, tokens } = useTheme();
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(review.likes || review.helpfulCount || 0);
+  const [likeCount, setLikeCount] = useState(review.likes || 0);
   const [isLiking, setIsLiking] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const hasImages = review.images && review.images.length > 0;
+  const hasImages = review.media && review.media.length > 0;
   
   // Create styles with current tokens
   const styles = createStyles(tokens);
@@ -72,7 +72,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
       
       if (result.action === Share.sharedAction) {
         console.log('Share tracked:', {
-          reviewId: review._id || review.id,
+          reviewId: review.id,
           platform: result.activityType || 'native_share',
         });
       }
@@ -106,7 +106,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-              {review.subjectName || review.authorName || 'Anonymous'}
+              {/* This should be replaced with actual author name */}
+              Anonymous
             </Text>
             <View style={styles.metaContainer}>
               <View
@@ -132,7 +133,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
         {hasImages && (
           <View style={styles.imageContainer}>
             <Image
-              source={{ uri: review.images![0] }}
+              source={{ uri: review.media![0] }}
               style={styles.image}
               contentFit="cover"
               placeholder={{ blurhash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj' }}
@@ -160,32 +161,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
             }}
             numberOfLines={hasImages ? 2 : 3}
           >
-            {review.content || review.comment}
+            {review.content}
           </Text>
 
           {/* Badges with enhanced styling */}
           <View style={styles.badges}>
-            {(review.greenFlags || []).slice(0, 2).map((flag) => (
-              <View
-                key={flag.id}
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: colors.chipBg,
-                    borderWidth: StyleSheet.hairlineWidth,
-                    borderColor: colors.chipBorder,
-                  }
-                ]}
-              >
-                <Text variant="caption" style={{
-                  color: colors.chipText,
-                  fontSize: 11,
-                  fontWeight: '500',
-                }}>
-                  {flag.label}
-                </Text>
-              </View>
-            ))}
+            {/* Badges are not part of the Firestore data model yet */}
           </View>
         </View>
 
@@ -216,7 +197,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
             <View style={styles.footerItem}>
               <MessageCircle size={12} color={colors.textSecondary} strokeWidth={1.5} />
               <Text variant="caption" style={{ marginLeft: 4, color: colors.textSecondary }}>
-                {review.comments}
+                {review.comments?.length || 0}
               </Text>
             </View>
 
@@ -233,7 +214,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
             <View style={styles.footerItem}>
               <MapPin size={12} color={colors.textSecondary} strokeWidth={1.5} />
               <Text variant="caption" style={{ marginLeft: 4, color: colors.textSecondary }}>
-                {review.location?.split(",")[0] || 'Unknown'}
+                {/* Location is not part of the Firestore data model yet */}
+                Unknown
               </Text>
             </View>
           </View>

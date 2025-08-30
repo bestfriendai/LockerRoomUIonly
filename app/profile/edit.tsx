@@ -36,7 +36,9 @@ interface FormData {
 export default function EditProfileScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, updateProfile } = useAuth();
+  // Handle optional updateUser method
+  const handleUpdateUser = updateUser || updateProfile;
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Initialize form data with current user data
@@ -50,8 +52,12 @@ export default function EditProfileScreen() {
     profilePicture: user?.profilePicture || '',
     datingPreferences: {
       ageRange: {
-        min: user?.datingPreferences?.ageRange?.min || 18,
-        max: user?.datingPreferences?.ageRange?.max || 35,
+        min: Array.isArray(user?.datingPreferences?.ageRange)
+          ? user.datingPreferences.ageRange[0] || 18
+          : user?.datingPreferences?.ageRange?.min || 18,
+        max: Array.isArray(user?.datingPreferences?.ageRange)
+          ? user.datingPreferences.ageRange[1] || 35
+          : user?.datingPreferences?.ageRange?.max || 35,
       },
       gender: (user?.datingPreferences?.gender as LookingFor) || 'both',
     },
@@ -135,7 +141,14 @@ export default function EditProfileScreen() {
       newErrors.bio = 'Bio must be less than 500 characters';
     }
 
-    if (formData.datingPreferences.ageRange.min >= formData.datingPreferences.ageRange.max) {
+    const minAge = Array.isArray(formData.datingPreferences.ageRange)
+      ? formData.datingPreferences.ageRange[0]
+      : formData.datingPreferences.ageRange.min;
+    const maxAge = Array.isArray(formData.datingPreferences.ageRange)
+      ? formData.datingPreferences.ageRange[1]
+      : formData.datingPreferences.ageRange.max;
+
+    if (minAge >= maxAge) {
       Alert.alert('Invalid Age Range', 'Minimum age must be less than maximum age.');
       return false;
     }
@@ -387,7 +400,10 @@ export default function EditProfileScreen() {
             </View>
 
             <Text variant="bodySmall" weight="medium" style={styles.ageRangeLabel}>
-              Age Range: {formData.datingPreferences.ageRange.min} - {formData.datingPreferences.ageRange.max}
+              Age Range: {Array.isArray(formData.datingPreferences.ageRange)
+                ? `${formData.datingPreferences.ageRange[0]} - ${formData.datingPreferences.ageRange[1]}`
+                : `${formData.datingPreferences.ageRange.min} - ${formData.datingPreferences.ageRange.max}`
+              }
             </Text>
             
             <View style={styles.ageRangeContainer}>

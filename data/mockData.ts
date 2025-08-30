@@ -47,17 +47,19 @@ export interface Review {
   reviewerId: string;
   reviewedUserId: string;
   revieweeId?: string;
+  userId: string; // Added missing userId property
   rating: number;
-  comment: string;
+  comment?: string; // Made optional since not all reviews have comments
   photos?: string[];
   createdAt: string;
+  updatedAt?: string; // Added missing updatedAt property
   _creationTime?: string;
   isAnonymous: boolean;
   tags: string[];
   likes: number;
   likesCount?: number;
   isLiked?: boolean;
-  reports: number;
+  reports?: number; // Made optional since not all reviews have reports
   viewsCount?: number;
   platform?: string;
   media?: { url: string; type: 'image' | 'video' }[];
@@ -69,10 +71,12 @@ export interface Review {
   authorId?: string;
   authorName?: string;
   subjectName?: string;
+  personName?: string; // Added missing personName property
   category?: string;
   comments?: number;
   greenFlags?: ReviewFlag[];
   redFlags?: ReviewFlag[];
+  flags?: string[]; // Added missing flags property (accepts strings)
   images?: string[];
   helpfulCount?: number;
   viewCount?: number;
@@ -346,7 +350,7 @@ export const mockReviews: Review[] = [
     id: '1',
     reviewerId: '1',
     reviewedUserId: '2',
-    userId: '1',
+    userId: '1', // This property is now properly defined in the Review type
     personName: 'Jake Miller',
     category: 'Men',
     title: 'Great first date, but no spark',
@@ -358,7 +362,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=elegant%20restaurant%20dinner%20date%20romantic%20candlelight%20setting&image_size=landscape_4_3'
     ],
     flags: ['respectful', 'punctual'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-28T19:30:00Z',
     updatedAt: '2025-08-28T19:30:00Z',
     likes: 12,
@@ -381,7 +385,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=romantic%20picnic%20park%20blanket%20basket%20sunny%20day&image_size=landscape_4_3'
     ],
     flags: ['thoughtful', 'attentive'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-25T16:30:00Z',
     updatedAt: '2025-08-25T16:30:00Z',
     likes: 6,
@@ -404,7 +408,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=mountain%20hiking%20trail%20couple%20scenic%20nature%20adventure&image_size=landscape_4_3'
     ],
     flags: ['fit', 'knowledgeable', 'surprising'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-27T11:20:00Z',
     updatedAt: '2025-08-27T11:20:00Z',
     likes: 18,
@@ -425,7 +429,7 @@ export const mockReviews: Review[] = [
     location: 'Los Angeles, CA',
     images: [],
     flags: ['love-bombing', 'ghosted', 'intense'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-26T22:15:00Z',
     updatedAt: '2025-08-26T22:15:00Z',
     likes: 24,
@@ -450,7 +454,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=hiking%20trail%20couple%20adventure%20mountain%20views&image_size=landscape_4_3'
     ],
     flags: ['great-conversation', 'shared-interests'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-26T14:20:00Z',
     updatedAt: '2025-08-26T14:20:00Z',
     likes: 28,
@@ -471,7 +475,7 @@ export const mockReviews: Review[] = [
     location: 'Los Angeles, CA',
     images: [],
     flags: ['late', 'phone-obsessed', 'entitled'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-27T20:45:00Z',
     updatedAt: '2025-08-27T20:45:00Z',
     likes: 8,
@@ -494,7 +498,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=modern%20art%20museum%20gallery%20couple%20viewing%20paintings&image_size=landscape_4_3'
     ],
     flags: ['creative', 'talented', 'flaky'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-27T15:45:00Z',
     updatedAt: '2025-08-27T15:45:00Z',
     likes: 14,
@@ -517,7 +521,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=romantic%20proposal%20engagement%20ring%20sunset%20happy%20couple&image_size=landscape_4_3'
     ],
     flags: ['perfect-match', 'intelligent', 'athletic'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-28T09:30:00Z',
     updatedAt: '2025-08-28T09:30:00Z',
     likes: 45,
@@ -541,7 +545,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=art%20gallery%20opening%20diverse%20crowd%20cultural%20event&image_size=landscape_4_3'
     ],
     flags: ['creative', 'deep-conversation'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-23T21:15:00Z',
     updatedAt: '2025-08-23T21:15:00Z',
     likes: 15,
@@ -565,7 +569,7 @@ export const mockReviews: Review[] = [
       'https://trae-api-us.mchost.guru/api/ide/v1/text_to_image?prompt=drag%20show%20performance%20audience%20laughing%20entertainment&image_size=landscape_4_3'
     ],
     flags: ['activist', 'community-minded', 'shared-values'],
-    anonymous: false,
+    isAnonymous: false,
     createdAt: '2025-08-24T20:10:00Z',
     updatedAt: '2025-08-24T20:10:00Z',
     likes: 32,
@@ -586,7 +590,7 @@ export const mockReviews: Review[] = [
     location: 'Austin, TX',
     images: [],
     flags: ['great-chemistry', 'closeted', 'not-ready'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-22T17:25:00Z',
     updatedAt: '2025-08-22T17:25:00Z',
     likes: 19,
@@ -607,7 +611,7 @@ export const mockReviews: Review[] = [
     location: 'San Francisco, CA',
     images: [],
     flags: ['manipulative', 'controlling', 'threatening'],
-    anonymous: true,
+    isAnonymous: true,
     createdAt: '2025-08-21T14:50:00Z',
     updatedAt: '2025-08-21T14:50:00Z',
     likes: 27,
@@ -621,57 +625,77 @@ export const mockChatMessages: ChatMessage[] = [
   {
     _id: '1',
     id: '1',
+    roomId: '1_2',
     senderId: '1',
     receiverId: '2',
     content: 'Hey Alex! Thanks for the great dinner last night 😊',
     _creationTime: '2025-08-28T09:30:00Z',
     timestamp: '2025-08-28T09:30:00Z',
+    messageType: 'text' as const,
+    type: 'text',
     read: true,
-    type: 'text'
+    isRead: true,
+    isDelivered: true
   },
   {
     _id: '2',
     id: '2',
+    roomId: '1_2',
     senderId: '2',
     receiverId: '1',
     content: 'It was my pleasure Emma! I had such a great time. Would love to cook for you again sometime 👨‍🍳',
     _creationTime: '2025-08-28T09:45:00Z',
     timestamp: '2025-08-28T09:45:00Z',
+    messageType: 'text' as const,
+    type: 'text',
     read: true,
-    type: 'text'
+    isRead: true,
+    isDelivered: true
   },
   {
     _id: '3',
     id: '3',
+    roomId: '1_2',
     senderId: '1',
     receiverId: '2',
     content: 'That sounds amazing! I\'m free this weekend if you want to plan something',
     _creationTime: '2025-08-28T10:00:00Z',
     timestamp: '2025-08-28T10:00:00Z',
+    messageType: 'text' as const,
+    type: 'text',
     read: false,
-    type: 'text'
+    isRead: false,
+    isDelivered: true
   },
   {
     _id: '4',
     id: '4',
+    roomId: '3_4',
     senderId: '3',
     receiverId: '4',
     content: 'Hi Michael! Ready for our hiking adventure tomorrow? 🥾',
     _creationTime: '2025-08-27T18:30:00Z',
     timestamp: '2025-08-27T18:30:00Z',
+    messageType: 'text' as const,
+    type: 'text',
     read: true,
-    type: 'text'
+    isRead: true,
+    isDelivered: true
   },
   {
     _id: '5',
     id: '5',
+    roomId: '3_4',
     senderId: '4',
     receiverId: '3',
     content: 'Absolutely! I\'ve got all the gear ready. It\'s going to be an amazing day! ⛰️',
     _creationTime: '2025-08-27T19:00:00Z',
     timestamp: '2025-08-27T19:00:00Z',
+    messageType: 'text' as const,
+    type: 'text',
     read: true,
-    type: 'text'
+    isRead: true,
+    isDelivered: true
   }
 ];
 

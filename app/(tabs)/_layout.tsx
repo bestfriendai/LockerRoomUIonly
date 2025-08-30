@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Search, PlusCircle, MessageCircle, User } from "lucide-react-native";
+import { Home, Search, PlusCircle, MessageCircle, Users } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { Route } from "@react-navigation/native";
@@ -194,7 +194,7 @@ export default function TabLayout() {
           tabBarLabel: "Profile",
           headerShown: false, // Keep custom header for profile screen
           tabBarIcon: ({ color, size }) => (
-            <User color={color} size={size} strokeWidth={1.5} />
+            <Users color={color} size={size} strokeWidth={1.5} />
           ),
         }}
       />

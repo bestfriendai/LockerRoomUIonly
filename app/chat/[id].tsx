@@ -10,7 +10,7 @@ import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
-import { mockChatRooms, mockUsers, mockChatMessages } from "@/data/mockData";
+import { useChat } from "@/providers/ChatProvider";
 import type { ChatRoom, ChatMessage, User } from "@/types";
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -24,7 +24,8 @@ interface MessageBubbleProps {
 
 const MessageBubble = ({ message, isOwn, showAvatar, showTimestamp }: MessageBubbleProps) => {
   const { colors } = useTheme();
-  const sender = mockUsers.find(u => u._id === message.senderId);
+  const users: any[] = []; // Placeholder since users is optional in ChatContextType
+  const sender = users.find((u: any) => u._id === message.senderId);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -199,37 +200,34 @@ export default function ChatRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const { chatRooms, messages, sendMessage } = useChat();
+  const isLoading = false; // Placeholder since isLoading is optional
   const scrollViewRef = useRef<FlashList<any>>(null);
 
   // State
   const [messageText, setMessageText] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
 
   // Find the chat room
   const room = useMemo(() => {
-    return mockChatRooms.find(r => r._id === id);
-  }, [id]);
+    return chatRooms.find(r => r._id === id);
+  }, [chatRooms, id]);
 
-  // Load messages
+  // Get messages for this room
+  const roomMessages = useMemo(() => {
+    if (!Array.isArray(messages)) return [];
+    return messages.filter((m: any) => m.chatRoomId === id)
+      .sort((a: any, b: any) => new Date(a._creationTime).getTime() - new Date(b._creationTime).getTime());
+  }, [messages, id]);
+
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (room) {
-      setIsLoading(true);
-      // Simulate loading messages
+    if (roomMessages.length > 0) {
       setTimeout(() => {
-        const roomMessages = mockChatMessages.filter((m: ChatMessage) => m.chatRoomId === room._id)
-          .sort((a: ChatMessage, b: ChatMessage) => new Date(a._creationTime).getTime() - new Date(b._creationTime).getTime());
-        setMessages(roomMessages);
-        setIsLoading(false);
-        
-        // Scroll to bottom after messages load
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }, 1000);
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
     }
-  }, [room]);
+  }, [roomMessages]);
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -253,40 +251,20 @@ export default function ChatRoomScreen() {
   const handleSendMessage = useCallback(async () => {
     if (!messageText.trim() || !user || !room || isSending) return;
 
-    const newMessage: ChatMessage = {
-      _id: `msg_${Date.now()}`,
-      _creationTime: new Date().toISOString(),
-      chatRoomId: room._id,
-      senderId: user._id || user.id,
-      content: messageText.trim(),
-      type: 'text',
-      read: false,
-    };
-
     setIsSending(true);
+    const content = messageText.trim();
     setMessageText('');
-    
-    // Optimistically add message
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Scroll to bottom
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      console.log('Message sent:', newMessage);
+      await sendMessage(room._id || room.id, content);
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Remove message on error
-      setMessages(prev => prev.filter(m => m._id !== newMessage._id));
       Alert.alert('Error', 'Failed to send message. Please try again.');
+      setMessageText(content); // Restore message text on error
     } finally {
       setIsSending(false);
     }
-  }, [messageText, user, room, isSending]);
+  }, [messageText, user, room, isSending, sendMessage]);
 
   const handleAttachment = useCallback(() => {
     Alert.alert(
@@ -302,9 +280,9 @@ export default function ChatRoomScreen() {
 
   // Process messages for display
   const processedMessages = useMemo(() => {
-    return messages.map((message, index) => {
-      const prevMessage = index > 0 ? messages[index - 1] : null;
-      const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+    return roomMessages.map((message: any, index: number) => {
+      const prevMessage = index > 0 ? roomMessages[index - 1] : null;
+      const nextMessage = index < roomMessages.length - 1 ? roomMessages[index + 1] : null;
       
       const isOwn = message.senderId === user?._id;
       const showAvatar = !isOwn && (!nextMessage || nextMessage.senderId !== message.senderId);
@@ -319,7 +297,7 @@ export default function ChatRoomScreen() {
         showTimestamp,
       };
     });
-  }, [messages, user?._id]);
+  }, [roomMessages, user?._id]);
 
   if (!room) {
     return (

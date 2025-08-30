@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/Input";
 
 export default function SignInScreen() {
   const router = useRouter();
-  const { signIn, demoLogin, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
   const { colors } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,36 +27,35 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     setError("");
-    
+
     if (!email || !password) {
       setError("Please enter both email and password");
       return;
     }
-    
-    try {
-      const success = await signIn(email, password);
-      if (success) {
-        router.replace("/(tabs)");
-      } else {
-        setError("Sign in failed");
-      }
-    } catch (err: any) {
-      setError(err.message || "Sign in failed");
-    }
-  };
 
-  const handleDemoLogin = async () => {
-    setError("");
-    
     try {
-      const success = await demoLogin();
-      if (success) {
-        router.replace("/(tabs)");
-      } else {
-        setError("Demo login failed");
-      }
+      await signIn(email, password);
+      // Don't manually navigate - let the AuthProvider and index.tsx handle navigation
+      // This prevents race conditions and navigation conflicts
+      console.log('Sign in successful, waiting for auth state change...');
     } catch (err: any) {
-      setError("Demo login failed");
+      const errorCode = err.code;
+      switch (errorCode) {
+        case 'auth/invalid-credential':
+          setError('Invalid email or password');
+          break;
+        case 'auth/user-not-found':
+          setError('No account found with this email');
+          break;
+        case 'auth/wrong-password':
+          setError('Incorrect password');
+          break;
+        case 'auth/too-many-requests':
+          setError('Too many failed attempts. Please try again later.');
+          break;
+        default:
+          setError(err.message || 'Sign in failed');
+      }
     }
   };
 
@@ -142,26 +141,6 @@ export default function SignInScreen() {
               ) : (
                 <Text variant="body" weight="semibold" style={{ color: colors.onPrimary }}>
                   Sign In
-                </Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.demoButton,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.primary,
-                }
-              ]}
-              onPress={handleDemoLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
-                  Demo Login
                 </Text>
               )}
             </TouchableOpacity>

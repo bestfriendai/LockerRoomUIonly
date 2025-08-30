@@ -75,11 +75,31 @@ export default function SignUpScreen() {
     
     try {
       await signUp({ email, password, name: email.split('@')[0] });
-      Alert.alert("Success", "Account created successfully!", [
-        { text: "OK", onPress: () => router.push("/(auth)/profile-setup") }
+      console.log('Sign up successful, waiting for auth state change...');
+
+      // Show success message but don't manually navigate
+      // Let the AuthProvider and index.tsx handle navigation
+      Alert.alert("Success", "Account created successfully! You will be redirected to complete your profile.", [
+        { text: "OK" }
       ]);
     } catch (err: any) {
-      setError(err.message || "Sign up failed");
+      const errorCode = err.code;
+      switch (errorCode) {
+        case 'auth/email-already-in-use':
+          setError('This email address is already in use.');
+          break;
+        case 'auth/invalid-email':
+          setError('Please enter a valid email address.');
+          break;
+        case 'auth/weak-password':
+          setError('The password is too weak.');
+          break;
+        case 'auth/operation-not-allowed':
+          setError('Email/password accounts are not enabled.');
+          break;
+        default:
+          setError(err.message || "Sign up failed");
+      }
     }
   };
 

@@ -1,16 +1,18 @@
-import React, { useState, useCallback, useEffect, memo, useMemo } from "react";
+import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
 import { View, StyleSheet, RefreshControl, ScrollView, Platform, Pressable, Modal, TextInput, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, ChevronDown, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
+import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
 import { useAuth } from "@/providers/AuthProvider";
 import { MasonryReviewCard } from "@/components/MasonryReviewCard";
 import { useTheme } from "@/providers/ThemeProvider";
-import { Review } from "@/data/mockData";
+import { Review } from "@/types";
 import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
-import { mockReviews } from "@/data/mockData";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "@/utils/firebase";
 import { FILTER_CATEGORIES } from "@/constants/categories";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
@@ -57,6 +59,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
   const [useRadiusFilter, setUseRadiusFilter] = useState(true);
@@ -70,19 +73,35 @@ export default function HomeScreen() {
   });
   const [locationInput, setLocationInput] = useState("");
 
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    setRefreshing(true);
+    try {
+      const reviewsCollection = collection(db, "reviews");
+      const reviewsSnapshot = await getDocs(reviewsCollection);
+      const reviewsList = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review));
+      setReviews(reviewsList);
+    } catch (error) {
+      console.error("Error fetching reviews: ", error);
+      Alert.alert("Error", "Could not fetch reviews.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Filter reviews based on selected category
   const filteredReviews = useMemo(() => {
     if (selectedCategory === "All") {
-      return mockReviews;
+      return reviews;
     }
-    return mockReviews.filter(review => review.category === selectedCategory);
-  }, [selectedCategory]);
+    return reviews.filter(review => review.category === selectedCategory);
+  }, [selectedCategory, reviews]);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    // Simulate refresh delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
+    await fetchReviews();
   }, []);
 
   const onSelectCategory = useCallback((id: string) => {

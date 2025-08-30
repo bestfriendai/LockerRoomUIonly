@@ -1,15 +1,17 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Alert, Share, Dimensions, Animated, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Calendar, MapPin, User, Camera, Play } from "lucide-react-native";
+import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Calendar, MapPin, Camera, Play } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
-import { mockReviews, mockUsers, mockComments, type Review, type Comment } from "@/data/mockData";
+import { Review, Comment, User } from "@/types";
+import { ReviewService } from "@/services/reviewService";
+import { getUserById } from "@/services/userService";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -46,10 +48,22 @@ interface CommentItemProps {
 
 const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
   const { colors } = useTheme();
-  const commenter = mockUsers.find(u => u.id === comment.userId);
+  const [commenter, setCommenter] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchCommenter = async () => {
+      try {
+        const user = await getUserById(comment.userId || comment.authorId || '');
+        setCommenter(user);
+      } catch (error) {
+        console.error('Error fetching commenter:', error);
+      }
+    };
+    fetchCommenter();
+  }, [comment.userId]);
   
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+  const formatTime = (timestamp: string | any) => {
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
@@ -134,30 +148,75 @@ export default function ReviewDetailScreen() {
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [replyingTo, setReplyingTo] = useState<Comment | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
+  const [reviewer, setReviewer] = useState<User | null>(null);
+  const [reviewee, setReviewee] = useState<User | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Find the review
-  const review = useMemo(() => {
-    const found = mockReviews.find(r => r.id === id);
-    if (found) {
-      setLikesCount(found.likesCount || 0);
-      setIsLiked(found.isLiked || false);
-    }
-    return found;
-  }, [id]);
-
-  // Find reviewer and reviewee
-  const reviewer = useMemo(() => {
-    return mockUsers.find(u => u.id === review?.reviewerId);
-  }, [review?.reviewerId]);
-
-  const reviewee = useMemo(() => {
-    return mockUsers.find(u => u.id === review?.reviewedUserId);
-  }, [review?.reviewedUserId]);
-
-  // Mock comments for this review
-  const comments = useMemo(() => {
-    return mockComments.filter((c: any) => c.reviewId === review?.id);
-  }, [review?.id]);
+  // Fetch review data
+  useEffect(() => {
+    const fetchReviewData = async () => {
+      if (!id) return;
+      
+      try {
+        setLoading(true);
+        
+        // Fetch review
+        const reviewData = await ReviewService.getReviewById(id as string);
+        if (reviewData) {
+          setReview(reviewData);
+          setLikesCount(reviewData.likes || 0);
+          setIsLiked(reviewData.likedBy?.includes(currentUser?.id || '') || false);
+          
+          // Fetch reviewer with error handling
+          if (reviewData.authorId) {
+            try {
+              const reviewerData = await getUserById(reviewData.authorId);
+              setReviewer(reviewerData);
+            } catch (reviewerError) {
+              console.warn('Could not fetch reviewer data:', reviewerError);
+              // Continue without reviewer data
+            }
+          }
+          
+          // Fetch reviewee with error handling
+          if (reviewData.targetUserId) {
+            try {
+              const revieweeData = await getUserById(reviewData.targetUserId);
+              setReviewee(revieweeData);
+            } catch (revieweeError) {
+              console.warn('Could not fetch reviewee data:', revieweeError);
+              // Continue without reviewee data
+            }
+          }
+          
+          // Fetch comments with enhanced error handling
+          try {
+            const commentsData = await ReviewService.getComments(reviewData.id);
+            setComments(commentsData || []);
+          } catch (commentsError) {
+            console.warn('Could not fetch comments:', commentsError);
+            setComments([]); // Set empty array as fallback
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching review data:', error);
+        // Show user-friendly error message
+        if (error instanceof Error) {
+          if (error.message.includes('network') || error.message.includes('fetch')) {
+            console.log('Network error detected, please check your connection');
+          } else if (error.message.includes('index')) {
+            console.log('Database index issue, some features may be limited');
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchReviewData();
+  }, [id, currentUser?.id]);
 
   // Handlers
   const handleBack = useCallback(() => {
@@ -165,23 +224,46 @@ export default function ReviewDetailScreen() {
   }, [router]);
 
   const handleRefresh = useCallback(async () => {
+    if (!id) return;
+    
     setRefreshing(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setRefreshing(false);
-  }, []);
+    try {
+      // Fetch review
+      const reviewData = await ReviewService.getReviewById(id as string);
+      if (reviewData) {
+        setReview(reviewData);
+        setLikesCount(reviewData.likes || 0);
+        setIsLiked(reviewData.likedBy?.includes(currentUser?.id || '') || false);
+        
+        // Fetch comments
+        const commentsData = await ReviewService.getComments(reviewData.id);
+        setComments(commentsData);
+      }
+    } catch (error) {
+      console.error('Error refreshing review:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [id, currentUser?.id]);
 
-  const handleLike = useCallback(() => {
-    setIsLiked(!isLiked);
-    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
-    console.log(isLiked ? 'Unliked' : 'Liked', 'review');
-  }, [isLiked]);
+  const handleLike = useCallback(async () => {
+    if (!review || !currentUser?.id) return;
+    
+    try {
+      await ReviewService.toggleLike(review.id, currentUser.id);
+      setIsLiked(!isLiked);
+      setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  }, [review, currentUser?.id, isLiked]);
 
   const handleShare = useCallback(async () => {
     if (!review) return;
     
     try {
       await Share.share({
-        message: `Check out this review: "${review.title}" - ${review.content?.substring(0, 100) || review.comment.substring(0, 100)}...`,
+        message: `Check out this review: "${review.title}" - ${review.content?.substring(0, 100) || review.comment?.substring(0, 100) || 'No content'}...`,
         url: `https://app.example.com/review/${review.id}`,
       });
     } catch (error) {
@@ -205,7 +287,7 @@ export default function ReviewDetailScreen() {
   }, []);
 
   const handleMoreOptions = useCallback(() => {
-    const isOwnReview = currentUser?.id === review?.reviewerId;
+    const isOwnReview = currentUser?.id === review?.authorId;
     
     const options = [
       { text: 'Share Review', onPress: handleShare },
@@ -252,13 +334,36 @@ export default function ReviewDetailScreen() {
     );
   };
 
-  const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
+  const formatDate = (timestamp: string | any) => {
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.header}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleBack}
+            leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
+          >
+            
+          </Button>
+        </View>
+        <View style={styles.emptyState}>
+          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+            Loading review...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!review) {
     return (
@@ -347,7 +452,7 @@ export default function ReviewDetailScreen() {
               <View style={styles.reviewMeta}>
                 <Calendar size={12} color={colors.textSecondary} strokeWidth={1.5} />
                 <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
-                  {formatDate(review._creationTime || review.createdAt)}
+                  {formatDate(review.createdAt)}
                 </Text>
                 {review.location && (
                   <>
@@ -423,10 +528,7 @@ export default function ReviewDetailScreen() {
           {review.platform && (
             <View style={styles.platformContainer}>
               <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-                Platform: 
-              </Text>
-              <Text variant="bodySmall" weight="medium">
-                {review.platform}
+                Platform: <Text variant="bodySmall" weight="medium">{review.platform}</Text>
               </Text>
             </View>
           )}
