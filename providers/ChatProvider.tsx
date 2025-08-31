@@ -1,31 +1,29 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onSnapshot, query, where, orderBy, collection } from 'firebase/firestore';
+import { query, where, orderBy, collection, FirestoreError, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { useAuth } from './AuthProvider';
-import { ChatRoom, ChatMessage, Notification } from '../types';
+import { ChatRoom, Message } from '../types';
 import { chatService } from '../services/chatService';
-import { notificationService } from '../services/notificationService';
+import { subscribeToFirestore, ConnectionState, onFirestoreConnectionStateChange } from '../utils/firestoreConnectionManager';
 
 interface ChatContextType {
-  // Chat Rooms
+  // Chat rooms
   chatRooms: ChatRoom[];
   activeChatRoom: ChatRoom | null;
-  setActiveChatRoom: (room: ChatRoom | null) => void;
   
-  // Messages
-  messages: { [roomId: string]: ChatMessage[] };
-  
-  // Notifications
-  notifications: Notification[];
-  unreadNotificationCount: number;
-  
-  // Real-time status
-  isConnected: boolean;
+  // Messages for active chat
+  messages: Message[];
   
   // Actions
-  markNotificationAsRead: (notificationId: string) => Promise<void>;
-  markAllNotificationsAsRead: () => Promise<void>;
-  sendMessage: (roomId: string, content: string, type?: 'text' | 'image' | 'emoji') => Promise<void>;
+  setActiveChatRoom: (chatRoom: ChatRoom | null) => void;
+  sendMessage: (content: string, type?: 'text' | 'image' | 'emoji') => Promise<void>;
+  markMessagesAsRead: (chatRoomId: string) => Promise<void>;
+  
+  // Status
+  loading: boolean;
+  isConnected: boolean;
+  connectionState: ConnectionState;
+  reconnect: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -46,21 +44,42 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [activeChatRoom, setActiveChatRoom] = useState<ChatRoom | null>(null);
-  const [messages, setMessages] = useState<{ [roomId: string]: ChatMessage[] }>({});
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>({
+    isConnected: true,
+    isOffline: false,
+    isSlowConnection: false,
+    networkStatus: 'online',
+    lastPing: Date.now(),
+    error: null
+  });
+
+  // Subscribe to connection state changes
+  useEffect(() => {
+    const unsubscribeConnectionState = onFirestoreConnectionStateChange((state) => {
+      setConnectionState(state);
+      setIsConnected(state.isConnected && !state.isReconnecting);
+      if (state.isReconnecting) {
+        setLoading(true);
+      }
+    });
+
+    return () => unsubscribeConnectionState();
+  }, []);
 
   // Subscribe to user's chat rooms
   useEffect(() => {
     if (!user?.id) {
       setChatRooms([]);
-      setMessages({});
-      setNotifications([]);
+      setMessages([]);
       setIsConnected(false);
+      setLoading(false);
       return;
     }
 
-    setIsConnected(true);
+    setLoading(true);
 
     // Subscribe to chat rooms where user is a participant
     const chatRoomsQuery = query(
@@ -69,45 +88,31 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       orderBy('updatedAt', 'desc')
     );
 
-    const unsubscribeChatRooms = onSnapshot(
+    const unsubscribeChatRooms = subscribeToFirestore(
+      `chatRooms-${user.id}`,
       chatRoomsQuery,
       (snapshot) => {
-        const rooms = snapshot.docs.map(doc => ({
+        const rooms = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
         })) as ChatRoom[];
         setChatRooms(rooms);
+        setLoading(false);
+        setIsConnected(true);
       },
-      (error) => {
-        console.error('Error listening to chat rooms:', error);
+      (error: FirestoreError) => {
+        if (__DEV__) {
+          console.error('Error listening to chat rooms:', error);
+        }
+        // Don't clear chat rooms on error, keep existing data
         setIsConnected(false);
-      }
-    );
-
-    // Subscribe to user's notifications
-    const notificationsQuery = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.id),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribeNotifications = onSnapshot(
-      notificationsQuery,
-      (snapshot) => {
-        const userNotifications = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Notification[];
-        setNotifications(userNotifications);
+        setLoading(false);
       },
-      (error) => {
-        console.error('Error listening to notifications:', error);
-      }
+      { maxRetries: 5, retryDelay: 2000 }
     );
 
     return () => {
       unsubscribeChatRooms();
-      unsubscribeNotifications();
       setIsConnected(false);
     };
   }, [user?.id]);
@@ -115,6 +120,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   // Subscribe to messages for active chat room
   useEffect(() => {
     if (!activeChatRoom?.id || !user?.id) {
+      setMessages([]);
       return;
     }
 
@@ -124,18 +130,16 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       orderBy('timestamp', 'asc')
     );
 
-    const unsubscribeMessages = onSnapshot(
+    const unsubscribeMessages = subscribeToFirestore(
+      `messages-${activeChatRoom.id}`,
       messagesQuery,
       (snapshot) => {
-        const roomMessages = snapshot.docs.map(doc => ({
+        const roomMessages = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
-        })) as ChatMessage[];
+        })) as Message[];
         
-        setMessages(prev => ({
-          ...prev,
-          [activeChatRoom.id]: roomMessages
-        }));
+        setMessages(roomMessages);
 
         // Mark messages as read when they come in
         const unreadMessages = roomMessages.filter(
@@ -144,13 +148,17 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         
         if (unreadMessages.length > 0) {
           unreadMessages.forEach(msg => {
-            chatService.markMessagesAsRead(msg.roomId, user.id).catch(console.error);
+            chatService.markMessagesAsRead(activeChatRoom.id, user.id).catch(console.error);
           });
         }
       },
-      (error) => {
-        console.error('Error listening to messages:', error);
-      }
+      (error: FirestoreError) => {
+        if (__DEV__) {
+          console.error('Error listening to messages:', error);
+        }
+        // Don't clear messages on error, keep existing data
+      },
+      { maxRetries: 3, retryDelay: 1000 }
     );
 
     return () => {
@@ -159,44 +167,51 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   }, [activeChatRoom?.id, user?.id]);
 
   // Actions
-  const markNotificationAsRead = async (notificationId: string) => {
-    try {
-      await notificationService.markAsRead(notificationId);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const markAllNotificationsAsRead = async () => {
-    try {
-      const unreadNotifications = notifications.filter(n => !n.read);
-      await Promise.all(
-        unreadNotifications.map(n => notificationService.markAsRead(n.id))
-      );
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
-
-  const sendMessage = async (roomId: string, content: string, type: 'text' | 'image' | 'emoji' = 'text') => {
-    if (!user?.id) return;
+  const sendMessage = async (content: string, type: 'text' | 'image' | 'emoji' = 'text') => {
+    if (!user?.id || !activeChatRoom?.id) return;
     
     try {
-      await chatService.sendMessage(roomId, user.id, content, type);
+      await chatService.sendMessage(activeChatRoom.id, user.id, content, type);
     } catch (error) {
-      console.error('Error sending message:', error);
+      if (__DEV__) {
+        console.error('Error sending message:', error);
+      }
       throw error;
     }
   };
 
-  // Computed values
-  const unreadNotificationCount = notifications.filter(n => !n.read).length;
+  const markMessagesAsRead = async (chatRoomId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      await chatService.markMessagesAsRead(chatRoomId, user.id);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error marking messages as read:', error);
+      }
+      throw error;
+    }
+  };
+
+  const reconnect = () => {
+    // The connection manager will handle reconnection automatically
+    if (__DEV__) {
+      console.log('Reconnecting chat...');
+    }
+  };
 
   const value: ChatContextType = {
     chatRooms,
+    activeChatRoom,
     messages,
-    sendMessage
-  } as ChatContextType;
+    setActiveChatRoom,
+    sendMessage,
+    markMessagesAsRead,
+    loading,
+    isConnected,
+    connectionState,
+    reconnect
+  };
 
   return (
     <ChatContext.Provider value={value}>

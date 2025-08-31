@@ -1,16 +1,53 @@
 import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import * as Sentry from "sentry-expo";
+
 
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { ChatProvider } from "@/providers/ChatProvider";
 import { NotificationProvider } from "@/providers/NotificationProvider";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import AuthGuard from "@/components/AuthGuard";
+
+// Initialize Sentry for error and performance monitoring only if DSN is provided
+if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+    enableInExpoDevelopment: true,
+    debug: __DEV__,
+    tracesSampleRate: 1.0,
+    enableAutoSessionTracking: true,
+    sessionTrackingIntervalMillis: 10000,
+    enableWatchdogTerminationTracking: false,
+    beforeSend: (event) => {
+      // Add custom debugging information
+      if (event.exception) {
+        console.log('Sentry capturing exception:', event.exception);
+      }
+      if (event.message) {
+        console.log('Sentry capturing message:', event.message);
+      }
+      return event;
+    },
+  });
+
+  // Optional Sentry test trigger controlled by env variable
+  if (process.env.EXPO_PUBLIC_SENTRY_TEST === '1') {
+    try {
+      Sentry.Native.captureException(new Error('Sentry test error: startup'));
+    } catch (sentryError) {
+      console.warn('Sentry test error capture failed:', sentryError);
+    }
+  }
+} else if (__DEV__) {
+  console.log('Sentry DSN not provided - Sentry monitoring disabled');
+}
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -40,96 +77,14 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <ThemeProvider>
             <AuthProvider>
-              <NotificationProvider>
-                <ChatProvider>
-                  <StatusBar style="auto" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                  gestureEnabled: true,
-                }}
-              >
-                {/* Auth Group */}
-                <Stack.Screen 
-                  name="(auth)" 
-                  options={{ 
-                    headerShown: false
-                  }} 
-                />
-
-                {/* Main App Tabs */}
-                <Stack.Screen 
-                  name="(tabs)" 
-                  options={{ 
-                    headerShown: false 
-                  }} 
-                />
-
-                {/* Individual Screens */}
-                <Stack.Screen 
-                  name="chat/[id]" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-                <Stack.Screen 
-                  name="profile/[id]" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-                <Stack.Screen 
-                  name="profile/edit" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-                <Stack.Screen 
-                  name="profile/privacy" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-                <Stack.Screen 
-                  name="review/[id]" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-                <Stack.Screen 
-                  name="notifications" 
-                  options={{ 
-                    headerShown: false,
-                    presentation: 'card'
-                  }} 
-                />
-
-                {/* Modal */}
-                <Stack.Screen 
-                  name="modal" 
-                  options={{ 
-                    presentation: 'modal',
-                    headerShown: false,
-                    animation: 'slide_from_bottom'
-                  }} 
-                />
-
-                {/* Not Found */}
-                <Stack.Screen 
-                  name="+not-found" 
-                  options={{ 
-                    headerShown: false 
-                  }} 
-                />
-                  </Stack>
-                </ChatProvider>
-              </NotificationProvider>
+              <AuthGuard>
+                <NotificationProvider>
+                  <ChatProvider>
+                    <StatusBar style="auto" />
+                    <Slot />
+                  </ChatProvider>
+                </NotificationProvider>
+              </AuthGuard>
             </AuthProvider>
           </ThemeProvider>
         </SafeAreaProvider>

@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
+  TouchableOpacity,
   Pressable,
-  ActivityIndicator,
+  ActivityIndicator
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { Mail, Lock } from 'lucide-react-native';
-import Text from '../ui/Text';
+import { Text } from '../ui/Text';
 import { Input } from '../ui/Input';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -42,7 +44,7 @@ export default function SignInForm() {
         router.push('/(auth)/signup');
       }
     } catch (err: any) {
-      setError(err.message || `Failed to ${step === 'signIn' ? 'sign in' : 'sign up'}`);
+      setError((err as any)?.message || `Failed to ${step === 'signIn' ? 'sign in' : 'sign up'}`);
     } finally {
       setIsLoading(false);
     }
@@ -70,13 +72,11 @@ export default function SignInForm() {
     <View style={styles.container}>
       <View style={styles.welcomeSection}>
         <Text
-          variant="h1"
-          weight="bold"
           style={{ color: colors.text, marginBottom: 8 }}
         >
           Welcome {step === 'signIn' ? 'back' : 'to MockTrae'}
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary }}>
+        <Text style={{ color: colors.textSecondary }}>
           {step === 'signIn'
             ? 'Sign in to continue your journey'
             : 'Create an account to get started'}
@@ -85,7 +85,7 @@ export default function SignInForm() {
 
       {error ? (
         <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-          <Text variant="bodySmall" style={{ color: colors.error }}>
+          <Text style={{ color: colors.error }}>
             {error}
           </Text>
         </View>
@@ -121,7 +121,7 @@ export default function SignInForm() {
               { opacity: pressed ? 0.5 : 1 },
             ]}
           >
-            <Text variant="bodySmall" style={{ color: colors.primary }}>
+            <Text style={{ color: colors.primary }}>
               Forgot password?
             </Text>
           </Pressable>
@@ -143,8 +143,6 @@ export default function SignInForm() {
             <ActivityIndicator color={colors.onPrimary} size="small" />
           ) : (
             <Text
-              variant="body"
-              weight="semibold"
               style={{ color: colors.onPrimary }}
             >
               {step === 'signIn' ? 'Sign In' : 'Sign Up'}
@@ -168,8 +166,6 @@ export default function SignInForm() {
               <ActivityIndicator color={colors.primary} size="small" />
             ) : (
               <Text
-                variant="body"
-                weight="semibold"
                 style={{ color: colors.primary }}
               >
                 Demo Login
@@ -180,7 +176,7 @@ export default function SignInForm() {
       </View>
 
       <View style={styles.switchContainer}>
-        <Text variant="body" style={{ color: colors.textSecondary }}>
+        <Text style={{ color: colors.textSecondary }}>
           {step === 'signIn' ? "Don't have an account?" : 'Already have an account?'}{' '}
         </Text>
         <Pressable
@@ -193,7 +189,7 @@ export default function SignInForm() {
           }}
           style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
-          <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
+          <Text style={{ color: colors.primary }}>
             {step === 'signIn' ? 'Sign up' : 'Sign in'}
           </Text>
         </Pressable>

@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onSnapshot, query, where, orderBy, collection } from 'firebase/firestore';
+import { collection, query, where, orderBy, FirestoreError, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { useAuth } from './AuthProvider';
 import { Notification } from '../types';
+import { subscribeToFirestore, ConnectionState, onFirestoreConnectionStateChange } from '../utils/firestoreConnectionManager';
 import { notificationService } from '../services/notificationService';
 
 interface NotificationContextType {
@@ -29,10 +30,12 @@ interface NotificationContextType {
   clearAllNotifications: () => Promise<void>; // Added missing method
   deleteNotification: (notificationId: string) => Promise<void>;
   updateSettings: (newSettings: Partial<NotificationContextType['settings']>) => Promise<void>;
-  addNotification: (notification: any) => Promise<void>; // Added missing method
+  addNotification: (notification: unknown) => Promise<void>; // Added missing method
 
   // Real-time status
   isConnected: boolean;
+  connectionState: ConnectionState;
+  reconnect: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -66,6 +69,24 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [settings, setSettings] = useState(defaultSettings);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionState, setConnectionState] = useState<ConnectionState>({
+    isConnected: true,
+    isOffline: false,
+    isSlowConnection: false,
+    networkStatus: 'online' as 'online' | 'offline' | 'slow',
+    lastPing: Date.now(),
+    error: null
+  });
+
+  // Subscribe to connection state changes
+  useEffect(() => {
+    const unsubscribeConnectionState = onFirestoreConnectionStateChange((state) => {
+      setConnectionState(state);
+      setIsConnected(state.isConnected && !state.isReconnecting);
+    });
+
+    return () => unsubscribeConnectionState();
+  }, []);
 
   // Subscribe to user's notifications
   useEffect(() => {
@@ -75,28 +96,32 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    setIsConnected(true);
-
-    // Subscribe to notifications
+    // Subscribe to notifications using connection manager
     const notificationsQuery = query(
       collection(db, 'notifications'),
       where('userId', '==', user.id),
       orderBy('createdAt', 'desc')
     );
 
-    const unsubscribeNotifications = onSnapshot(
+    const unsubscribeNotifications = subscribeToFirestore(
+      `notifications-${user.id}`,
       notificationsQuery,
       (snapshot) => {
-        const userNotifications = snapshot.docs.map(doc => ({
+        const userNotifications = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
         })) as Notification[];
         setNotifications(userNotifications);
+        setIsConnected(true);
       },
-      (error) => {
-        console.error('Error listening to notifications:', error);
+      (error: FirestoreError) => {
+        if (__DEV__) {
+          console.error('Error listening to notifications:', error);
+        }
+        // Don't clear notifications on error, keep existing data
         setIsConnected(false);
-      }
+      },
+      { maxRetries: 5, retryDelay: 2000 }
     );
 
     // Load user notification settings
@@ -107,7 +132,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           setSettings({ ...defaultSettings, ...userSettings });
         }
       } catch (error) {
-        console.error('Error loading notification settings:', error);
+        if (__DEV__) {
+          console.error('Error loading notification settings:', error);
+        }
       }
     };
 
@@ -124,7 +151,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       await notificationService.markAsRead(notificationId);
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      if (__DEV__) {
+        console.error('Error marking notification as read:', error);
+      }
       throw error;
     }
   };
@@ -138,7 +167,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         unreadNotifications.map(n => notificationService.markAsRead(n.id))
       );
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      if (__DEV__) {
+        console.error('Error marking all notifications as read:', error);
+      }
       throw error;
     }
   };
@@ -147,7 +178,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       await notificationService.deleteNotification(notificationId);
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      if (__DEV__) {
+        console.error('Error deleting notification:', error);
+      }
       throw error;
     }
   };
@@ -160,7 +193,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       await notificationService.updateUserSettings(user.id, updatedSettings);
       setSettings(updatedSettings);
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      if (__DEV__) {
+        console.error('Error updating notification settings:', error);
+      }
       throw error;
     }
   };
@@ -173,8 +208,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       setNotifications([]);
       // In a real implementation, you would also clear from Firestore
     } catch (error) {
-      console.error('Error clearing notifications:', error);
+      if (__DEV__) {
+        console.error('Error clearing notifications:', error);
+      }
       throw error;
+    }
+  };
+
+  const reconnect = () => {
+    // The connection manager will handle reconnection automatically
+    if (__DEV__) {
+      console.log('Reconnecting notifications...');
     }
   };
 
@@ -188,9 +232,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     deleteNotification,
     updateSettings,
     isConnected,
-    addNotification: async (notification: any) => {
+    connectionState,
+    reconnect,
+    addNotification: async (notification: Partial<Notification>) => {
       // Placeholder implementation
-      console.log('Adding notification:', notification);
+      if (__DEV__) {
+        console.log('Adding notification:', notification);
+      }
     }
   };
 

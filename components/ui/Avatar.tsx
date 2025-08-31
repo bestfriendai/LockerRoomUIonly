@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ViewStyle,
+  Text
+} from 'react-native';
 import { Image } from "expo-image";
 import { User } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
-import Text from "@/components/ui/Text";
 import AnimatedPressable from "@/components/ui/AnimatedPressable";
 
 export interface AvatarProps {
-  src?: string | null;
-  imageUrl?: string | null;
+  // Removed src and imageUrl for anonymous app
   alt?: string;
   name?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
@@ -21,11 +24,12 @@ export interface AvatarProps {
   fallbackColor?: string;
   verified?: boolean;
   status?: "online" | "offline" | "away" | "busy";
+  // Anonymous-specific props
+  isAnonymous?: boolean;
 }
 
 export default function Avatar({
-  src,
-  imageUrl,
+  // Removed src and imageUrl for anonymous app
   alt,
   name,
   size = "md",
@@ -38,6 +42,7 @@ export default function Avatar({
   fallbackColor,
   verified = false,
   status,
+  isAnonymous = true, // Default to anonymous
 }: AvatarProps) {
   const { colors, tokens } = useTheme();
   const [imageError, setImageError] = useState(false);
@@ -119,32 +124,11 @@ export default function Avatar({
   };
 
   const renderContent = () => {
-    // Use imageUrl as fallback for src
-    const imageSrc = src || imageUrl;
-    
-    // Show image if imageSrc exists and no error
-    if (imageSrc && !imageError) {
-      return (
-        <Image
-          source={{ uri: imageSrc }}
-          style={{
-            width: avatarSize,
-            height: avatarSize,
-          }}
-          contentFit="cover"
-          placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-          transition={200}
-          onLoad={() => setIsLoading(false)}
-          onError={() => {
-            setImageError(true);
-            setIsLoading(false);
-          }}
-        />
-      );
-    }
+    // For anonymous app, always show anonymous icon or initials
+    // No profile images allowed
 
-    // Show initials if name is provided
-    if (name) {
+    // Show initials if name is provided (anonymous username)
+    if (name && !isAnonymous) {
       return (
         <Text
           style={{
@@ -158,11 +142,11 @@ export default function Avatar({
       );
     }
 
-    // Show default user icon
+    // Show anonymous user icon (default for anonymous app)
     return (
       <User
         size={fontSize}
-        color={fallbackColor || colors.textSecondary}
+        color={fallbackColor || colors.primary}
         strokeWidth={1.5}
       />
     );

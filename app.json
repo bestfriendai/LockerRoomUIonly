@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MockTrae",
-    "slug": "MockTrae",
+    "name": "LockerRoom Talk App",
+    "slug": "lockerroom-talk-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +25,11 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      ["sentry-expo", {
+        "project": "locker-room-talk-app"
+      }]
+    ],
     "extra": {
       "eas": {
         "projectId": "31cf86d6-6720-4729-ba11-85f811fcbd0a"

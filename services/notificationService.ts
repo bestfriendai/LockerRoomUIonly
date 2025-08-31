@@ -1,3 +1,6 @@
+import {
+  View
+} from 'react-native';
 import { 
   collection, 
   doc, 
@@ -66,7 +69,9 @@ export class NotificationService {
       await setDoc(notificationRef, notification);
       return notificationRef.id;
     } catch (error) {
-      console.error('Error creating notification:', error);
+      if (__DEV__) {
+        console.error('Error creating notification:', error);
+      }
       throw error;
     }
   }
@@ -87,7 +92,9 @@ export class NotificationService {
         ...doc.data()
       })) as Notification[];
     } catch (error) {
-      console.error('Error getting user notifications:', error);
+      if (__DEV__) {
+        console.error('Error getting user notifications:', error);
+      }
       throw error;
     }
   }
@@ -106,7 +113,9 @@ export class NotificationService {
       const querySnapshot = await getDocs(q);
       return querySnapshot.size;
     } catch (error) {
-      console.error('Error getting unread notifications count:', error);
+      if (__DEV__) {
+        console.error('Error getting unread notifications count:', error);
+      }
       return 0;
     }
   }
@@ -120,7 +129,9 @@ export class NotificationService {
         readAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      if (__DEV__) {
+        console.error('Error marking notification as read:', error);
+      }
       throw error;
     }
   }
@@ -146,7 +157,9 @@ export class NotificationService {
       
       await Promise.all(updatePromises);
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      if (__DEV__) {
+        console.error('Error marking all notifications as read:', error);
+      }
       throw error;
     }
   }
@@ -157,7 +170,9 @@ export class NotificationService {
       const notificationRef = doc(db, NOTIFICATIONS_COLLECTION, notificationId);
       await deleteDoc(notificationRef);
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      if (__DEV__) {
+        console.error('Error deleting notification:', error);
+      }
       throw error;
     }
   }
@@ -175,7 +190,9 @@ export class NotificationService {
       
       await Promise.all(deletePromises);
     } catch (error) {
-      console.error('Error deleting all notifications:', error);
+      if (__DEV__) {
+        console.error('Error deleting all notifications:', error);
+      }
       throw error;
     }
   }
@@ -196,7 +213,9 @@ export class NotificationService {
       })) as Notification[];
       callback(notifications);
     }, (error) => {
-      console.error('Error listening to notifications:', error);
+      if (__DEV__) {
+        console.error('Error listening to notifications:', error);
+      }
       callback([]);
     });
   }
@@ -224,7 +243,9 @@ export class NotificationService {
         emailNotifications: false
       };
     } catch (error) {
-      console.error('Error getting notification settings:', error);
+      if (__DEV__) {
+        console.error('Error getting notification settings:', error);
+      }
       throw error;
     }
   }
@@ -238,7 +259,9 @@ export class NotificationService {
         updatedAt: Timestamp.now()
       }, { merge: true });
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      if (__DEV__) {
+        console.error('Error updating notification settings:', error);
+      }
       throw error;
     }
   }
@@ -322,7 +345,7 @@ export class NotificationService {
     }
   }
 
-  static async notifySystem(userId: string, title: string, message: string, data?: any): Promise<void> {
+  static async notifySystem(userId: string, title: string, message: string, data?: unknown): Promise<void> {
     const settings = await this.getNotificationSettings(userId);
     if (settings.systemNotifications) {
       await this.createNotification(

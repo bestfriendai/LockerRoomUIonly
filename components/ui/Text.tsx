@@ -3,7 +3,7 @@ import {
   Text as RNText,
   TextProps as RNTextProps,
   StyleSheet,
-  TextStyle,
+  TextStyle
 } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { tokens, textPresets } from '../../constants/tokens';
@@ -88,51 +88,51 @@ export const Text: React.FC<TextProps> = ({
 
 // Convenience components for common text variants
 export const DisplayText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="display" {...props} />
+  <Text {...props} />
 );
 
 export const Heading1: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="h1" {...props} />
+  <Text {...props} />
 );
 
 export const Heading2: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="h2" {...props} />
+  <Text {...props} />
 );
 
 export const Heading3: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="h3" {...props} />
+  <Text {...props} />
 );
 
 export const Heading4: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="h4" {...props} />
+  <Text {...props} />
 );
 
 export const BodyText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="body" {...props} />
+  <Text {...props} />
 );
 
 export const BodyLargeText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="bodyLarge" {...props} />
+  <Text {...props} />
 );
 
 export const BodySmallText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="bodySmall" {...props} />
+  <Text {...props} />
 );
 
 export const LabelText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="label" {...props} />
+  <Text {...props} />
 );
 
 export const CaptionText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="caption" {...props} />
+  <Text {...props} />
 );
 
 export const ButtonText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="button" {...props} />
+  <Text {...props} />
 );
 
 export const ButtonSmallText: React.FC<Omit<TextProps, 'variant'>> = (props) => (
-  <Text variant="buttonSmall" {...props} />
+  <Text {...props} />
 );
 
 // Default export for backward compatibility

@@ -1,10 +1,13 @@
 import React, { ReactNode } from 'react';
 import {
-  Pressable,
-  PressableProps,
-  ViewStyle,
+  Text as RNText,
   StyleSheet,
+  Animated as RNAnimated,
+  ViewStyle,
+  Pressable,
+  PressableProps
 } from 'react-native';
+
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,6 +16,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
+
+// Fallback colors when ThemeProvider is not available
+const fallbackColors = {
+  primary: '#007AFF',
+  background: '#FFFFFF',
+  surface: '#F2F2F7',
+  text: '#000000',
+  border: '#C6C6C8',
+};
 import { Text } from './Text';
 
 interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
@@ -43,7 +55,14 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   disabled,
   ...props
 }) => {
-  const { colors } = useTheme();
+  // Use fallback colors if ThemeProvider is not available
+  let colors;
+  try {
+    const theme = useTheme();
+    colors = theme.colors;
+  } catch (error) {
+    colors = fallbackColors;
+  }
   const scale = useSharedValue(scaleFrom);
   const opacity = useSharedValue(1);
 
@@ -53,7 +72,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     }
   };
 
-  const handlePressIn = (event: any) => {
+  const handlePressIn = (event: unknown) => {
     scale.value = withSpring(scaleTo, {
       damping: 15,
       stiffness: 300,
@@ -67,7 +86,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     onPressIn?.(event);
   };
 
-  const handlePressOut = (event: any) => {
+  const handlePressOut = (event: unknown) => {
     scale.value = withSpring(scaleFrom, {
       damping: 15,
       stiffness: 300,
@@ -80,7 +99,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     onPressOut?.(event);
   };
 
-  const handlePress = (event: any) => {
+  const handlePress = (event: unknown) => {
     if (!disabled) {
       onPress?.(event);
     }

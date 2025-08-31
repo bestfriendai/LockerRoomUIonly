@@ -1,15 +1,16 @@
 import React from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
-  Image,
+  TouchableOpacity,
   Pressable,
-  Alert,
+  Alert
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { LogOut, Settings, User, MapPin } from 'lucide-react-native';
-import Text from '../ui/Text';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { Text } from '../ui/Text';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/providers/AuthProvider';
 
@@ -35,7 +36,9 @@ export default function UserProfile() {
               await signOut();
               router.replace('/(auth)');
             } catch (error) {
-              console.error('Sign out error:', error);
+              if (__DEV__) {
+                console.error('Sign out error:', error);
+              }
             }
           },
         },
@@ -59,30 +62,25 @@ export default function UserProfile() {
     <View style={styles.container}>
       <View style={styles.profileSection}>
         <View style={styles.avatarContainer}>
-          {user.photoURL ? (
-            <Image source={{ uri: user.photoURL }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: colors.chipBg }]}>
-              <User color={colors.textSecondary} size={32} strokeWidth={1.5} />
-            </View>
-          )}
+          {/* Anonymous avatar - no profile photos */}
+          <View style={[styles.avatarPlaceholder, { backgroundColor: colors.chipBg }]}>
+            <User color={colors.primary} size={32} strokeWidth={1.5} />
+          </View>
         </View>
 
         <View style={styles.userInfo}>
           <Text
-            variant="h3"
-            weight="semibold"
             style={{ color: colors.text, marginBottom: 4 }}
           >
             {user.displayName || user.email?.split('@')[0] || 'User'}
           </Text>
           
-          <Text variant="body" style={{ color: colors.textSecondary, marginBottom: 8 }}>
+          <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
             {user.email}
           </Text>
 
           {user.age && (
-            <Text variant="bodySmall" style={{ color: colors.textSecondary, marginBottom: 4 }}>
+            <Text style={{ color: colors.textSecondary, marginBottom: 4 }}>
               Age: {user.age}
             </Text>
           )}
@@ -91,7 +89,6 @@ export default function UserProfile() {
             <View style={styles.locationContainer}>
               <MapPin color={colors.textSecondary} size={14} strokeWidth={1.5} />
               <Text
-                variant="bodySmall"
                 style={{ color: colors.textSecondary, marginLeft: 4 }}
               >
                 {user.location}
@@ -103,28 +100,28 @@ export default function UserProfile() {
 
       <View style={styles.statsSection}>
         <View style={styles.statItem}>
-          <Text variant="h4" weight="bold" style={{ color: colors.text }}>
+          <Text style={{ color: colors.text }}>
             {user.reviewsCount || 0}
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary }}>
             Reviews
           </Text>
         </View>
         
         <View style={styles.statItem}>
-          <Text variant="h4" weight="bold" style={{ color: colors.text }}>
+          <Text style={{ color: colors.text }}>
             {user.matchesCount || 0}
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary }}>
             Matches
           </Text>
         </View>
         
         <View style={styles.statItem}>
-          <Text variant="h4" weight="bold" style={{ color: colors.text }}>
+          <Text style={{ color: colors.text }}>
             {user.rating || '0.0'}
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary }}>
             Rating
           </Text>
         </View>
@@ -139,8 +136,6 @@ export default function UserProfile() {
           onPress={handleGoToApp}
         >
           <Text
-            variant="body"
-            weight="semibold"
             style={{ color: colors.onPrimary }}
           >
             Go to App
@@ -157,8 +152,6 @@ export default function UserProfile() {
         >
           <Settings color={colors.text} size={18} strokeWidth={1.5} />
           <Text
-            variant="body"
-            weight="medium"
             style={{ color: colors.text, marginLeft: 8 }}
           >
             Edit Profile
@@ -175,8 +168,6 @@ export default function UserProfile() {
         >
           <LogOut color={colors.error} size={18} strokeWidth={1.5} />
           <Text
-            variant="body"
-            weight="medium"
             style={{ color: colors.error, marginLeft: 8 }}
           >
             Sign Out
@@ -186,7 +177,7 @@ export default function UserProfile() {
 
       {!user.profileComplete && (
         <View style={[styles.incompleteProfileBanner, { backgroundColor: colors.warningBg }]}>
-          <Text variant="bodySmall" style={{ color: colors.warning, textAlign: 'center' }}>
+          <Text style={{ color: colors.warning, textAlign: 'center' }}>
             Complete your profile to get better matches
           </Text>
           <Pressable
@@ -197,8 +188,6 @@ export default function UserProfile() {
             ]}
           >
             <Text
-              variant="bodySmall"
-              weight="semibold"
               style={{ color: colors.warning }}
             >
               Complete Now

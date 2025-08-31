@@ -2,21 +2,22 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
+  Text as RNText,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+  TouchableOpacity,
   ScrollView,
   Alert,
-  TouchableOpacity,
-} from "react-native";
+  Platform,
+  KeyboardAvoidingView
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, User, Cake, Book, Camera } from "lucide-react-native";
+import { ArrowLeft, User, Cake, Book } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
+import { Text } from "@/components/ui/Text";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
@@ -26,21 +27,10 @@ export default function ProfileSetupScreen() {
   const [name, setName] = useState(user?.name || "");
   const [age, setAge] = useState(user?.age?.toString() || "");
   const [bio, setBio] = useState(user?.bio || "");
-  const [photos, setPhotos] = useState<string[]>(user?.photos || []);
+  // Removed photos for anonymous app
   const [error, setError] = useState("");
 
-  const handleImagePick = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setPhotos([...photos, result.assets[0].uri]);
-    }
-  };
+  // Removed image picking functionality for anonymous app
 
   const handleSave = async () => {
     if (!name || !age || !bio) {
@@ -53,14 +43,20 @@ export default function ProfileSetupScreen() {
         name,
         age: parseInt(age),
         bio,
-        photos,
+        // Removed photos for anonymous app
         profileComplete: true,
+        isAnonymous: true,
       });
       Alert.alert("Success", "Profile updated successfully!", [
         { text: "OK", onPress: () => router.replace("/(tabs)") },
       ]);
-    } catch (err: any) {
-      setError(err.message || "Failed to update profile.");
+    } catch (err: unknown) {
+      const error = err as Error;
+      setFormState(prev => ({
+        ...prev,
+        error: error.message || "Failed to update profile.",
+        isLoading: false
+      }));
     }
   };
 
@@ -129,38 +125,19 @@ export default function ProfileSetupScreen() {
               containerStyle={{ marginBottom: 24 }}
             />
 
-            <View style={styles.photosContainer}>
+            {/* Anonymous Profile Notice */}
+            <View style={styles.anonymousNotice}>
               <Text
                 variant="h4"
                 weight="semibold"
                 style={{ color: colors.text, marginBottom: 12 }}
               >
-                Your Photos
+                Anonymous Profile
               </Text>
-              <View style={styles.photoGrid}>
-                {photos.map((photo, index) => (
-                  <View key={index} style={styles.photoWrapper}>
-                    <Text>Photo {index + 1}</Text>
-                  </View>
-                ))}
-                {photos.length < 5 && (
-                  <TouchableOpacity
-                    style={[
-                      styles.addPhoto,
-                      {
-                        backgroundColor: colors.surface,
-                        borderColor: colors.border,
-                      },
-                    ]}
-                    onPress={handleImagePick}
-                  >
-                    <Camera size={24} color={colors.textSecondary} />
-                    <Text variant="bodySmall" style={{ color: colors.textSecondary, marginTop: 8 }}>
-                      Add Photo
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+                🎭 Your identity remains completely anonymous. No profile photos are needed -
+                your reviews and interactions speak for themselves!
+              </Text>
             </View>
 
             <Button
@@ -208,29 +185,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
   },
-  photosContainer: {
+  anonymousNotice: {
     marginBottom: 24,
-  },
-  photoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  photoWrapper: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    backgroundColor: "#ccc",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  addPhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderStyle: "dashed",
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: '#F0F8FF',
+    alignItems: 'center',
   },
 });

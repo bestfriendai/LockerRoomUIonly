@@ -1,12 +1,19 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  RefreshControl
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Bell, Heart, MessageCircle, Users, Star, Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
+import { ArrowLeft, Bell, Heart, MessageCircle, _Users, Star, _Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useNotifications } from "@/providers/NotificationProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
@@ -70,7 +77,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     }
   };
 
-  const formatTimestamp = (timestamp: any) => {
+  const formatTimestamp = (timestamp: unknown) => {
     const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -104,7 +111,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
             <Avatar
               size="sm"
               name={user.username}
-              imageUrl={user.profilePicture}
+              isAnonymous={true}
             />
           ) : (
             <View style={[styles.iconContainer, { backgroundColor: colors.background }]}>
@@ -116,31 +123,26 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
         {/* Content */}
         <View style={styles.notificationText}>
           <View style={styles.notificationHeader}>
-            <Text
-              variant="bodySmall"
-              weight="medium"
-              style={{
+            <Text style={{
                 color: notification.read ? colors.text : colors.primary,
                 flex: 1,
               }}
             >
               {notification.title}
             </Text>
-            <Text variant="caption" style={{ color: colors.textSecondary }}>
+            <Text style={{ color: colors.textSecondary }}>
               {formatTimestamp(notification.timestamp)}
             </Text>
           </View>
           
-          <Text
-            variant="caption"
-            style={{
+          <Text style={{
               color: colors.textSecondary,
               marginTop: 2,
               lineHeight: 16,
             }}
             numberOfLines={2}
           >
-            {notification.message}
+            {(notification as any)?.message}
           </Text>
         </View>
 
@@ -165,7 +167,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
               }}
             >
               <Bell size={16} color={colors.text} strokeWidth={1.5} />
-              <Text variant="caption" style={{ marginLeft: 8 }}>
+              <Text style={{ marginLeft: 8 }}>
                 Mark as read
               </Text>
             </TouchableOpacity>
@@ -179,7 +181,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
             }}
           >
             <Trash2 size={16} color={colors.error} strokeWidth={1.5} />
-            <Text variant="caption" style={{ marginLeft: 8, color: colors.error }}>
+            <Text style={{ marginLeft: 8, color: colors.error }}>
               Delete
             </Text>
           </TouchableOpacity>
@@ -276,24 +278,19 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleBack}
           leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
         />
-        <Text variant="h3" weight="normal">
+        <Text >
           Notifications
         </Text>
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleMarkAllAsRead}
           disabled={unreadCount === 0}
         >
-          <Text
-            variant="caption"
-            weight="medium"
-            style={{
+          <Text style={{
               color: unreadCount > 0 ? colors.primary : colors.textSecondary,
             }}
           >
@@ -310,10 +307,7 @@ export default function NotificationsScreen() {
           onPress={() => setFilter('all')}
           style={styles.filterButton}
         >
-          <Text
-            variant="caption"
-            weight="medium"
-            style={{
+          <Text style={{
               color: filter === 'all' ? colors.background : colors.text,
             }}
           >
@@ -327,10 +321,7 @@ export default function NotificationsScreen() {
           onPress={() => setFilter('unread')}
           style={styles.filterButton}
         >
-          <Text
-            variant="caption"
-            weight="medium"
-            style={{
+          <Text style={{
               color: filter === 'unread' ? colors.background : colors.text,
             }}
           >
@@ -368,11 +359,10 @@ export default function NotificationsScreen() {
             {/* Clear All Button */}
             {notifications.length > 0 && (
               <Button
-                variant="outline"
                 onPress={handleClearAll}
                 style={styles.clearAllButton}
               >
-                <Text variant="body" weight="medium">
+                <Text >
                   Clear All Notifications
                 </Text>
               </Button>
@@ -382,12 +372,10 @@ export default function NotificationsScreen() {
           /* Empty State */
           <Card style={styles.emptyState}>
             <Bell size={48} color={colors.textSecondary} strokeWidth={1} />
-            <Text variant="h4" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+            <Text style={{ marginTop: 16, textAlign: 'center' }}>
               {filter === 'unread' ? 'No unread notifications' : 'No notifications'}
             </Text>
-            <Text
-              variant="body"
-              style={{
+            <Text style={{
                 color: colors.textSecondary,
                 textAlign: 'center',
                 marginTop: 8,

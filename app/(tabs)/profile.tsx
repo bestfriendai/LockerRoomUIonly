@@ -1,12 +1,46 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Animated, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Pressable,
+  ScrollView,
+  Alert,
+  Dimensions,
+  ActivityIndicator,
+  _Modal,
+  Share as _RNShare,
+  Animated,
+  RefreshControl
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Settings, Edit3, Star, Activity, MessageCircle, Heart, Eye, Calendar, MapPin, LogOut, Share, User as UserIcon } from "lucide-react-native";
+import { Text } from '@/components/ui/Text';
+import {
+  _Settings,
+  Edit3,
+  Star,
+  Activity,
+  MessageCircle,
+  Heart,
+  _Eye,
+  _Calendar,
+  _MapPin,
+  LogOut,
+  Share,
+  User as UserIcon,
+  Shield,
+  Trophy,
+  _Target,
+  _Zap,
+  RefreshCw,
+  ChevronRight,
+  Award,
+} from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
@@ -14,6 +48,8 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import type { Review, User } from "@/types";
+import { generateAnonymousUsername, generateMultipleUsernames } from "@/services/usernameGenerator";
+import { toMillis, formatDate } from "@/utils/timestampHelpers";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -52,14 +88,14 @@ const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
         <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
           {icon}
         </View>
-        <Text variant="h3" weight="normal" style={styles.statValue}>
+        <Text style={styles.statValue}>
            {value}
          </Text>
-         <Text variant="bodySmall" weight="normal" style={styles.statTitle}>
+         <Text style={styles.statTitle}>
           {title}
         </Text>
         {subtitle && (
-          <Text variant="caption" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
             {subtitle}
           </Text>
         )}
@@ -72,14 +108,14 @@ const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
       <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
         {icon}
       </View>
-      <Text variant="h3" weight="normal" style={styles.statValue}>
+      <Text style={styles.statValue}>
         {value}
       </Text>
-      <Text variant="bodySmall" weight="normal" style={styles.statTitle}>
+      <Text style={styles.statTitle}>
         {title}
       </Text>
       {subtitle && (
-        <Text variant="caption" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
           {subtitle}
         </Text>
       )}
@@ -92,7 +128,7 @@ interface ActivityItemProps {
   title: string;
   description: string;
   timestamp: string;
-  metadata?: any;
+  metadata?: unknown;
 }
 
 const ActivityItem = ({ type, title, description, timestamp, metadata }: ActivityItemProps) => {
@@ -135,13 +171,13 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
         {getIcon()}
       </View>
       <View style={styles.activityContent}>
-        <Text variant="body" weight="medium">
+        <Text >
           {title}
         </Text>
-        <Text variant="bodySmall" style={{ color: colors.textSecondary, marginTop: 2 }}>
+        <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
           {description}
         </Text>
-        <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
+        <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
           {formatTime(timestamp)}
         </Text>
       </View>
@@ -152,9 +188,14 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
 export default function ProfileScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUser } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
+
+  // Anonymous username management states
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [usernameOptions, setUsernameOptions] = useState<string[]>([]);
+  const [isGeneratingUsernames, setIsGeneratingUsernames] = useState(false);
 
   // State
   const [activeTab, setActiveTab] = useState<ProfileTab>('reviews');
@@ -171,17 +212,19 @@ export default function ProfileScreen() {
       // Fetch reviews written by the user
       const userReviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.id));
       const userReviewsSnapshot = await getDocs(userReviewsQuery);
-      const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as Review));
+      const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...(doc as unknown)?.data(), id: doc.id } as unknown as Review));
       setUserReviews(userReviewsData);
 
       // Fetch reviews received by the user
       const receivedReviewsQuery = query(collection(db, "reviews"), where("targetId", "==", user.id));
       const receivedReviewsSnapshot = await getDocs(receivedReviewsQuery);
-      const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as unknown as Review));
+      const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...(doc as unknown)?.data(), id: doc.id } as unknown as Review));
       setReceivedReviews(receivedReviewsData);
 
     } catch (error) {
-      console.error("Error fetching reviews:", error);
+      if (__DEV__) {
+        console.error("Error fetching reviews:", error);
+      }
     } finally {
       setRefreshing(false);
     }
@@ -193,9 +236,53 @@ export default function ProfileScreen() {
     setActivities([]);
   }, [fetchReviews]);
 
-  const onRefresh = useCallback(() => {
+  const _onRefresh = useCallback(() => {
     fetchReviews();
   }, [fetchReviews]);
+
+  // Anonymous username management functions
+  const handleUsernameEdit = useCallback(async () => {
+    setIsGeneratingUsernames(true);
+    try {
+      const options = generateMultipleUsernames(5);
+      setUsernameOptions(options);
+      setIsEditingUsername(true);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error generating usernames:', error);
+      }
+      Alert.alert('Error', 'Failed to generate username options. Please try again.');
+    } finally {
+      setIsGeneratingUsernames(false);
+    }
+  }, []);
+
+  const handleUsernameUpdate = useCallback(async (newUsername: string) => {
+    try {
+      await updateUser({ name: newUsername });
+      setIsEditingUsername(false);
+      Alert.alert('Success', 'Your anonymous identity has been updated!');
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error updating username:', error);
+      }
+      Alert.alert('Error', 'Failed to update username. Please try again.');
+    }
+  }, [updateUser]);
+
+  const regenerateUsernames = useCallback(async () => {
+    setIsGeneratingUsernames(true);
+    try {
+      const newOptions = generateMultipleUsernames(5);
+      setUsernameOptions(newOptions);
+    } catch (error) {
+      if (__DEV__) {
+        console.error('Error regenerating usernames:', error);
+      }
+    } finally {
+      setIsGeneratingUsernames(false);
+    }
+  }, []);
 
   const memoizedUserReviews = useMemo(() => userReviews, [userReviews]);
   const memoizedReceivedReviews = useMemo(() => receivedReviews, [receivedReviews]);
@@ -208,7 +295,7 @@ export default function ProfileScreen() {
   ];
 
   // Calculate stats
-  const stats = useMemo(() => {
+  const _stats = useMemo(() => {
     const givenCount = userReviews.length;
     const receivedCount = receivedReviews.length;
     const averageRating = receivedReviews.length > 0 
@@ -237,7 +324,7 @@ export default function ProfileScreen() {
     }).start();
   }, [tabIndicatorAnim]);
 
-  const handleEditProfile = useCallback(() => {
+  const _handleEditProfile = useCallback(() => {
     router.push('/profile/edit');
   }, [router]);
 
@@ -250,16 +337,18 @@ export default function ProfileScreen() {
   }, [signOut]);
 
   const handleShare = useCallback(() => {
-    console.log('Share profile');
+    if (__DEV__) {
+      console.log('Share profile');
+    }
   }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'reviews':
-        const allReviews = [...userReviews, ...receivedReviews].sort(
+      case 'reviews': {
+        const allReviews = [...(userReviews as unknown), ...receivedReviews].sort(
           (a, b) => {
-            const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
-            const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+            const timeA = toMillis(a.timestamp);
+            const timeB = toMillis(b.timestamp);
             return timeB - timeA;
           }
         );
@@ -268,10 +357,10 @@ export default function ProfileScreen() {
           return (
             <View style={styles.emptyState}>
               <Star size={48} color={colors.textSecondary} strokeWidth={1} />
-              <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+              <Text style={{ marginTop: 16, textAlign: 'center' }}>
                 No Reviews Yet
               </Text>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
                 Start reviewing others or encourage them to review you!
               </Text>
             </View>
@@ -294,16 +383,17 @@ export default function ProfileScreen() {
             keyExtractor={(item) => item.id}
           />
         );
+      }
 
-      case 'activity':
+      case 'activity': {
         if (activities.length === 0) {
           return (
             <View style={styles.emptyState}>
               <Activity size={48} color={colors.textSecondary} strokeWidth={1} />
-              <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+              <Text style={{ marginTop: 16, textAlign: 'center' }}>
                 No Activity Yet
               </Text>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
                 Your recent activities will appear here.
               </Text>
             </View>
@@ -321,6 +411,7 @@ export default function ProfileScreen() {
             ))}
           </ScrollView>
         );
+      }
 
       case 'about':
         return (
@@ -330,72 +421,82 @@ export default function ProfileScreen() {
             showsVerticalScrollIndicator={false}
           >
             <Card style={styles.aboutSection}>
-              <Text variant="body" weight="medium" style={styles.aboutTitle}>
-                Bio
+              <Text style={styles.aboutTitle}>
+                Anonymous Bio
               </Text>
-              <Text variant="body" style={{ color: colors.text, lineHeight: 22 }}>
-                {user?.bio || 'No bio available. Edit your profile to add a bio.'}
+              <Text style={{ color: colors.text, lineHeight: 22 }}>
+                {user?.bio || 'No bio available. Edit your profile to add an anonymous bio.'}
               </Text>
             </Card>
 
             <Card style={styles.aboutSection}>
-              <Text variant="body" weight="medium" style={styles.aboutTitle}>
-                Details
+              <Text style={styles.aboutTitle}>
+                Anonymous Profile Details
               </Text>
               <View style={styles.detailsList}>
+                <View style={styles.detailItem}>
+                  <Shield size={16} color={colors.success} strokeWidth={1.5} />
+                  <Text style={{ marginLeft: 12, color: colors.text }}>
+                    Anonymous Identity Protected
+                  </Text>
+                </View>
                 {user?.age && (
                   <View style={styles.detailItem}>
-                    <Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text variant="body" style={{ marginLeft: 12 }}>
+                    <_Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
+                    <Text style={{ marginLeft: 12, color: colors.text }}>
                       {user.age} years old
-                    </Text>
-                  </View>
-                )}
-                {user?.location && (
-                  <View style={styles.detailItem}>
-                    <MapPin size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text variant="body" style={{ marginLeft: 12 }}>
-                      {user.location}
                     </Text>
                   </View>
                 )}
                 <View style={styles.detailItem}>
                   <UserIcon size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                  <Text variant="body" style={{ marginLeft: 12 }}>
-                    Member since {new Date(Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  <Text style={{ marginLeft: 12, color: colors.text }}>
+                    Member since {user?.createdAt ? formatDate(user.createdAt, { month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </Text>
+                </View>
+                <View style={styles.detailItem}>
+                  <Trophy size={16} color={colors.primary} strokeWidth={1.5} />
+                  <Text style={{ marginLeft: 12, color: colors.text }}>
+                    Reputation Level: {Math.floor((user?.reputationScore || 0) / 100) + 1}
                   </Text>
                 </View>
               </View>
             </Card>
 
             <Card style={styles.aboutSection}>
-              <Text variant="body" weight="medium" style={styles.aboutTitle}>
-                Preferences
+              <Text style={styles.aboutTitle}>
+                Privacy & Settings
               </Text>
-              <View style={styles.preferencesList}>
-                {user?.datingPreferences?.ageRange && (
-                  <View style={styles.preferenceItem}>
-                    <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-                      Age Range
-                    </Text>
-                    <Text variant="body">
-                      {Array.isArray(user.datingPreferences.ageRange)
-                        ? `${user.datingPreferences.ageRange[0]} - ${user.datingPreferences.ageRange[1]} years`
-                        : `${user.datingPreferences.ageRange.min} - ${user.datingPreferences.ageRange.max} years`
-                      }
+              <View style={styles.settingsGroup}>
+                <TouchableOpacity style={styles.settingItem} onPress={handleUsernameEdit}>
+                  <View style={styles.settingContent}>
+                    <Text style={{ color: colors.text }}>Change Anonymous Username</Text>
+                    <Text style={{ color: colors.textSecondary }}>
+                      Generate a new anonymous identity
                     </Text>
                   </View>
-                )}
-                {user?.datingPreferences?.gender && (
-                  <View style={styles.preferenceItem}>
-                    <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-                      Looking for
-                    </Text>
-                    <Text variant="body" style={{ textTransform: 'capitalize' }}>
-                      {user.datingPreferences.gender}
+                  <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.5} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/profile/edit')}>
+                  <View style={styles.settingContent}>
+                    <Text style={{ color: colors.text }}>Edit Profile</Text>
+                    <Text style={{ color: colors.textSecondary }}>
+                      Update your anonymous profile information
                     </Text>
                   </View>
-                )}
+                  <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.5} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.settingItem} onPress={handleSettings}>
+                  <View style={styles.settingContent}>
+                    <Text style={{ color: colors.text }}>Privacy Settings</Text>
+                    <Text style={{ color: colors.textSecondary }}>
+                      Control your anonymous profile visibility
+                    </Text>
+                  </View>
+                  <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.5} />
+                </TouchableOpacity>
               </View>
             </Card>
           </ScrollView>
@@ -411,10 +512,10 @@ export default function ProfileScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.emptyState}>
           <UserIcon size={48} color={colors.textSecondary} strokeWidth={1} />
-          <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+          <Text style={{ marginTop: 16, textAlign: 'center' }}>
             Not Signed In
           </Text>
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
             Please sign in to view your profile.
           </Text>
           <Button
@@ -448,7 +549,6 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.headerActions}>
             <Button
-              variant="ghost"
               size="sm"
               onPress={handleShare}
               leftIcon={<Share size={16} color={colors.primary} strokeWidth={1.5} />}
@@ -456,41 +556,53 @@ export default function ProfileScreen() {
               Share
             </Button>
             <Button
-              variant="ghost"
               size="sm"
               onPress={handleSettings}
-              leftIcon={<Settings size={16} color={colors.primary} strokeWidth={1.5} />}
+              leftIcon={<_Settings size={16} color={colors.primary} strokeWidth={1.5} />}
             >
               Settings
             </Button>
           </View>
         </View>
 
-        {/* Profile Info */}
+        {/* Anonymous Profile Header */}
         <View style={styles.profileSection}>
-          <Avatar
-            size="xl"
-            name={user.username}
-            imageUrl={user.profilePicture}
-            style={styles.avatar}
-          />
-          <Text variant="h2" weight="bold" style={styles.username}>
-            {user.displayName || user.username}
-          </Text>
-          {user.displayName && (
-            <Text variant="body" style={{ color: colors.textSecondary }}>
-              @{user.username}
+          <View style={[styles.anonymousAvatar, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
+            <UserIcon size={40} color={colors.primary} strokeWidth={1.5} />
+          </View>
+
+          <View style={styles.usernameContainer}>
+            <TouchableOpacity
+              style={styles.usernameEditContainer}
+              onPress={handleUsernameEdit}
+              disabled={isGeneratingUsernames}
+            >
+              <Text style={[styles.username, { color: colors.text }]}>
+                {user?.name || 'Anonymous User'}
+              </Text>
+              <Edit3 size={16} color={colors.primary} strokeWidth={1.5} style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.anonymousBadge, { backgroundColor: colors.success + '20' }]}>
+            <Shield size={14} color={colors.success} strokeWidth={1.5} />
+            <Text style={{ color: colors.success, marginLeft: 4, fontWeight: '500' }}>
+              Anonymous User
             </Text>
-          )}
-          {user.bio && (
-            <Text variant="body" style={{ color: colors.text, textAlign: 'center', marginTop: 8, lineHeight: 20 }}>
+          </View>
+
+          <Text style={{ color: colors.textSecondary, marginTop: 8 }}>
+            Member since {user?.createdAt ? formatDate(user.createdAt) : 'Recently'}
+          </Text>
+
+          {user?.bio && (
+            <Text style={{ color: colors.text, textAlign: 'center', marginTop: 12, lineHeight: 20 }}>
               {user.bio}
             </Text>
           )}
-          
+
           <Button
-            variant="outline"
-            onPress={handleEditProfile}
+            onPress={() => router.push('/profile/edit')}
             style={styles.editButton}
             leftIcon={<Edit3 size={16} color={colors.primary} strokeWidth={1.5} />}
           >
@@ -498,24 +610,67 @@ export default function ProfileScreen() {
           </Button>
         </View>
 
-        {/* Stats */}
+        {/* Anonymous Stats */}
         <View style={styles.statsSection}>
           <StatCard
-            title="Reviews Given"
-            value={stats.given}
+            title="Reviews"
+            value={user?.reviewCount || 0}
             icon={<Star size={20} color={colors.primary} strokeWidth={1.5} />}
           />
           <StatCard
-            title="Reviews Received"
-            value={stats.received}
-            icon={<Heart size={20} color={colors.error} strokeWidth={1.5} />}
+            title="Helpful Votes"
+            value={user?.helpfulVotes || 0}
+            icon={<Heart size={20} color={colors.primary} strokeWidth={1.5} />}
           />
           <StatCard
-            title="Average Rating"
-            value={stats.rating > 0 ? stats.rating.toFixed(1) : '0.0'}
-            subtitle="★"
-            icon={<Star size={20} color={colors.warning} strokeWidth={1.5} />}
+            title="Reputation"
+            value={user?.reputationScore || 0}
+            icon={<Trophy size={20} color={colors.primary} strokeWidth={1.5} />}
           />
+        </View>
+
+        {/* Reputation System */}
+        <View style={[styles.reputationContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Anonymous Reputation
+          </Text>
+
+          <View style={[styles.reputationCard, { backgroundColor: colors.background }]}>
+            <View style={styles.reputationHeader}>
+              <Trophy size={20} color="#FFD700" strokeWidth={1.5} />
+              <Text style={[styles.reputationScore, { color: colors.text }]}>
+                {user?.reputationScore || 0} points
+              </Text>
+            </View>
+
+            <View style={styles.reputationProgress}>
+              <View style={[styles.progressBar, { backgroundColor: colors.border }]}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${Math.min(((user?.reputationScore || 0) % 100), 100)}%`,
+                      backgroundColor: colors.primary
+                    }
+                  ]}
+                />
+              </View>
+              <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+                {100 - ((user?.reputationScore || 0) % 100)} points to next level
+              </Text>
+            </View>
+
+            {user?.badges && user.badges.length > 0 && (
+              <View style={styles.reputationBadges}>
+                {user.badges.map((badge, index) => (
+                  <View key={index} style={[styles.badge, { backgroundColor: colors.surface }]}>
+                    <Award size={16} color={badge.color || colors.primary} strokeWidth={1.5} />
+                    <Text style={[styles.badgeText, { color: colors.textSecondary }]}>{badge.name}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Tabs */}
@@ -535,9 +690,7 @@ export default function ProfileScreen() {
                     color={isActive ? colors.primary : colors.textSecondary}
                     strokeWidth={1.5}
                   />
-                  <Text
-                    variant="bodySmall"
-                    weight={isActive ? "medium" : "normal"}
+                  <Text weight={isActive ? "medium" : "normal"}
                     style={{
                       color: isActive ? colors.primary : colors.textSecondary,
                       marginLeft: 6
@@ -574,7 +727,6 @@ export default function ProfileScreen() {
 
         {/* Sign Out Button */}
         <Button
-          variant="ghost"
           onPress={handleSignOut}
           style={styles.signOutButton}
           leftIcon={<LogOut size={16} color={colors.error} strokeWidth={1.5} />}
@@ -582,6 +734,56 @@ export default function ProfileScreen() {
           Sign Out
         </Button>
       </ScrollView>
+
+      {/* Username Edit Modal */}
+      <Modal
+        visible={isEditingUsername}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setIsEditingUsername(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setIsEditingUsername(false)}>
+              <Text style={[styles.cancel_Button, { color: colors.primary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Choose New Identity</Text>
+            <View style={{ width: 60 }} />
+          </View>
+
+          <View style={styles.usernameOptionsContainer}>
+            <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+              Select a new anonymous username from the options below:
+            </Text>
+
+            {usernameOptions.map((username, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[styles.usernameOptionItem, { backgroundColor: colors.surface }]}
+                onPress={() => handleUsernameUpdate(username)}
+              >
+                <Text style={[styles.usernameOptionText, { color: colors.text }]}>{username}</Text>
+                <ChevronRight size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={[styles.regenerateButton, { borderColor: colors.primary }]}
+              onPress={regenerateUsernames}
+              disabled={isGeneratingUsernames}
+            >
+              {isGeneratingUsernames ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <RefreshCw size={20} color={colors.primary} />
+              )}
+              <Text style={[styles.regenerateText, { color: colors.primary }]}>
+                {isGeneratingUsernames ? 'Generating...' : 'Generate New Options'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -727,5 +929,168 @@ const styles = StyleSheet.create({
   username: {
     marginBottom: 4,
     textAlign: 'center',
+  },
+  // Anonymous profile styles
+  anonymousAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    marginBottom: 16,
+  },
+  usernameContainer: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  usernameEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  anonymousBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginBottom: 8,
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  cancelButton: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalDescription: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  usernameOptionsContainer: {
+    padding: 20,
+  },
+  usernameOptionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  usernameOptionText: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  regenerateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    marginTop: 16,
+    borderWidth: 2,
+    borderRadius: 8,
+    borderStyle: 'dashed',
+  },
+  regenerateText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // Reputation system styles
+  reputationContainer: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  reputationCard: {
+    padding: 16,
+    borderRadius: 8,
+  },
+  reputationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reputationScore: {
+    marginLeft: 8,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  reputationProgress: {
+    marginBottom: 16,
+  },
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+  },
+  progressText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  reputationBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  badgeText: {
+    marginLeft: 4,
+    fontSize: 12,
+  },
+  // Settings styles
+  settingsGroup: {
+    // Settings group styles
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  settingContent: {
+    flex: 1,
+  },
+  featuresList: {
+    // Features list styles
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
   },
 });

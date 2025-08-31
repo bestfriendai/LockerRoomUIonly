@@ -1,4 +1,4 @@
-// Color palette for the MockTrae app
+// Color palette for the LockerRoom Talk App
 export const Colors = {
   // Primary brand colors
   primary: {

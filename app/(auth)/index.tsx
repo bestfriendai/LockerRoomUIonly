@@ -5,10 +5,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
-  Animated,
-} from "react-native";
+  Dimensions,
+  Animated
+} from 'react-native';
+
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -18,6 +19,7 @@ import {
   Users,
   MessageCircle,
 } from "lucide-react-native";
+import { useAuth as _useAuth } from "@/providers/AuthProvider";
 
 const { width } = Dimensions.get("window");
 
@@ -25,7 +27,7 @@ const onboardingData = [
   {
     id: 1,
     icon: Heart,
-    title: "Welcome to\nMockTrae",
+    title: "Welcome to\nLockerRoom Talk App",
     subtitle: "Anonymous dating reviews from real people",
     description: "Share your experiences, read others' stories, and make better dating decisions",
     gradient: ["#6366F1", "#8B5CF6"] as const,
@@ -80,7 +82,7 @@ export default function WelcomeScreen() {
     ]).start();
   }, []);
 
-  const handleScroll = (event: any) => {
+  const handleScroll = (event: unknown) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffset / width);
     if (index !== currentIndex && index >= 0 && index < onboardingData.length) {

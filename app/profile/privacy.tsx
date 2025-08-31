@@ -1,11 +1,18 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Alert, Switch } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Switch
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Eye, EyeOff, Lock, Users, Bell, MapPin, Heart, MessageCircle } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 
@@ -49,11 +56,11 @@ function SettingItem({ icon, title, description, value, onValueChange, disabled 
           {icon}
         </View>
         <View style={styles.settingText}>
-          <Text variant="body" weight="medium">
+          <Text >
             {title}
           </Text>
           {description && (
-            <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 2 }}>
+            <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
               {description}
             </Text>
           )}
@@ -89,11 +96,11 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
           {icon}
         </View>
         <View style={styles.settingText}>
-          <Text variant="body" weight="medium">
+          <Text >
             {title}
           </Text>
           {description && (
-            <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 2 }}>
+            <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
               {description}
             </Text>
           )}
@@ -106,9 +113,7 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
                 onPress={() => onValueChange(option.value)}
                 style={styles.optionButton}
               >
-                <Text
-                  variant="caption"
-                  style={{
+                <Text style={{
                     color: selectedValue === option.value ? colors.background : colors.text,
                   }}
                 >
@@ -161,7 +166,7 @@ export default function PrivacyScreen() {
     setSettings(prev => {
       if (key && typeof prev[category] === 'object' && prev[category] !== null) {
         return {
-          ...prev,
+          ...(prev as any),
           [category]: {
             ...(prev[category] as any),
             [key]: !(prev[category] as any)[key],
@@ -169,7 +174,7 @@ export default function PrivacyScreen() {
         };
       } else {
         return {
-          ...prev,
+          ...(prev as any),
           [category]: !prev[category],
         };
       }
@@ -178,7 +183,7 @@ export default function PrivacyScreen() {
 
   const handleOptionChange = useCallback((category: keyof PrivacySettings, value: string) => {
     setSettings(prev => ({
-      ...prev,
+      ...(prev as any),
       [category]: value,
     }));
   }, []);
@@ -195,7 +200,9 @@ export default function PrivacyScreen() {
         [{ text: 'OK' }]
       );
     } catch (error) {
-      console.error('Error updating privacy settings:', error);
+      if (__DEV__) {
+        console.error('Error updating privacy settings:', error);
+      }
       Alert.alert('Error', 'Failed to update privacy settings. Please try again.');
     } finally {
       setLoading(false);
@@ -246,21 +253,19 @@ export default function PrivacyScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleBack}
           leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
         />
-        <Text variant="h3" weight="bold">
+        <Text >
           Privacy Settings
         </Text>
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleSave}
           disabled={loading}
         >
-          <Text variant="body" weight="medium" style={{ color: colors.primary }}>
+          <Text style={{ color: colors.primary }}>
             {loading ? 'Saving...' : 'Save'}
           </Text>
         </Button>
@@ -273,7 +278,7 @@ export default function PrivacyScreen() {
       >
         {/* Profile Visibility */}
         <Card style={styles.section}>
-          <Text variant="body" weight="bold" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Profile Visibility
           </Text>
           
@@ -313,7 +318,7 @@ export default function PrivacyScreen() {
 
         {/* Communication */}
         <Card style={styles.section}>
-          <Text variant="body" weight="bold" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Communication
           </Text>
           
@@ -346,7 +351,7 @@ export default function PrivacyScreen() {
 
         {/* Notifications */}
         <Card style={styles.section}>
-          <Text variant="body" weight="bold" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Notifications
           </Text>
           
@@ -354,7 +359,7 @@ export default function PrivacyScreen() {
             icon={<MessageCircle size={20} color={colors.primary} strokeWidth={1.5} />}
             title="Message notifications"
             description="Get notified when you receive new messages"
-            value={settings.allowNotifications.messages}
+            value={(settings as any)?.allowNotifications?.messages}
             onValueChange={() => handleToggleSetting('allowNotifications', 'messages')}
           />
 
@@ -385,7 +390,7 @@ export default function PrivacyScreen() {
 
         {/* Data & Privacy */}
         <Card style={styles.section}>
-          <Text variant="body" weight="bold" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Data & Privacy
           </Text>
           
@@ -393,7 +398,7 @@ export default function PrivacyScreen() {
             icon={<Shield size={20} color={colors.primary} strokeWidth={1.5} />}
             title="Analytics data"
             description="Help improve the app by sharing usage analytics"
-            value={settings.dataSharing.analytics}
+            value={(settings as any)?.dataSharing.analytics}
             onValueChange={() => handleToggleSetting('dataSharing', 'analytics')}
           />
 
@@ -401,7 +406,7 @@ export default function PrivacyScreen() {
             icon={<Eye size={20} color={colors.primary} strokeWidth={1.5} />}
             title="Personalization"
             description="Use your data to personalize your experience"
-            value={settings.dataSharing.personalization}
+            value={(settings as any)?.dataSharing.personalization}
             onValueChange={() => handleToggleSetting('dataSharing', 'personalization')}
           />
 
@@ -409,33 +414,31 @@ export default function PrivacyScreen() {
             icon={<Lock size={20} color={colors.primary} strokeWidth={1.5} />}
             title="Third-party sharing"
             description="Share data with trusted partners for better service"
-            value={settings.dataSharing.thirdParty}
+            value={(settings as any)?.dataSharing.thirdParty}
             onValueChange={() => handleToggleSetting('dataSharing', 'thirdParty')}
           />
         </Card>
 
         {/* Account Actions */}
         <Card style={styles.section}>
-          <Text variant="body" weight="bold" style={styles.sectionTitle}>
+          <Text style={styles.sectionTitle}>
             Account Actions
           </Text>
           
           <Button
-            variant="outline"
             onPress={() => Alert.alert('Export Data', 'Your data export will be sent to your email within 24 hours.')}
             style={styles.actionButton}
           >
-            <Text variant="body" weight="medium">
+            <Text >
               Export My Data
             </Text>
           </Button>
 
           <Button
-            variant="destructive"
             onPress={handleDeleteAccount}
             style={styles.actionButton}
           >
-            <Text variant="body" weight="medium">
+            <Text >
               Delete Account
             </Text>
           </Button>
@@ -443,7 +446,7 @@ export default function PrivacyScreen() {
 
         {/* Privacy Policy */}
         <View style={styles.footer}>
-          <Text variant="caption" style={{ color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
             By using this app, you agree to our Privacy Policy and Terms of Service.
             Your privacy is important to us and we are committed to protecting your personal information.
           </Text>

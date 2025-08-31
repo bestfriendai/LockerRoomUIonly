@@ -1,20 +1,33 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, StyleSheet, ScrollView, TextInput, Pressable, Alert, KeyboardAvoidingView, Platform, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Alert,
+  Platform,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Camera, Image as ImageIcon, MapPin, X, Plus, Star, ChevronDown, Check, Flag } from "lucide-react-native";
+import { Camera, Image as ImageIcon, X, ChevronDown, Check, Flag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Card from "@/components/ui/Card";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/utils/firebase";
+import { LocationSelector } from "@/components/LocationSelector";
+import { LocationService } from "@/services/locationService";
 
-const { width: screenWidth } = Dimensions.get('window');
+
 
 type MediaItem = {
   id: string;
@@ -32,7 +45,7 @@ type LocationSuggestion = {
   };
 };
 
-const categories = ['Men', 'Women', 'LGBT'];
+const _categories = ['Men', 'Women', 'LGBT'];
 
 const platforms = [
   'Tinder', 'Bumble', 'Hinge', 'Instagram', 'Snapchat', 'WhatsApp', 'LinkedIn', 'Facebook', 'Twitter', 'Other'
@@ -40,7 +53,7 @@ const platforms = [
 
 export default function CreateReviewScreen() {
   const router = useRouter();
-  const { colors, tokens, isDark } = useTheme();
+  const { colors } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const { user } = useAuth();
 
@@ -59,6 +72,9 @@ export default function CreateReviewScreen() {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // New location system state
+  const [selectedLocationData, setSelectedLocationData] = useState<any>(null);
+
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -71,8 +87,33 @@ export default function CreateReviewScreen() {
     { id: '5', name: 'Empire State Building', address: 'New York, NY, USA' },
   ];
 
-  // Get current location
-  const getCurrentLocation = async () => {
+  // New location handling
+  const handleLocationSelect = useCallback((locationData: unknown) => {
+    setSelectedLocationData(locationData);
+    // Also update the old location field for backward compatibility
+    if (locationData.data && locationData.data.name) {
+      setLocation(locationData.data.name);
+    }
+  }, []);
+
+  // Load saved location on component mount
+  useEffect(() => {
+    const loadSavedLocation = async () => {
+      const savedLocation = await LocationService.getSelectedLocation();
+      if (savedLocation) {
+        setSelectedLocationData({
+          type: 'selected',
+          data: savedLocation,
+        });
+        setLocation((savedLocation as unknown).name || (savedLocation as unknown).city || 'Unknown Location');
+      }
+    };
+
+    loadSavedLocation();
+  }, []);
+
+  // Get current location (legacy function - kept for compatibility)
+  const _getCurrentLocation = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -80,7 +121,7 @@ export default function CreateReviewScreen() {
         return;
       }
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
+      const _currentLocation = await Location.getCurrentPositionAsync({});
       const reverseGeocode = await Location.reverseGeocodeAsync({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
@@ -92,13 +133,15 @@ export default function CreateReviewScreen() {
         setLocation(locationString);
       }
     } catch (error) {
-      console.error('Error getting location:', error);
+      if (__DEV__) {
+        console.error('Error getting location:', error);
+      }
       Alert.alert('Error', 'Failed to get your current location.');
     }
   };
 
   // Handle location search
-  const handleLocationSearch = useCallback((query: string) => {
+  const _handleLocationSearch = useCallback((query: string) => {
     setLocation(query);
     if (query.length > 2) {
       const filtered = mockLocationSuggestions.filter(suggestion =>
@@ -235,6 +278,10 @@ export default function CreateReviewScreen() {
         category: selectedCategories.join(', '),
         platform,
         isAnonymous,
+        // Enhanced location data
+        location: selectedLocationData ? selectedLocationData.data.name : location,
+        locationData: selectedLocationData || null,
+        coordinates: selectedLocationData?.data?.coordinates || null,
       };
 
       await addDoc(collection(db, "reviews"), reviewData);
@@ -290,10 +337,7 @@ export default function CreateReviewScreen() {
             fill={flag === 'green' ? '#FFFFFF' : 'none'}
             strokeWidth={1.5}
           />
-          <Text
-            variant="body"
-            weight="medium"
-            style={{
+          <Text style={{
               color: flag === 'green' ? '#FFFFFF' : '#10B981',
               marginLeft: 8
             }}
@@ -318,10 +362,7 @@ export default function CreateReviewScreen() {
             fill={flag === 'red' ? '#FFFFFF' : 'none'}
             strokeWidth={1.5}
           />
-          <Text
-            variant="body"
-            weight="medium"
-            style={{
+          <Text style={{
               color: flag === 'red' ? '#FFFFFF' : '#EF4444',
               marginLeft: 8
             }}
@@ -348,17 +389,17 @@ export default function CreateReviewScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text variant="h2" weight="bold">
+            <Text >
               Create Review
             </Text>
-            <Text variant="body" style={{ color: colors.textSecondary, marginTop: 4 }}>
+            <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
               Share your experience with others
             </Text>
           </View>
 
           {/* Person Name */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Who are you reviewing?
             </Text>
             <Input
@@ -372,11 +413,11 @@ export default function CreateReviewScreen() {
 
           {/* Categories */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Categories
             </Text>
             {errors.categories && (
-              <Text variant="caption" style={{ color: colors.error, marginBottom: 8 }}>
+              <Text style={{ color: colors.error, marginBottom: 8 }}>
                 {errors.categories}
               </Text>
             )}
@@ -395,10 +436,7 @@ export default function CreateReviewScreen() {
                       }
                     ]}
                   >
-                    <Text
-                      variant="body"
-                      weight="medium"
-                      style={{
+                    <Text style={{
                         color: isSelected ? colors.onPrimary : colors.text
                       }}
                     >
@@ -412,15 +450,15 @@ export default function CreateReviewScreen() {
 
           {/* Flag Selection */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Flag Type *
             </Text>
-            <Text variant="bodySmall" style={{ color: colors.textSecondary, marginBottom: 12 }}>
+            <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
               Choose whether this is a positive (green flag) or negative (red flag) experience
             </Text>
             {renderFlagOptions()}
             {errors.flag && (
-              <Text variant="caption" style={{ color: colors.error, marginTop: 8 }}>
+              <Text style={{ color: colors.error, marginTop: 8 }}>
                 {errors.flag}
               </Text>
             )}
@@ -428,7 +466,7 @@ export default function CreateReviewScreen() {
 
           {/* Title */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Review Title
             </Text>
             <Input
@@ -443,7 +481,7 @@ export default function CreateReviewScreen() {
 
           {/* Content */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Your Review
             </Text>
             <TextInput
@@ -465,12 +503,12 @@ export default function CreateReviewScreen() {
               maxLength={1000}
             />
             <View style={styles.characterCount}>
-              <Text variant="caption" style={{ color: colors.textSecondary }}>
+              <Text style={{ color: colors.textSecondary }}>
                 {content.length}/1000 characters
               </Text>
             </View>
             {errors.content && (
-              <Text variant="caption" style={{ color: colors.error, marginTop: 4 }}>
+              <Text style={{ color: colors.error, marginTop: 4 }}>
                 {errors.content}
               </Text>
             )}
@@ -478,7 +516,7 @@ export default function CreateReviewScreen() {
 
           {/* Platform */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Platform (Optional)
             </Text>
             <Pressable
@@ -491,9 +529,7 @@ export default function CreateReviewScreen() {
                 }
               ]}
             >
-              <Text
-                variant="body"
-                style={{
+              <Text style={{
                   color: platform ? colors.text : colors.textSecondary,
                   flex: 1
                 }}
@@ -513,7 +549,7 @@ export default function CreateReviewScreen() {
                     }}
                     style={styles.platformItem}
                   >
-                    <Text variant="body" style={{ color: colors.text }}>
+                    <Text style={{ color: colors.text }}>
                       {p}
                     </Text>
                     {platform === p && (
@@ -527,55 +563,29 @@ export default function CreateReviewScreen() {
 
           {/* Location */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Location (Optional)
             </Text>
-            <View style={styles.locationContainer}>
-              <Input
-                placeholder="Add location"
-                value={location}
-                onChangeText={handleLocationSearch}
-                style={[styles.input, { flex: 1 }]}
-                leftIcon={<MapPin size={16} color={colors.textSecondary} strokeWidth={1.5} />}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={getCurrentLocation}
-                style={styles.locationButton}
-              >
-                Current
-              </Button>
-            </View>
-            {showLocationSuggestions && locationSuggestions.length > 0 && (
-              <View style={[styles.locationSuggestions, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
-                {locationSuggestions.map((suggestion) => (
-                  <Pressable
-                    key={suggestion.id}
-                    onPress={() => {
-                      setLocation(suggestion.address);
-                      setShowLocationSuggestions(false);
-                    }}
-                    style={styles.locationSuggestion}
-                  >
-                    <MapPin size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                    <View style={styles.locationInfo}>
-                      <Text variant="body" style={{ color: colors.text }}>
-                        {suggestion.name}
-                      </Text>
-                      <Text variant="caption" style={{ color: colors.textSecondary }}>
-                        {suggestion.address}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
+            <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+              Where did this experience take place?
+            </Text>
+
+            <LocationSelector
+              onLocationSelect={handleLocationSelect}
+              currentLocation={selectedLocationData}
+              style={styles.locationSelector}
+            />
+
+            {selectedLocationData && (
+              <Text style={{ color: colors.textSecondary, marginTop: 8 }}>
+                📍 {selectedLocationData.data.name}
+              </Text>
             )}
           </Card>
 
           {/* Media */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Photos (Optional)
             </Text>
             <View style={styles.mediaContainer}>
@@ -597,7 +607,7 @@ export default function CreateReviewScreen() {
                     style={[styles.mediaButton, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                   >
                     <ImageIcon size={20} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
+                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
                       Gallery
                     </Text>
                   </Pressable>
@@ -606,7 +616,7 @@ export default function CreateReviewScreen() {
                     style={[styles.mediaButton, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
                   >
                     <Camera size={20} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text variant="caption" style={{ color: colors.textSecondary, marginTop: 4 }}>
+                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
                       Camera
                     </Text>
                   </Pressable>
@@ -622,10 +632,10 @@ export default function CreateReviewScreen() {
               style={styles.anonymousOption}
             >
               <View style={styles.anonymousInfo}>
-                <Text variant="body" weight="medium">
+                <Text >
                   Post Anonymously
                 </Text>
-                <Text variant="bodySmall" style={{ color: colors.textSecondary, marginTop: 2 }}>
+                <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
                   Your name won't be visible to others
                 </Text>
               </View>
@@ -732,6 +742,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 8,
     maxHeight: 200,
+  },
+  locationSelector: {
+    width: '100%',
   },
   mediaActions: {
     flexDirection: 'row',

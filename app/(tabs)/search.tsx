@@ -1,11 +1,17 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { View, StyleSheet, TextInput, Keyboard, ScrollView, Pressable, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  TextInput
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Search as SearchIcon, X, TrendingUp, Clock, Users, SlidersHorizontal, MapPin, Star, Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
+import { Text } from '@/components/ui/Text';
+import { Search as SearchIcon, X, TrendingUp, Clock, _Users, SlidersHorizontal, _MapPin, Star, _Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
-import Text from "@/components/ui/Text";
 import { useChat } from "@/providers/ChatProvider";
 import { reviewService } from "@/services/reviewService";
 import { searchUsers } from "@/services/userService";
@@ -57,9 +63,9 @@ export default function SearchScreen() {
   ]);
 
   // Filter options
-  const categories = ["All", "dating", "social", "professional", "social_media", "app"];
-  const ratingFilters = [5, 4, 3, 2, 1];
-  const dateFilters = ["Any", "Today", "This Week", "This Month", "This Year"];
+  const _categories = ["All", "dating", "social", "professional", "social_media", "app"];
+  const _ratingFilters = [5, 4, 3, 2, 1];
+  const _dateFilters = ["Any", "Today", "This Week", "This Month", "This Year"];
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'relevance', label: 'Relevance' },
     { value: 'date', label: 'Recent' },
@@ -98,7 +104,9 @@ export default function SearchScreen() {
         setReviews(reviewsData);
         setUsers(usersData);
       } catch (error) {
-        console.error('Error loading search data:', error);
+        if (__DEV__) {
+          console.error('Error loading search data:', error);
+        }
         setReviews([]);
         setUsers([]);
       } finally {
@@ -113,7 +121,7 @@ export default function SearchScreen() {
   const searchResults = useMemo(() => {
     if (debouncedQuery.length < 2) return [];
 
-    let results: any[] = [];
+    let results: unknown[] = [];
     switch (activeTab) {
       case 'reviews':
         results = [...reviews];
@@ -132,15 +140,15 @@ export default function SearchScreen() {
 
     // Apply filters
     if (selectedCategory !== "All" && activeTab === 'reviews') {
-      results = results.filter((item: any) => item.category === selectedCategory);
+      results = results.filter((item: unknown) => item.category === selectedCategory);
     }
 
     if (selectedRating && activeTab === 'reviews') {
-      results = results.filter((item: any) => item.rating >= selectedRating);
+      results = results.filter((item: unknown) => item.rating >= selectedRating);
     }
 
     // Apply sorting
-    results.sort((a, b) => {
+    results.sort((a: unknown, b: unknown) => {
       switch (sortBy) {
         case 'date':
           const dateA = new Date(a._creationTime || 0).getTime();
@@ -186,7 +194,7 @@ export default function SearchScreen() {
     searchInputRef.current?.focus();
   };
 
-  const renderSearchResult = ({ item, index }: { item: any; index: number }) => {
+  const renderSearchResult = ({ item, index }: { item: unknown; index: number }) => {
     switch (activeTab) {
       case 'reviews':
         return (
@@ -208,21 +216,21 @@ export default function SearchScreen() {
               }
             ]}
           >
-            <Avatar size="md" name={item.username} src={item.profilePicture} />
+            <Avatar size="md" name={item.username} isAnonymous={true} />
             <View style={styles.userInfo}>
-              <Text variant="body" weight="normal">
+              <Text >
                 {item.username}
               </Text>
               {item.bio && (
-                <Text variant="bodySmall" style={{ color: colors.textSecondary }} numberOfLines={2}>
+                <Text style={{ color: colors.textSecondary }} numberOfLines={2}>
                   {item.bio}
                 </Text>
               )}
               <View style={styles.userStats}>
-                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                <Text style={{ color: colors.textSecondary }}>
                   {item.reviewCount || 0} reviews
                 </Text>
-                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                <Text style={{ color: colors.textSecondary }}>
                   • {item.averageRating?.toFixed(1) || '0.0'} ★
                 </Text>
               </View>
@@ -245,19 +253,19 @@ export default function SearchScreen() {
               <MessageCircle size={20} color={colors.surface} strokeWidth={1.5} />
             </View>
             <View style={styles.roomInfo}>
-              <Text variant="body" weight="normal">
+              <Text >
                 {item.name}
               </Text>
               {item.description && (
-                <Text variant="bodySmall" style={{ color: colors.textSecondary }} numberOfLines={2}>
+                <Text style={{ color: colors.textSecondary }} numberOfLines={2}>
                   {item.description}
                 </Text>
               )}
               <View style={styles.roomStats}>
-                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                <Text style={{ color: colors.textSecondary }}>
                   {item.memberIds?.length || 0} members
                 </Text>
-                <Text variant="caption" style={{ color: colors.textSecondary }}>
+                <Text style={{ color: colors.textSecondary }}>
                   • {item.type}
                 </Text>
               </View>
@@ -278,7 +286,7 @@ export default function SearchScreen() {
             <View style={styles.searchSection}>
               <View style={styles.sectionHeader}>
                 <Clock size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text variant="body" weight="normal" style={{ marginLeft: 8 }}>
+                <Text style={{ marginLeft: 8 }}>
                   Recent Searches
                 </Text>
               </View>
@@ -288,7 +296,7 @@ export default function SearchScreen() {
                   onPress={() => handleSearch(search)}
                   style={styles.searchItem}
                 >
-                  <Text variant="body" style={{ color: colors.text }}>
+                  <Text style={{ color: colors.text }}>
                     {search}
                   </Text>
                 </Pressable>
@@ -300,7 +308,7 @@ export default function SearchScreen() {
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
               <TrendingUp size={16} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="body" weight="normal" style={{ marginLeft: 8 }}>
+              <Text style={{ marginLeft: 8 }}>
                 Trending
               </Text>
             </View>
@@ -310,7 +318,7 @@ export default function SearchScreen() {
                 onPress={() => handleSearch(search)}
                 style={styles.searchItem}
               >
-                <Text variant="body" style={{ color: colors.text }}>
+                <Text style={{ color: colors.text }}>
                   {search}
                 </Text>
               </Pressable>
@@ -323,7 +331,7 @@ export default function SearchScreen() {
     if (debouncedQuery.length < 2) {
       return (
         <View style={styles.emptyContainer}>
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: "center" }}>
+          <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
             Type at least 2 characters to search
           </Text>
         </View>
@@ -332,7 +340,7 @@ export default function SearchScreen() {
 
     return (
       <View style={styles.emptyContainer}>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: "center" }}>
+        <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
           No results found for "{debouncedQuery}"
         </Text>
       </View>
@@ -364,7 +372,7 @@ export default function SearchScreen() {
         </View>
         <Pressable
           onPress={() => setShowFilters(!showFilters)}
-          style={[styles.filterButton, { backgroundColor: colors.surfaceElevated }]}
+          style={[styles.filter_Button, { backgroundColor: colors.surfaceElevated }]}
         >
           <SlidersHorizontal size={18} color={colors.text} strokeWidth={1.5} />
         </Pressable>
@@ -389,9 +397,7 @@ export default function SearchScreen() {
                 color={isActive ? colors.primary : colors.textSecondary}
                 strokeWidth={1.5}
               />
-              <Text
-                variant="bodySmall"
-                weight={isActive ? "medium" : "normal"}
+              <Text weight={isActive ? "medium" : "normal"}
                 style={{
                   color: isActive ? colors.primary : colors.textSecondary,
                   marginLeft: 6
@@ -412,7 +418,7 @@ export default function SearchScreen() {
           estimatedItemSize={120}
           contentContainerStyle={styles.resultsContainer}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item: unknown) => item._id || item.id}
         />
       ) : (
         renderEmptyState()

@@ -1,16 +1,25 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { View, StyleSheet, TextInput, Pressable, RefreshControl, Alert } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Alert,
+  TextInput,
+  RefreshControl
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Plus, MessageCircle, Users, Lock, Globe, Crown, Clock, MoreVertical } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import type { ChatRoom } from "@/types/index";
+import { toMillis } from "@/utils/timestampHelpers";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
 
@@ -32,10 +41,14 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   const lastMessage = room.lastMessage;
   const isPrivate = room.type === 'private';
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  const formatTime = (timestamp: unknown) => {
+    if (!timestamp) return '';
+
+    const date = toMillis(timestamp as string | number | Date | null | undefined);
+    if (!date) return '';
+    
+    const now = Date.now();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
 
     if (diffInHours < 1) {
       return `${Math.floor(diffInHours * 60)}m`;
@@ -78,7 +91,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
             <View style={[styles.roomIcon, { backgroundColor: colors.primary }]}>
               <MessageCircle size={16} color={colors.surface} strokeWidth={1.5} />
             </View>
-            <Text variant="body" weight="semibold" style={styles.roomName}>
+            <Text style={styles.roomName}>
               {room.name}
             </Text>
             {isPrivate && (
@@ -90,9 +103,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           </View>
           
           {room.description && (
-            <Text
-              variant="bodySmall"
-              style={{ color: colors.textSecondary, marginTop: 2 }}
+            <Text style={{ color: colors.textSecondary, marginTop: 2 }}
               numberOfLines={2}
             >
               {room.description}
@@ -102,7 +113,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           <View style={styles.roomMeta}>
             <View style={styles.memberCount}>
               <Users size={12} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+              <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
                 {memberCount} {memberCount === 1 ? 'member' : 'members'}
               </Text>
             </View>
@@ -110,7 +121,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
             {lastMessage && (
               <View style={styles.lastMessage}>
                 <Clock size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
                   {typeof lastMessage === 'string'
                     ? formatTime(room.lastMessageTime)
                     : formatTime(lastMessage.timestamp)
@@ -122,12 +133,12 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
 
           {lastMessage && (
             <View style={styles.lastMessageContent}>
-              <Text variant="caption" style={{ color: colors.textSecondary }} numberOfLines={1}>
+              <Text style={{ color: colors.textSecondary }} numberOfLines={1}>
                 {typeof lastMessage === 'string' ? (
                   lastMessage
                 ) : (
                   <>
-                    <Text weight="medium">{lastMessage.senderName || 'Unknown'}: </Text>
+                    <Text >{lastMessage.senderName || 'Unknown'}: </Text>
                     {lastMessage.content}
                   </>
                 )}
@@ -139,7 +150,6 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
         <View style={styles.roomActions}>
           {!isMember && (
             <Button
-              variant="outline"
               size="sm"
               onPress={handleJoinPress}
               style={styles.joinButton}
@@ -149,7 +159,6 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           )}
           {isMember && !isOwner && (
             <Button
-              variant="ghost"
               size="sm"
               onPress={handleJoinPress}
               style={styles.leaveButton}
@@ -168,7 +177,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { colors, tokens, isDark } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
 
   // State
@@ -192,10 +201,12 @@ export default function ChatScreen() {
     try {
       const roomsCollection = collection(db, "chatRooms");
       const roomsSnapshot = await getDocs(roomsCollection);
-      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() } as ChatRoom));
+      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc as unknown)?.data() } as ChatRoom));
       setChatRooms(roomsList);
     } catch (error) {
-      console.error("Error fetching chat rooms: ", error);
+      if (__DEV__) {
+        console.error("Error fetching chat rooms: ", error);
+      }
       Alert.alert("Error", "Could not fetch chat rooms.");
     } finally {
       setRefreshing(false);
@@ -233,7 +244,7 @@ export default function ChatScreen() {
     return rooms.sort((a, b) => {
       const aTime = (typeof a.lastMessage === 'object' && a.lastMessage?.timestamp) || a.lastMessageTime || a._creationTime;
       const bTime = (typeof b.lastMessage === 'object' && b.lastMessage?.timestamp) || b.lastMessageTime || b._creationTime;
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
+      return toMillis(bTime) - toMillis(aTime);
     });
   }, [activeTab, searchQuery, chatRooms, user?.id]);
 
@@ -256,7 +267,9 @@ export default function ChatScreen() {
       await fetchChatRooms();
       Alert.alert('Success', 'You have joined the room!');
     } catch (error) {
-      console.error("Error joining room: ", error);
+      if (__DEV__) {
+        console.error("Error joining room: ", error);
+      }
       Alert.alert('Error', 'Could not join the room. Please try again.');
     }
   }, [user?.id]);
@@ -271,7 +284,9 @@ export default function ChatScreen() {
       await fetchChatRooms();
       Alert.alert('Success', 'You have left the room.');
     } catch (error) {
-      console.error("Error leaving room: ", error);
+      if (__DEV__) {
+        console.error("Error leaving room: ", error);
+      }
       Alert.alert('Error', 'Could not leave the room. Please try again.');
     }
   }, [user?.id]);
@@ -322,10 +337,10 @@ export default function ChatScreen() {
     return (
       <View style={styles.emptyState}>
         <MessageCircle size={48} color={colors.textSecondary} strokeWidth={1} />
-        <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+        <Text style={{ marginTop: 16, textAlign: 'center' }}>
           {title}
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
           {description}
         </Text>
         {(activeTab === 'all' || activeTab === 'my_rooms') && (
@@ -346,11 +361,10 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
-          <Text variant="h2" weight="bold">
+          <Text >
             Chat Rooms
           </Text>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleCreateRoom}
             leftIcon={<Plus size={16} color={colors.primary} strokeWidth={1.5} />}
@@ -392,9 +406,7 @@ export default function ChatScreen() {
                 color={isActive ? colors.primary : colors.textSecondary}
                 strokeWidth={1.5}
               />
-              <Text
-                variant="bodySmall"
-                weight={isActive ? "medium" : "normal"}
+              <Text weight={isActive ? "medium" : "normal"}
                 style={{
                   color: isActive ? colors.primary : colors.textSecondary,
                   marginLeft: 6

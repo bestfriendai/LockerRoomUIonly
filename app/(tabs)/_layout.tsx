@@ -6,7 +6,8 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-} from "react-native";
+  
+} from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, PlusCircle, MessageCircle, Users } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";

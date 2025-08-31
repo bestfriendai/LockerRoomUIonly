@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { Review, Comment } from '../types';
+import { toMillis } from '../utils/timestampHelpers';
 
 const REVIEWS_COLLECTION = 'reviews';
 const COMMENTS_COLLECTION = 'comments';
@@ -40,7 +41,9 @@ export class ReviewService {
       await setDoc(reviewRef, review);
       return reviewRef.id;
     } catch (error) {
-      console.error('Error creating review:', error);
+      if (__DEV__) {
+        console.error('Error creating review:', error);
+      }
       throw error;
     }
   }
@@ -56,7 +59,9 @@ export class ReviewService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting review:', error);
+      if (__DEV__) {
+        console.error('Error getting review:', error);
+      }
       throw error;
     }
   }
@@ -64,7 +69,7 @@ export class ReviewService {
   // Get all reviews with pagination
   static async getReviews(limitCount: number = 20, lastReviewId?: string): Promise<Review[]> {
     try {
-      let q = query(
+      const q = query(
         collection(db, REVIEWS_COLLECTION),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
@@ -76,7 +81,9 @@ export class ReviewService {
         ...doc.data()
       })) as Review[];
     } catch (error) {
-      console.error('Error getting reviews:', error);
+      if (__DEV__) {
+        console.error('Error getting reviews:', error);
+      }
       throw error;
     }
   }
@@ -96,7 +103,9 @@ export class ReviewService {
         ...doc.data()
       })) as Review[];
     } catch (error) {
-      console.error('Error getting reviews by user:', error);
+      if (__DEV__) {
+        console.error('Error getting reviews by user:', error);
+      }
       throw error;
     }
   }
@@ -116,7 +125,9 @@ export class ReviewService {
         ...doc.data()
       })) as Review[];
     } catch (error) {
-      console.error('Error getting reviews about user:', error);
+      if (__DEV__) {
+        console.error('Error getting reviews about user:', error);
+      }
       throw error;
     }
   }
@@ -130,7 +141,9 @@ export class ReviewService {
         updatedAt: Timestamp.now()
       });
     } catch (error) {
-      console.error('Error updating review:', error);
+      if (__DEV__) {
+        console.error('Error updating review:', error);
+      }
       throw error;
     }
   }
@@ -141,7 +154,9 @@ export class ReviewService {
       const reviewRef = doc(db, REVIEWS_COLLECTION, reviewId);
       await deleteDoc(reviewRef);
     } catch (error) {
-      console.error('Error deleting review:', error);
+      if (__DEV__) {
+        console.error('Error deleting review:', error);
+      }
       throw error;
     }
   }
@@ -171,7 +186,9 @@ export class ReviewService {
         }
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      if (__DEV__) {
+        console.error('Error toggling like:', error);
+      }
       throw error;
     }
   }
@@ -197,7 +214,9 @@ export class ReviewService {
       
       return commentRef.id;
     } catch (error) {
-      console.error('Error adding comment:', error);
+      if (__DEV__) {
+        console.error('Error adding comment:', error);
+      }
       throw error;
     }
   }
@@ -217,11 +236,15 @@ export class ReviewService {
         ...doc.data()
       })) as Comment[];
     } catch (error) {
-      console.error('Error getting comments:', error);
+      if (__DEV__) {
+        console.error('Error getting comments:', error);
+      }
       
       // If it's an index error, try without ordering
       if (error instanceof Error && error.message.includes('index')) {
-        console.log('Retrying without ordering due to missing index');
+        if (__DEV__) {
+          console.log('Retrying without ordering due to missing index');
+        }
         try {
           const fallbackQuery = query(
             collection(db, COMMENTS_COLLECTION),
@@ -235,12 +258,14 @@ export class ReviewService {
           
           // Sort manually by createdAt
           return comments.sort((a, b) => {
-            const aTime = a.createdAt?.toMillis() || 0;
-            const bTime = b.createdAt?.toMillis() || 0;
+            const aTime = toMillis(a.createdAt) || 0;
+            const bTime = toMillis(b.createdAt) || 0;
             return aTime - bTime;
           });
         } catch (fallbackError) {
-          console.error('Fallback query also failed:', fallbackError);
+          if (__DEV__) {
+            console.error('Fallback query also failed:', fallbackError);
+          }
           return []; // Return empty array instead of throwing
         }
       }
@@ -262,7 +287,9 @@ export class ReviewService {
         comments: arrayRemove(commentId)
       });
     } catch (error) {
-      console.error('Error deleting comment:', error);
+      if (__DEV__) {
+        console.error('Error deleting comment:', error);
+      }
       throw error;
     }
   }
@@ -282,7 +309,9 @@ export class ReviewService {
       })) as Review[];
       callback(reviews);
     }, (error) => {
-      console.error('Error listening to reviews:', error);
+      if (__DEV__) {
+        console.error('Error listening to reviews:', error);
+      }
       callback([]);
     });
   }
@@ -309,7 +338,9 @@ export class ReviewService {
         review.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
     } catch (error) {
-      console.error('Error searching reviews:', error);
+      if (__DEV__) {
+        console.error('Error searching reviews:', error);
+      }
       throw error;
     }
   }

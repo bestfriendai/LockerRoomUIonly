@@ -1,15 +1,15 @@
 import React from "react";
 import {
   View,
+  Text,
   StyleSheet,
-  Pressable,
   TouchableOpacity,
   Alert,
-  Share,
-} from "react-native";
+  Share
+} from 'react-native';
+
 import { Image } from "expo-image";
 import { Star, ThumbsUp, MessageCircle, Share2 } from "lucide-react-native";
-import Text from "@/components/ui/Text";
 import { useTheme } from "@/providers/ThemeProvider";
 
 const CARD_PADDING = 6;
@@ -34,7 +34,9 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
   
   // Safety check for review data
   if (!review) {
-    console.warn('MasonryReviewCard received undefined review');
+    if (__DEV__) {
+      console.warn('MasonryReviewCard received undefined review');
+    }
     return null;
   }
 
@@ -53,7 +55,9 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error: any) {
-      console.error('Error liking review:', error);
+      if (__DEV__) {
+        console.error('Error liking review:', error);
+      }
       // Revert optimistic update on error
       setLiked(!liked);
       setLikeCount((prev: number) => liked ? prev + 1 : Math.max(0, prev - 1));
@@ -77,7 +81,9 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
       
       const result = await Share.share(shareContent);
     } catch (error: any) {
-      console.error('Error sharing review:', error);
+      if (__DEV__) {
+        console.error('Error sharing review:', error);
+      }
       Alert.alert('Error', 'Failed to share. Please try again.');
     } finally {
       setIsSharing(false);

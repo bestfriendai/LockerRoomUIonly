@@ -50,7 +50,9 @@ export class ChatService {
       
       return roomId;
     } catch (error) {
-      console.error('Error creating/getting chat room:', error);
+      if (__DEV__) {
+        console.error('Error creating/getting chat room:', error);
+      }
       throw error;
     }
   }
@@ -66,7 +68,9 @@ export class ChatService {
       }
       return null;
     } catch (error) {
-      console.error('Error getting chat room:', error);
+      if (__DEV__) {
+        console.error('Error getting chat room:', error);
+      }
       throw error;
     }
   }
@@ -86,7 +90,9 @@ export class ChatService {
         ...doc.data()
       })) as ChatRoom[];
     } catch (error) {
-      console.error('Error getting user chat rooms:', error);
+      if (__DEV__) {
+        console.error('Error getting user chat rooms:', error);
+      }
       throw error;
     }
   }
@@ -131,7 +137,9 @@ export class ChatService {
       
       return messageRef.id;
     } catch (error) {
-      console.error('Error sending message:', error);
+      if (__DEV__) {
+        console.error('Error sending message:', error);
+      }
       throw error;
     }
   }
@@ -155,7 +163,9 @@ export class ChatService {
       // Return messages in chronological order (oldest first)
       return messages.reverse();
     } catch (error) {
-      console.error('Error getting messages:', error);
+      if (__DEV__) {
+        console.error('Error getting messages:', error);
+      }
       throw error;
     }
   }
@@ -188,7 +198,9 @@ export class ChatService {
         [`unreadCount.${userId}`]: 0
       });
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      if (__DEV__) {
+        console.error('Error marking messages as read:', error);
+      }
       throw error;
     }
   }
@@ -199,7 +211,9 @@ export class ChatService {
       const messageRef = doc(db, MESSAGES_COLLECTION, messageId);
       await deleteDoc(messageRef);
     } catch (error) {
-      console.error('Error deleting message:', error);
+      if (__DEV__) {
+        console.error('Error deleting message:', error);
+      }
       throw error;
     }
   }
@@ -219,7 +233,9 @@ export class ChatService {
       })) as ChatMessage[];
       callback(messages);
     }, (error) => {
-      console.error('Error listening to messages:', error);
+      if (__DEV__) {
+        console.error('Error listening to messages:', error);
+      }
       callback([]);
     });
   }
@@ -239,7 +255,9 @@ export class ChatService {
       })) as ChatRoom[];
       callback(chatRooms);
     }, (error) => {
-      console.error('Error listening to chat rooms:', error);
+      if (__DEV__) {
+        console.error('Error listening to chat rooms:', error);
+      }
       callback([]);
     });
   }
@@ -252,7 +270,9 @@ export class ChatService {
         return total + (room.unreadCount?.[userId] || 0);
       }, 0);
     } catch (error) {
-      console.error('Error getting unread message count:', error);
+      if (__DEV__) {
+        console.error('Error getting unread message count:', error);
+      }
       return 0;
     }
   }
@@ -280,7 +300,9 @@ export class ChatService {
         }
       }
     } catch (error) {
-      console.error('Error toggling block user:', error);
+      if (__DEV__) {
+        console.error('Error toggling block user:', error);
+      }
       throw error;
     }
   }

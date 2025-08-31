@@ -4,6 +4,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   View,
+  Text as RNText
 } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
 import { Text } from './Text';
@@ -11,6 +12,20 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { SPACING } from '../../constants/spacing';
 import { BORDER_RADIUS } from '../../constants/shadows';
 import { tokens } from '../../constants/tokens';
+
+// Fallback colors when ThemeProvider is not available
+const fallbackColors = {
+  primary: '#007AFF',
+  surface: '#ffffff',
+  surfaceDisabled: '#f5f5f5',
+  border: '#e0e0e0',
+  text: '#000000',
+  textDisabled: '#999999',
+  white: '#ffffff',
+  black: '#000000',
+  error: '#FF3B30',
+  success: '#34C759',
+};
 
 type ButtonVariant = 
   | 'primary'
@@ -49,7 +64,16 @@ export const Button: React.FC<ButtonProps> = ({
   rightIcon,
   fullWidth = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  // Use try-catch to handle cases where ThemeProvider is not available
+  let colors, isDark;
+  try {
+    const theme = useTheme();
+    colors = theme.colors;
+    isDark = theme.isDark;
+  } catch {
+    colors = fallbackColors;
+    isDark = false;
+  }
 
   // Calculate padding based on size
   const getPadding = () => {

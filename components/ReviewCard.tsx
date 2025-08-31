@@ -1,13 +1,21 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Alert, Share, ViewStyle } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Share,
+  ViewStyle
+} from 'react-native';
+
 import { Image } from "expo-image";
 import { MessageCircle, ThumbsUp, MapPin, Clock, Share2 } from "lucide-react-native";
 import { MotiView } from "moti";
 import Card from "@/components/ui/Card";
 import AnimatedPressable from "@/components/ui/AnimatedPressable";
-import Text from "@/components/ui/Text";
 import { useTheme } from "@/providers/ThemeProvider";
 import { SHADOWS } from "@/constants/shadows";
+import { tokens } from "@/constants/tokens";
 import type { Review } from "@/types";
 
 type ReviewCardProps = {
@@ -25,13 +33,13 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
   const hasImages = review.media && review.media.length > 0;
   
   // Create styles with current tokens
-  const styles = createStyles(tokens);
+  const styles = createStyles();
 
   const handlePress = () => {
     onPress();
   };
 
-  const handleLikePress = async (e: any) => {
+  const handleLikePress = async (e: unknown) => {
     e.stopPropagation();
     
     if (isLiking) return;
@@ -48,14 +56,16 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
       setLikeCount((prev: number) => newLiked ? prev + 1 : Math.max(0, prev - 1));
       
     } catch (error: any) {
-      console.error('Error liking review:', error);
+      if (__DEV__) {
+        console.error('Error liking review:', error);
+      }
       Alert.alert('Error', 'Failed to update like. Please try again.');
     } finally {
       setIsLiking(false);
     }
   };
   
-  const handleShare = async (e: any) => {
+  const handleShare = async (e: unknown) => {
     e.stopPropagation();
     
     if (isSharing) return;
@@ -71,13 +81,17 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
       const result = await Share.share(shareContent);
       
       if (result.action === Share.sharedAction) {
-        console.log('Share tracked:', {
+        if (__DEV__) {
+          console.log('Share tracked:', {
           reviewId: review.id,
           platform: result.activityType || 'native_share',
         });
+        }
       }
     } catch (error: any) {
-      console.error('Error sharing review:', error);
+      if (__DEV__) {
+        console.error('Error sharing review:', error);
+      }
       Alert.alert('Error', 'Failed to share. Please try again.');
     } finally {
       setIsSharing(false);
@@ -105,7 +119,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
+            <Text style={{ color: colors.textSecondary }}>
               {/* This should be replaced with actual author name */}
               Anonymous
             </Text>
@@ -117,7 +131,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
                   borderColor: colors.chipBorder,
                 }]}
               >
-                <Text variant="caption" style={{
+                <Text style={{
                   color: colors.chipText,
                   letterSpacing: 0.3,
                   fontWeight: '600',
@@ -144,7 +158,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
 
         {/* Content */}
         <View style={styles.content}>
-          <Text variant="bodySmall" weight="semibold" style={{
+          <Text style={{
             color: colors.text,
             marginBottom: 8,
             lineHeight: 22,
@@ -152,9 +166,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
             {review.title || 'Review'}
           </Text>
 
-          <Text
-            variant="bodySmall"
-            style={{
+          <Text style={{
               color: colors.textSecondary,
               lineHeight: 20,
               marginBottom: 12
@@ -185,7 +197,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
                 fill={isLiked ? colors.primary : 'transparent'}
                 strokeWidth={1.5}
               />
-              <Text variant="caption" style={{
+              <Text style={{
                 marginLeft: 4,
                 color: isLiked ? colors.primary : colors.textSecondary,
                 fontWeight: isLiked ? '600' : '400',
@@ -196,7 +208,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
 
             <View style={styles.footerItem}>
               <MessageCircle size={12} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="caption" style={{ marginLeft: 4, color: colors.textSecondary }}>
+              <Text style={{ marginLeft: 4, color: colors.textSecondary }}>
                 {review.comments?.length || 0}
               </Text>
             </View>
@@ -213,7 +225,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
 
             <View style={styles.footerItem}>
               <MapPin size={12} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="caption" style={{ marginLeft: 4, color: colors.textSecondary }}>
+              <Text style={{ marginLeft: 4, color: colors.textSecondary }}>
                 {/* Location is not part of the Firestore data model yet */}
                 Unknown
               </Text>
@@ -222,7 +234,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
 
           <View style={styles.footerRight}>
             <Clock size={12} color={colors.textSecondary} strokeWidth={1.5} />
-            <Text variant="caption" style={{ marginLeft: 4, color: colors.textSecondary }}>
+            <Text style={{ marginLeft: 4, color: colors.textSecondary }}>
               2d ago
             </Text>
           </View>
@@ -232,8 +244,8 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
   );
 };
 
-// Create styles function that accepts tokens
-const createStyles = (tokens: any) => StyleSheet.create({
+// Create styles using imported tokens
+const createStyles = () => StyleSheet.create({
   badge: {
     borderRadius: tokens.radii.full,
     paddingHorizontal: tokens.spacing.sm,

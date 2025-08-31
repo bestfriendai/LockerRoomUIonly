@@ -1,12 +1,21 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
-import { View, StyleSheet, ScrollView, Pressable, KeyboardAvoidingView, Platform, TextInput, Alert, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  Platform,
+  Dimensions,
+  TextInput,
+  KeyboardAvoidingView
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Send, MoreVertical, Users, Settings, UserPlus, UserMinus, Flag, Smile, Paperclip, Image as ImageIcon, Camera } from "lucide-react-native";
+import { ArrowLeft, Send, MoreVertical, _Users, _Settings, _UserPlus, _UserMinus, _Flag, _Smile, Paperclip, Image as _ImageIcon, Camera } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
@@ -27,41 +36,54 @@ const MessageBubble = ({ message, isOwn, showAvatar, showTimestamp }: MessageBub
   const users: any[] = []; // Placeholder since users is optional in ChatContextType
   const sender = users.find((u: any) => u._id === message.senderId);
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
+  const formatTime = (timestamp: any) => {
+    if (!timestamp) return '';
+
+    // Handle Firestore Timestamp
+    let date: Date;
+    if (timestamp?.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp === 'number' || typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else {
+      return '';
+    }
+    
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
   return (
     <View style={[
-      styles.messageContainer,
+      (styles as any)?.messageContainer,
       isOwn ? styles.ownMessageContainer : styles.otherMessageContainer
     ]}>
       {!isOwn && showAvatar && (
         <Avatar
           size="sm"
           name={sender?.username || 'Unknown'}
-          imageUrl={sender?.profilePicture}
-          style={styles.messageAvatar}
+          isAnonymous={true}
+          style={(styles as any)?.messageAvatar}
         />
       )}
       {!isOwn && !showAvatar && (
-        <View style={styles.messageAvatarSpacer} />
+        <View style={(styles as any)?.messageAvatarSpacer} />
       )}
       
       <View style={[
-        styles.messageBubble,
+        (styles as any)?.messageBubble,
         {
           backgroundColor: isOwn ? colors.primary : colors.card,
           borderColor: colors.border,
         }
       ]}>
         {!isOwn && showAvatar && (
-          <Text variant="caption" weight="normal" style={{
+          <Text style={{
             color: colors.textSecondary,
             marginBottom: 4
           }}>
@@ -69,15 +91,15 @@ const MessageBubble = ({ message, isOwn, showAvatar, showTimestamp }: MessageBub
           </Text>
         )}
         
-        <Text variant="body" style={{
+        <Text style={{
           color: isOwn ? colors.background : colors.text,
           lineHeight: 20
         }}>
           {message.content}
         </Text>
         
-        {showTimestamp && (
-          <Text variant="caption" style={{
+        {showTimestamp && message._creationTime && (
+          <Text style={{
             color: isOwn ? colors.background + '80' : colors.textSecondary,
             marginTop: 4,
             alignSelf: isOwn ? 'flex-end' : 'flex-start'
@@ -103,24 +125,23 @@ const ChatHeader = ({ room, onBack, onMoreOptions }: ChatHeaderProps) => {
     <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
       <View style={styles.headerLeft}>
         <Button
-          variant="ghost"
           size="sm"
           onPress={onBack}
           leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
         />
         <View style={styles.headerInfo}>
-          <Text variant="body" weight="normal" numberOfLines={1}>
+          <Text numberOfLines={1}>
             {room.name}
           </Text>
           <View style={styles.headerSubInfo}>
             <Users size={12} color={colors.textSecondary} strokeWidth={1.5} />
-            <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+            <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
               {room.memberCount} members
             </Text>
             {room.isActive && (
               <>
                 <View style={[styles.activeDot, { backgroundColor: colors.success }]} />
-                <Text variant="caption" style={{ color: colors.success }}>
+                <Text style={{ color: colors.success }}>
                   Active
                 </Text>
               </>
@@ -130,7 +151,6 @@ const ChatHeader = ({ room, onBack, onMoreOptions }: ChatHeaderProps) => {
       </View>
       
       <Button
-        variant="ghost"
         size="sm"
         onPress={onMoreOptions}
         leftIcon={<MoreVertical size={20} color={colors.text} strokeWidth={1.5} />}
@@ -161,7 +181,6 @@ const MessageInput = ({ value, onChangeText, onSend, onAttachment, disabled }: M
     <View style={[styles.inputContainer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
       <View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Button
-          variant="ghost"
           size="sm"
           onPress={onAttachment}
           leftIcon={<Paperclip size={18} color={colors.textSecondary} strokeWidth={1.5} />}
@@ -184,7 +203,6 @@ const MessageInput = ({ value, onChangeText, onSend, onAttachment, disabled }: M
         />
         
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleSend}
           leftIcon={<Send size={18} color={value.trim() ? colors.primary : colors.textSecondary} strokeWidth={1.5} />}
@@ -256,9 +274,11 @@ export default function ChatRoomScreen() {
     setMessageText('');
 
     try {
-      await sendMessage(room._id || room.id, content);
+      await sendMessage(content);
     } catch (error) {
-      console.error('Failed to send message:', error);
+      if (__DEV__) {
+        console.error('Failed to send message:', error);
+      }
       Alert.alert('Error', 'Failed to send message. Please try again.');
       setMessageText(content); // Restore message text on error
     } finally {
@@ -286,9 +306,10 @@ export default function ChatRoomScreen() {
       
       const isOwn = message.senderId === user?._id;
       const showAvatar = !isOwn && (!nextMessage || nextMessage.senderId !== message.senderId);
-      const showTimestamp = !nextMessage || 
+      const showTimestamp = !nextMessage ||
         nextMessage.senderId !== message.senderId ||
-        (new Date(nextMessage._creationTime).getTime() - new Date(message._creationTime).getTime()) > 300000; // 5 minutes
+        (nextMessage._creationTime && message._creationTime &&
+          (new Date(nextMessage._creationTime as any).getTime() - new Date(message._creationTime as any).getTime()) > 300000); // 5 minutes
       
       return {
         ...message,
@@ -303,10 +324,10 @@ export default function ChatRoomScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.errorContainer}>
-          <Text variant="h3" weight="normal" style={{ textAlign: 'center' }}>
+          <Text style={{ textAlign: 'center' }}>
             Room Not Found
           </Text>
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
             This chat room doesn't exist or has been deleted.
           </Text>
           <Button
@@ -335,19 +356,19 @@ export default function ChatRoomScreen() {
         />
 
         {/* Messages */}
-        <View style={styles.messagesContainer}>
+        <View style={(styles as any)?.messagesContainer}>
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
                 Loading messages...
               </Text>
             </View>
           ) : processedMessages.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text variant="h3" weight="normal" style={{ textAlign: 'center' }}>
+              <Text style={{ textAlign: 'center' }}>
                 No Messages Yet
               </Text>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
                 Be the first to start the conversation!
               </Text>
             </View>
@@ -364,7 +385,7 @@ export default function ChatRoomScreen() {
                 />
               )}
               estimatedItemSize={80}
-              contentContainerStyle={styles.messagesList}
+              contentContainerStyle={(styles as any)?.messagesList}
               showsVerticalScrollIndicator={false}
               keyExtractor={(item) => item._id}
               maintainVisibleContentPosition={{

@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut as firebaseSignOut, sendPasswordResetEmail } from 'firebase/auth';
 import { app } from '../utils/firebase';
 import { User } from '../types';
-import { createUser, getUserById, updateUser, subscribeToUserChanges } from '../services/userService';
-
+import { createUser, getUserById, subscribeToUserChanges } from '../services/userService';
+import * as Sentry from 'sentry-expo';
 
 
 interface AuthContextType {
@@ -26,12 +26,23 @@ const auth = getAuth(app);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authTransitioning, setAuthTransitioning] = useState(false);
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('Auth state changed:', firebaseUser ? firebaseUser.uid : 'null');
+      try {
+        Sentry.Native.setTag('auth_state', firebaseUser ? 'authenticated' : 'unauthenticated');
+      } catch (sentryError) {
+        console.warn('Sentry tag failed:', sentryError);
+      }
+
+      if (__DEV__) {
+
+        console.log('Auth state changed:', firebaseUser ? firebaseUser.uid : 'null');
+
+      }
 
       try {
         // Clean up previous user subscription
@@ -41,7 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (firebaseUser) {
-          console.log('Firebase user found, getting user data...');
+          if (__DEV__) {
+            console.log('Firebase user found, getting user data...');
+          }
 
           // Try to get user data from Firestore with retry logic
           let userData = null;
@@ -51,11 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               userData = await getUserById(firebaseUser.uid);
               if (userData) {
-                console.log('User data found in Firestore');
+                if (__DEV__) {
+                  console.log('User data found in Firestore');
+                }
                 break;
               }
             } catch (error) {
-              console.log(`Attempt ${4 - retries} failed, retrying...`, error);
+              if (__DEV__) {
+                console.log(`Attempt ${4 - retries} failed, retrying...`, error);
+              }
               retries--;
               if (retries > 0) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -67,11 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userData);
             // Subscribe to real-time updates for this user
             userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
-              console.log('User data updated from Firestore');
+              if (__DEV__) {
+                console.log('User data updated from Firestore');
+              }
               setUser(updatedUser);
             });
           } else {
-            console.log('User not found in Firestore, creating new user document...');
+            if (__DEV__) {
+              console.log('User not found in Firestore, creating new user document...');
+            }
 
             // Ensure we have a fresh authentication token
             await firebaseUser.getIdToken(true);
@@ -89,21 +110,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               createdAt: new Date(),
               updatedAt: new Date(),
               lastActive: new Date(),
-              isOnline: true
+              isOnline: true,
+              // Anonymous user fields
+              isAnonymous: true,
+              reputationScore: 0,
+              reviewCount: 0,
+              helpfulVotes: 0,
+              badges: [],
             };
 
             try {
               const createdUser = await createUser(firebaseUser.uid, newUser);
-              console.log('New user created successfully');
+              if (__DEV__) {
+                console.log('New user created successfully');
+              }
               setUser(createdUser);
 
               // Subscribe to real-time updates for the new user
               userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
-                console.log('New user data updated from Firestore');
+                if (__DEV__) {
+                  console.log('New user data updated from Firestore');
+                }
                 setUser(updatedUser);
               });
-            } catch (createError) {
-              console.error('Failed to create user document:', createError);
+            } catch (createError: any) {
+              if (__DEV__) {
+                console.error('Failed to create user document:', createError);
+              }
+
+              // If it's a permission error, show user-friendly message
+              if (createError?.message?.includes('Permission denied')) {
+                if (__DEV__) {
+                  console.log('Permission denied - user will need to refresh or retry');
+                }
+                // Still set a minimal user to allow navigation
+              }
+
               // Set a minimal user object to prevent auth loops
               setUser({
                 id: firebaseUser.uid,
@@ -119,19 +161,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 lastActive: new Date(),
-                isOnline: true
+                isOnline: true,
+                // Anonymous user fields
+                isAnonymous: true,
+                reputationScore: 0,
+                reviewCount: 0,
+                helpfulVotes: 0,
+                badges: [],
               });
             }
+
+	          try {
+              Sentry.Native.addBreadcrumb({
+                category: 'auth',
+                message: 'User data loaded',
+                level: 'info' as const
+              });
+            } catch (sentryError) {
+              console.warn('Sentry breadcrumb failed:', sentryError);
+            }
+
           }
         } else {
-          console.log('No Firebase user, setting user to null');
+          if (__DEV__) {
+            console.log('No Firebase user, setting user to null');
+          }
           setUser(null);
         }
       } catch (error) {
-        console.error('Auth state change error:', error);
+        if (__DEV__) {
+          console.error('Auth state change error:', error);
+        }
         setUser(null);
       } finally {
         setIsLoading(false);
+        setAuthTransitioning(false);
       }
     });
 
@@ -145,16 +209,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
-      console.log('Starting sign in process...');
+      if (__DEV__) {
+        console.log('Starting sign in process...');
+      }
       setIsLoading(true);
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log('Sign in successful for user:', userCredential.user.uid);
+      if (__DEV__) {
+        console.log('Sign in successful for user:', userCredential.user.uid);
+      }
 
       // Don't set loading to false here - let the auth state change handler do it
       // This prevents race conditions with navigation
     } catch (error) {
-      console.error('Sign in error:', error);
+      if (__DEV__) {
+        console.error('Sign in error:', error);
+      }
+      try {
+        Sentry.Native.captureException(error);
+      } catch (sentryError) {
+        console.warn('Sentry exception capture failed:', sentryError);
+      }
       setIsLoading(false); // Only set loading false on error
       throw error;
     }
@@ -162,11 +237,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (userData: Partial<User> & { email: string; password: string }): Promise<void> => {
     try {
-      console.log('Starting sign up process...');
+      if (__DEV__) {
+        console.log('Starting sign up process...');
+      }
       setIsLoading(true);
+      setAuthTransitioning(true);
 
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-      console.log('Firebase user created:', firebaseUser.uid);
+      if (__DEV__) {
+        console.log('Firebase user created:', firebaseUser.uid);
+      }
 
       // Wait for the auth token to be fully established
       await firebaseUser.getIdToken(true);
@@ -175,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: userData.name || userData.email.split('@')[0] || 'New User',
         age: userData.age || 25,
         bio: userData.bio || '',
-        photos: userData.photos || [],
+        photos: [],
         location: userData.location || '',
         interests: userData.interests || [],
         verified: false,
@@ -185,24 +265,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastActive: new Date(),
         isOnline: true,
         email: userData.email, // Ensure email is set correctly
+        // Anonymous user specific fields
+        isAnonymous: userData.isAnonymous !== undefined ? userData.isAnonymous : true,
+        reputationScore: 0,
+        reviewCount: 0,
+        helpfulVotes: 0,
+        badges: [],
       };
 
       try {
-        console.log('Creating user document in Firestore...');
-        const createdUser = await createUser(firebaseUser.uid, newUser);
-        console.log('User document created successfully');
+        if (__DEV__) {
+          console.log('Creating user document in Firestore...');
+        }
+        await createUser(firebaseUser.uid, newUser);
+        try {
+          Sentry.Native.addBreadcrumb({
+            category: 'auth',
+            message: 'User doc created',
+            level: 'info' as const
+          });
+        } catch (sentryError) {
+          console.warn('Sentry breadcrumb failed:', sentryError);
+        }
 
-        // Don't set user here - let the auth state change handler do it
-        // This prevents race conditions with navigation
-      } catch (createError) {
-        console.error('Failed to create user document:', createError);
-        // Don't throw here - the auth state change handler will handle it
+        // The auth state change handler will update the user state
+        // and handle navigation automatically
+      } catch (createError: unknown) {
+        if (__DEV__) {
+          console.error('Failed to create user document:', createError);
+        }
+        const error = createError as { message?: string };
+
+        // Even if document creation fails, the user is authenticated
+        // The auth state handler will retry or handle it
+        if (error.message?.includes('Permission denied')) {
+          if (__DEV__) {
+            console.log('Permission issue detected, but user is authenticated');
+          }
+        }
       }
 
       // Don't set loading to false here - let the auth state change handler do it
+      // Auth state change will trigger navigation
     } catch (error) {
-      console.error('Sign up error:', error);
-      setIsLoading(false); // Only set loading false on error
+      if (__DEV__) {
+        console.error('Sign up error:', error);
+      }
+      try {
+        Sentry.Native.captureException(error);
+      } catch (sentryError) {
+        console.warn('Sentry exception capture failed:', sentryError);
+      }
+      setIsLoading(false);
+      setAuthTransitioning(false);
       throw error;
     }
   };
@@ -211,7 +326,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
     } catch (error) {
-      console.error('Sign out error:', error);
+      if (__DEV__) {
+        console.error('Sign out error:', error);
+      }
     }
   };
 
@@ -222,7 +339,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ ...user, ...userData });
       }
     } catch (error) {
-      console.error('Update profile error:', error);
+      if (__DEV__) {
+        console.error('Update profile error:', error);
+      }
       throw error;
     }
   };
@@ -231,7 +350,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await sendPasswordResetEmail(auth, email);
     } catch (error) {
-      console.error('Reset password error:', error);
+      if (__DEV__) {
+        console.error('Reset password error:', error);
+      }
       throw error;
     }
   };
@@ -246,7 +367,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
     } catch (error) {
-      console.error('Delete account error:', error);
+      if (__DEV__) {
+        console.error('Delete account error:', error);
+      }
       throw error;
     }
   };
@@ -263,7 +386,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    isLoading,
+    isLoading: isLoading || authTransitioning,
     signIn,
     signUp,
     signOut,

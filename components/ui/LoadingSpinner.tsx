@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { MotiView } from 'moti';
 import { useTheme } from '@/providers/ThemeProvider';
-import Text from '@/components/ui/Text';
 import { Spinner } from './LoadingAnimations';
 
 interface LoadingSpinnerProps {
@@ -36,7 +35,7 @@ export default function LoadingSpinner({
           style={{ marginBottom: text ? tokens.spacing.md : 0 }}
         />
         {text && (
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
             {text}
           </Text>
         )}

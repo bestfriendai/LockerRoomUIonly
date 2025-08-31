@@ -1,12 +1,20 @@
 import React, { useState, useCallback, useRef } from "react";
-import { View, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+  KeyboardAvoidingView
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, MapPin, Calendar, User, Mail, Phone, Edit3 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Avatar from "@/components/ui/Avatar";
@@ -79,7 +87,7 @@ export default function EditProfileScreen() {
     }
   }, [errors]);
 
-  const handlePreferenceChange = useCallback((field: string, value: any) => {
+  const handlePreferenceChange = useCallback((field: string, value: unknown) => {
     setFormData(prev => ({
       ...prev,
       datingPreferences: {
@@ -102,29 +110,7 @@ export default function EditProfileScreen() {
     }));
   }, []);
 
-  const handleImagePicker = useCallback(async () => {
-    try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant camera roll permissions to upload photos.');
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setFormData(prev => ({ ...prev, profilePicture: result.assets[0].uri }));
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image. Please try again.');
-    }
-  }, []);
+  // Removed image picker functionality for anonymous app
 
   const validateForm = useCallback((): boolean => {
     const newErrors: Partial<FormData> = {};
@@ -188,7 +174,9 @@ export default function EditProfileScreen() {
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
-      console.error('Error updating profile:', error);
+      if (__DEV__) {
+        console.error('Error updating profile:', error);
+      }
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
@@ -218,21 +206,19 @@ export default function EditProfileScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleBack}
             leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
           />
-          <Text variant="h3" weight="bold">
+          <Text >
             Edit Profile
           </Text>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleSave}
             disabled={loading}
           >
-            <Text variant="body" weight="medium" style={{ color: colors.primary }}>
+            <Text style={{ color: colors.primary }}>
               {loading ? 'Saving...' : 'Save'}
             </Text>
           </Button>
@@ -245,33 +231,27 @@ export default function EditProfileScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Profile Picture */}
+          {/* Anonymous Profile */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
-              Profile Picture
+            <Text style={styles.sectionTitle}>
+              Anonymous Identity
             </Text>
             <View style={styles.avatarContainer}>
               <Avatar
                 size="xl"
                 name={formData.displayName || user?.username || 'User'}
-                src={formData.profilePicture}
+                isAnonymous={true}
                 style={styles.avatar}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onPress={handleImagePicker}
-                leftIcon={<Camera size={16} color={colors.text} strokeWidth={1.5} />}
-                style={styles.changePhotoButton}
-              >
-                Change Photo
-              </Button>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+                🎭 Your identity remains anonymous - no profile photos needed
+              </Text>
             </View>
           </Card>
 
           {/* Basic Information */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Basic Information
             </Text>
             
@@ -297,7 +277,7 @@ export default function EditProfileScreen() {
               leftIcon={<Edit3 size={16} color={colors.textSecondary} strokeWidth={1.5} />}
               style={styles.input}
             />
-            <Text variant="caption" style={{ color: colors.textSecondary, textAlign: 'right' }}>
+            <Text style={{ color: colors.textSecondary, textAlign: 'right' }}>
               {formData.bio.length}/500
             </Text>
 
@@ -313,7 +293,7 @@ export default function EditProfileScreen() {
             />
 
             <View style={styles.pickerContainer}>
-              <Text variant="bodySmall" weight="medium" style={styles.pickerLabel}>
+              <Text style={styles.pickerLabel}>
                 Gender
               </Text>
               <View style={[styles.pickerWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
@@ -336,7 +316,7 @@ export default function EditProfileScreen() {
 
           {/* Contact Information */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Contact Information
             </Text>
             
@@ -348,7 +328,7 @@ export default function EditProfileScreen() {
               leftIcon={<Mail size={16} color={colors.textSecondary} strokeWidth={1.5} />}
               style={[styles.input, { opacity: 0.6 }]}
             />
-            <Text variant="caption" style={{ color: colors.textSecondary, marginTop: -8, marginBottom: 16 }}>
+            <Text style={{ color: colors.textSecondary, marginTop: -8, marginBottom: 16 }}>
               Email cannot be changed
             </Text>
 
@@ -374,12 +354,12 @@ export default function EditProfileScreen() {
 
           {/* Dating Preferences */}
           <Card style={styles.section}>
-            <Text variant="body" weight="medium" style={styles.sectionTitle}>
+            <Text style={styles.sectionTitle}>
               Dating Preferences
             </Text>
             
             <View style={styles.pickerContainer}>
-              <Text variant="bodySmall" weight="medium" style={styles.pickerLabel}>
+              <Text style={styles.pickerLabel}>
                 Looking for
               </Text>
               <View style={[styles.pickerWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
@@ -399,7 +379,7 @@ export default function EditProfileScreen() {
               </View>
             </View>
 
-            <Text variant="bodySmall" weight="medium" style={styles.ageRangeLabel}>
+            <Text style={styles.ageRangeLabel}>
               Age Range: {Array.isArray(formData.datingPreferences.ageRange)
                 ? `${formData.datingPreferences.ageRange[0]} - ${formData.datingPreferences.ageRange[1]}`
                 : `${formData.datingPreferences.ageRange.min} - ${formData.datingPreferences.ageRange.max}`
@@ -408,7 +388,7 @@ export default function EditProfileScreen() {
             
             <View style={styles.ageRangeContainer}>
               <View style={styles.ageRangeItem}>
-                <Text variant="caption" style={{ color: colors.textSecondary, marginBottom: 8 }}>
+                <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
                   Minimum Age
                 </Text>
                 <View style={[styles.pickerWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>
@@ -425,7 +405,7 @@ export default function EditProfileScreen() {
               </View>
               
               <View style={styles.ageRangeItem}>
-                <Text variant="caption" style={{ color: colors.textSecondary, marginBottom: 8 }}>
+                <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
                   Maximum Age
                 </Text>
                 <View style={[styles.pickerWrapper, { borderColor: colors.border, backgroundColor: colors.card }]}>

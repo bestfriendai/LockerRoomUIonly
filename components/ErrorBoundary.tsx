@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, AppState, AppStateStatus } from 'react-native';
+import { View, StyleSheet, AppState, AppStateStatus, Text } from 'react-native';
 import { useTheme } from '@/providers/ThemeProvider';
-import Text from '@/components/ui/Text';
 import { Button } from '@/components/ui/Button';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as Sentry from 'sentry-expo';
 
 interface Props {
   children: React.ReactNode;
@@ -24,7 +24,7 @@ interface State {
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
-  private appStateListener?: any;
+  private appStateListener?: { remove: () => void };
 
   constructor(props: Props) {
     super(props);
@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    const errorId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const errorId = `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     
     return { 
       hasError: true, 
@@ -49,11 +49,27 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+    if (__DEV__) {
+      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    }
+
+    // Send error to Sentry with additional context
+    try {
+      Sentry.Native.setTag('errorBoundary', 'true');
+      Sentry.Native.setTag('level', this.props.level || 'component');
+      Sentry.Native.setContext('errorInfo', {
+        componentStack: errorInfo.componentStack,
+        retryCount: this.state.retryCount,
+        errorId: this.state.errorId,
+      });
+      Sentry.Native.captureException(error);
+    } catch (sentryError) {
+      console.warn('Failed to send error to Sentry:', sentryError);
+    }
+
     // Trigger haptic feedback
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
-    
+
     // Call custom error handler
     this.props.onError?.(error, errorInfo);
   }
@@ -142,15 +158,14 @@ const DefaultErrorFallback: React.FC<{
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <View style={[styles.content, { backgroundColor: colors.surfaceElevated }]}>
         <View style={[styles.iconContainer, { backgroundColor: colors.errorContainer }]}>
-          <AlertTriangle size={32} color={colors.error} />
+          <Ionicons name="warning" size={32} color={colors.error} />
         </View>
         
-        <Text variant="h3" weight="bold" style={{ textAlign: 'center', marginBottom: 8 }}>
+        <Text style={{ textAlign: 'center', marginBottom: 8 }}>
           Something went wrong
         </Text>
         
         <Text 
-          variant="body" 
           style={{ 
             color: colors.textSecondary, 
             textAlign: 'center', 
@@ -165,8 +180,8 @@ const DefaultErrorFallback: React.FC<{
             backgroundColor: colors.surface,
             borderColor: colors.border 
           }]}>
-            <Text variant="caption" style={{ color: colors.textSecondary }}>
-              {error.message}
+            <Text style={{ color: colors.textSecondary }}>
+              {error instanceof Error ? error.message : 'Unknown error occurred'}
             </Text>
           </View>
         )}
@@ -174,23 +189,25 @@ const DefaultErrorFallback: React.FC<{
         <View style={{ flexDirection: 'row', gap: 12 }}>
           {retryable && (
             <Button
-              variant="primary"
               onPress={resetError}
               style={{ flex: 1 }}
             >
-              <RefreshCw size={16} color={colors.onPrimary} style={{ marginRight: 8 }} />
-              Try Again
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="refresh" size={16} color={colors.onPrimary} style={{ marginRight: 8 }} />
+                <Text>Try Again</Text>
+              </View>
             </Button>
           )}
           
           {showGoHome && (
             <Button
-              variant="outline"
               onPress={resetError}
               style={{ flex: 1 }}
             >
-              <Home size={16} color={colors.text} style={{ marginRight: 8 }} />
-              Go Home
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="home" size={16} color={colors.text} style={{ marginRight: 8 }} />
+                <Text>Go Home</Text>
+              </View>
             </Button>
           )}
         </View>

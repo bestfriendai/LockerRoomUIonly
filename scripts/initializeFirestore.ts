@@ -3,7 +3,9 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'fire
 import { auth, db } from '../utils/firebase';
 
 const initializeFirestore = async () => {
-  console.log('Initializing Firestore collections...');
+  if (__DEV__) {
+    console.log('Initializing Firestore collections...');
+  }
   
   try {
     // Create a temporary admin user for initialization
@@ -14,18 +16,26 @@ const initializeFirestore = async () => {
     try {
       // Try to sign in first
       adminUser = await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-      console.log('Signed in as admin user');
+      if (__DEV__) {
+        console.log('Signed in as admin user');
+      }
     } catch (error: any) {
       if (error.code === 'auth/user-not-found') {
         // Create admin user if doesn't exist
         adminUser = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
-        console.log('Created admin user');
+        if (__DEV__) {
+          console.log('Created admin user');
+        }
       } else {
         throw error;
       }
     }
 
-    console.log('Creating sample users...');
+    if (__DEV__) {
+
+      console.log('Creating sample users...');
+
+    }
     
     // Sample users
     const users = [
@@ -61,10 +71,16 @@ const initializeFirestore = async () => {
 
     for (const user of users) {
       await setDoc(doc(db, 'users', user.id), user);
-      console.log(`Created user: ${user.displayName}`);
+      if (__DEV__) {
+        console.log(`Created user: ${user.displayName}`);
+      }
     }
 
-    console.log('Creating sample reviews...');
+    if (__DEV__) {
+
+      console.log('Creating sample reviews...');
+
+    }
     
     // Sample reviews
     const reviews = [
@@ -98,10 +114,16 @@ const initializeFirestore = async () => {
 
     for (const review of reviews) {
       await setDoc(doc(db, 'reviews', review.id), review);
-      console.log(`Created review: ${review.id}`);
+      if (__DEV__) {
+        console.log(`Created review: ${review.id}`);
+      }
     }
 
-    console.log('Creating sample chat room...');
+    if (__DEV__) {
+
+      console.log('Creating sample chat room...');
+
+    }
     
     // Sample chat room
     const chatRoom = {
@@ -116,9 +138,15 @@ const initializeFirestore = async () => {
     };
 
     await setDoc(doc(db, 'chatRooms', chatRoom.id), chatRoom);
-    console.log('Created chat room');
+    if (__DEV__) {
+      console.log('Created chat room');
+    }
 
-    console.log('Creating sample messages...');
+    if (__DEV__) {
+
+      console.log('Creating sample messages...');
+
+    }
     
     // Sample messages
     const messages = [
@@ -146,10 +174,16 @@ const initializeFirestore = async () => {
 
     for (const message of messages) {
       await setDoc(doc(db, 'messages', message.id), message);
-      console.log(`Created message: ${message.id}`);
+      if (__DEV__) {
+        console.log(`Created message: ${message.id}`);
+      }
     }
 
-    console.log('Creating sample notifications...');
+    if (__DEV__) {
+
+      console.log('Creating sample notifications...');
+
+    }
     
     // Sample notifications
     const notifications = [
@@ -177,13 +211,21 @@ const initializeFirestore = async () => {
 
     for (const notification of notifications) {
       await setDoc(doc(db, 'notifications', notification.id), notification);
-      console.log(`Created notification: ${notification.id}`);
+      if (__DEV__) {
+        console.log(`Created notification: ${notification.id}`);
+      }
     }
 
-    console.log('✅ Firestore initialization completed successfully!');
+    if (__DEV__) {
+
+      console.log('✅ Firestore initialization completed successfully!');
+
+    }
     
   } catch (error) {
-    console.error('❌ Error initializing Firestore:', error);
+    if (__DEV__) {
+      console.error('❌ Error initializing Firestore:', error);
+    }
   }
 };
 

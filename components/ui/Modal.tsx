@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import {
-  Modal as RNModal,
   View,
   StyleSheet,
   Pressable,
   Dimensions,
+  Animated as RNAnimated,
   ViewStyle,
+  Modal as RNModal
 } from 'react-native';
+
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -82,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
   });
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    const baseStyle: any = {
+    const baseStyle: unknown = {
       opacity: opacity.value,
     };
 

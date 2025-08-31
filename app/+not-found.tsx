@@ -1,10 +1,14 @@
 import React from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Text
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Home, ArrowLeft, Search, RefreshCw } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 
@@ -50,13 +54,11 @@ export default function NotFoundScreen() {
         </View>
 
         {/* Error Message */}
-        <View style={styles.messageContainer}>
-          <Text variant="h2" weight="normal" style={styles.title}>
+        <View style={(styles as any)?.messageContainer}>
+          <Text style={styles.title}>
             Page Not Found
           </Text>
-          <Text 
-            variant="body" 
-            style={[styles.description, { color: colors.textSecondary }]}
+          <Text style={[styles.description, { color: colors.textSecondary }]}
           >
             Sorry, we couldn't find the page you're looking for. 
             It might have been moved, deleted, or you entered the wrong URL.
@@ -65,7 +67,7 @@ export default function NotFoundScreen() {
 
         {/* Action Buttons */}
         <Card style={styles.actionsCard}>
-          <Text variant="bodySmall" weight="medium" style={{ marginBottom: 16 }}>
+          <Text style={{ marginBottom: 16 }}>
             What would you like to do?
           </Text>
           
@@ -79,7 +81,6 @@ export default function NotFoundScreen() {
             </Button>
 
             <Button
-              variant="outline"
               onPress={handleGoBack}
               leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
               style={styles.secondaryButton}
@@ -88,7 +89,6 @@ export default function NotFoundScreen() {
             </Button>
 
             <Button
-              variant="outline"
               onPress={handleSearch}
               leftIcon={<Search size={20} color={colors.text} strokeWidth={1.5} />}
               style={styles.secondaryButton}
@@ -97,7 +97,6 @@ export default function NotFoundScreen() {
             </Button>
 
             <Button
-              variant="ghost"
               onPress={handleRefresh}
               leftIcon={<RefreshCw size={20} color={colors.textSecondary} strokeWidth={1.5} />}
               style={styles.ghostButton}
@@ -109,35 +108,35 @@ export default function NotFoundScreen() {
 
         {/* Help Section */}
         <Card style={styles.helpCard}>
-          <Text variant="bodySmall" weight="medium" style={{ marginBottom: 12 }}>
+          <Text style={{ marginBottom: 12 }}>
             Need Help?
           </Text>
           
           <View style={styles.helpContent}>
             <View style={styles.helpItem}>
               <Text style={styles.helpBullet}>•</Text>
-              <Text variant="caption" style={[styles.helpText, { color: colors.textSecondary }]}>
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
                 Check if the URL is spelled correctly
               </Text>
             </View>
             
             <View style={styles.helpItem}>
               <Text style={styles.helpBullet}>•</Text>
-              <Text variant="caption" style={[styles.helpText, { color: colors.textSecondary }]}>
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
                 Try searching for what you're looking for
               </Text>
             </View>
             
             <View style={styles.helpItem}>
               <Text style={styles.helpBullet}>•</Text>
-              <Text variant="caption" style={[styles.helpText, { color: colors.textSecondary }]}>
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
                 Go back to the home page and navigate from there
               </Text>
             </View>
             
             <View style={styles.helpItem}>
               <Text style={styles.helpBullet}>•</Text>
-              <Text variant="caption" style={[styles.helpText, { color: colors.textSecondary }]}>
+              <Text style={[styles.helpText, { color: colors.textSecondary }]}>
                 Contact support if the problem persists
               </Text>
             </View>
@@ -146,7 +145,7 @@ export default function NotFoundScreen() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text variant="caption" style={[styles.footerText, { color: colors.textSecondary }]}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }]}>
             MockTrae • Error 404
           </Text>
         </View>

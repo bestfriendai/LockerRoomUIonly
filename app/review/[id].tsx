@@ -1,11 +1,22 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { View, StyleSheet, ScrollView, Pressable, RefreshControl, Alert, Share, Dimensions, Animated, Image } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  Alert,
+  Dimensions,
+  Share,
+  RefreshControl,
+  Image
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Calendar, MapPin, Camera, Play } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
@@ -56,7 +67,9 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
         const user = await getUserById(comment.userId || comment.authorId || '');
         setCommenter(user);
       } catch (error) {
-        console.error('Error fetching commenter:', error);
+        if (__DEV__) {
+          console.error('Error fetching commenter:', error);
+        }
       }
     };
     fetchCommenter();
@@ -83,19 +96,19 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
       <Avatar
         size="sm"
         name={commenter?.username || 'Anonymous'}
-        src={commenter?.profilePicture}
+        isAnonymous={true}
         style={styles.commentAvatar}
       />
       <View style={styles.commentContent}>
         <View style={styles.commentHeader}>
-          <Text variant="bodySmall" weight="medium">
+          <Text >
             {commenter?.displayName || commenter?.username || 'Anonymous'}
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary }}>
             {formatTime(comment._creationTime || comment.timestamp)}
           </Text>
         </View>
-        <Text variant="body" style={{ marginTop: 4, lineHeight: 20 }}>
+        <Text style={{ marginTop: 4, lineHeight: 20 }}>
           {comment.content}
         </Text>
         <View style={styles.commentActions}>
@@ -109,9 +122,7 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
               strokeWidth={1.5}
               fill={comment.isLiked ? colors.primary : 'none'}
             />
-            <Text
-              variant="caption"
-              style={{
+            <Text style={{
                 color: comment.isLiked ? colors.primary : colors.textSecondary,
                 marginLeft: 4
               }}
@@ -124,7 +135,7 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
             style={styles.commentAction}
           >
             <MessageCircle size={14} color={colors.textSecondary} strokeWidth={1.5} />
-            <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+            <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
               Reply
             </Text>
           </Pressable>
@@ -175,7 +186,9 @@ export default function ReviewDetailScreen() {
               const reviewerData = await getUserById(reviewData.authorId);
               setReviewer(reviewerData);
             } catch (reviewerError) {
-              console.warn('Could not fetch reviewer data:', reviewerError);
+              if (__DEV__) {
+                console.warn('Could not fetch reviewer data:', reviewerError);
+              }
               // Continue without reviewer data
             }
           }
@@ -186,7 +199,9 @@ export default function ReviewDetailScreen() {
               const revieweeData = await getUserById(reviewData.targetUserId);
               setReviewee(revieweeData);
             } catch (revieweeError) {
-              console.warn('Could not fetch reviewee data:', revieweeError);
+              if (__DEV__) {
+                console.warn('Could not fetch reviewee data:', revieweeError);
+              }
               // Continue without reviewee data
             }
           }
@@ -196,18 +211,26 @@ export default function ReviewDetailScreen() {
             const commentsData = await ReviewService.getComments(reviewData.id);
             setComments(commentsData || []);
           } catch (commentsError) {
-            console.warn('Could not fetch comments:', commentsError);
+            if (__DEV__) {
+              console.warn('Could not fetch comments:', commentsError);
+            }
             setComments([]); // Set empty array as fallback
           }
         }
       } catch (error) {
-        console.error('Error fetching review data:', error);
+        if (__DEV__) {
+          console.error('Error fetching review data:', error);
+        }
         // Show user-friendly error message
         if (error instanceof Error) {
-          if (error.message.includes('network') || error.message.includes('fetch')) {
-            console.log('Network error detected, please check your connection');
-          } else if (error.message.includes('index')) {
-            console.log('Database index issue, some features may be limited');
+          if ((error as any)?.message.includes('network') || (error as any)?.message.includes('fetch')) {
+            if (__DEV__) {
+              console.log('Network error detected, please check your connection');
+            }
+          } else if ((error as any)?.message.includes('index')) {
+            if (__DEV__) {
+              console.log('Database index issue, some features may be limited');
+            }
           }
         }
       } finally {
@@ -240,7 +263,9 @@ export default function ReviewDetailScreen() {
         setComments(commentsData);
       }
     } catch (error) {
-      console.error('Error refreshing review:', error);
+      if (__DEV__) {
+        console.error('Error refreshing review:', error);
+      }
     } finally {
       setRefreshing(false);
     }
@@ -254,7 +279,9 @@ export default function ReviewDetailScreen() {
       setIsLiked(!isLiked);
       setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
     } catch (error) {
-      console.error('Error toggling like:', error);
+      if (__DEV__) {
+        console.error('Error toggling like:', error);
+      }
     }
   }, [review, currentUser?.id, isLiked]);
 
@@ -267,7 +294,9 @@ export default function ReviewDetailScreen() {
         url: `https://app.example.com/review/${review.id}`,
       });
     } catch (error) {
-      console.error('Error sharing:', error);
+      if (__DEV__) {
+        console.error('Error sharing:', error);
+      }
     }
   }, [review]);
 
@@ -301,16 +330,22 @@ export default function ReviewDetailScreen() {
   }, [currentUser, review, handleShare, handleReport]);
 
   const handleCommentLike = useCallback((commentId: string) => {
-    console.log('Like comment:', commentId);
+    if (__DEV__) {
+      console.log('Like comment:', commentId);
+    }
   }, []);
 
   const handleCommentReply = useCallback((comment: Comment) => {
     setReplyingTo(comment);
-    console.log('Reply to comment:', comment.id);
+    if (__DEV__) {
+      console.log('Reply to comment:', comment.id);
+    }
   }, []);
 
   const handleMediaPress = useCallback((uri: string, type: 'image' | 'video') => {
-    console.log('Open media:', uri, type);
+    if (__DEV__) {
+      console.log('Open media:', uri, type);
+    }
     // Navigate to media viewer or open modal
   }, []);
 
@@ -348,7 +383,6 @@ export default function ReviewDetailScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleBack}
             leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
@@ -357,7 +391,7 @@ export default function ReviewDetailScreen() {
           </Button>
         </View>
         <View style={styles.emptyState}>
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
             Loading review...
           </Text>
         </View>
@@ -370,7 +404,6 @@ export default function ReviewDetailScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleBack}
             leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
@@ -380,10 +413,10 @@ export default function ReviewDetailScreen() {
         </View>
         <View style={styles.emptyState}>
           <Star size={48} color={colors.textSecondary} strokeWidth={1} />
-          <Text variant="h3" weight="medium" style={{ marginTop: 16, textAlign: 'center' }}>
+          <Text style={{ marginTop: 16, textAlign: 'center' }}>
             Review Not Found
           </Text>
-          <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
             This review doesn't exist or has been deleted.
           </Text>
           <Button
@@ -416,7 +449,6 @@ export default function ReviewDetailScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleBack}
             leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
@@ -424,7 +456,6 @@ export default function ReviewDetailScreen() {
             
           </Button>
           <Button
-            variant="ghost"
             size="sm"
             onPress={handleMoreOptions}
             leftIcon={<MoreVertical size={20} color={colors.text} strokeWidth={1.5} />}
@@ -443,22 +474,22 @@ export default function ReviewDetailScreen() {
             <Avatar
               size="md"
               name={reviewer?.username || 'Anonymous'}
-              src={reviewer?.profilePicture}
+              isAnonymous={true}
             />
             <View style={styles.reviewerDetails}>
-              <Text variant="body" weight="medium">
+              <Text >
                 {reviewer?.displayName || reviewer?.username || 'Anonymous'}
               </Text>
               <View style={styles.reviewMeta}>
                 <Calendar size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
                   {formatDate(review.createdAt)}
                 </Text>
                 {review.location && (
                   <>
-                    <Text variant="caption" style={{ color: colors.textSecondary, marginHorizontal: 8 }}>•</Text>
+                    <Text style={{ color: colors.textSecondary, marginHorizontal: 8 }}>•</Text>
                     <MapPin size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text variant="caption" style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                    <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
                       {review.location}
                     </Text>
                   </>
@@ -469,12 +500,12 @@ export default function ReviewDetailScreen() {
 
           {/* Review Title & Rating */}
           <View style={styles.reviewHeader}>
-            <Text variant="h3" weight="bold" style={styles.reviewTitle}>
+            <Text style={styles.reviewTitle}>
               {review.title}
             </Text>
             <View style={styles.ratingContainer}>
               {renderStars(review.rating)}
-              <Text variant="body" weight="medium" style={{ marginLeft: 8 }}>
+              <Text style={{ marginLeft: 8 }}>
                 {review.rating}.0
               </Text>
             </View>
@@ -486,17 +517,17 @@ export default function ReviewDetailScreen() {
               onPress={() => handleUserPress(reviewee.id)}
               style={styles.revieweeInfo}
             >
-              <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
+              <Text style={{ color: colors.textSecondary }}>
                 Review about
               </Text>
               <View style={styles.revieweeDetails}>
                 <Avatar
                   size="sm"
                   name={reviewee.username}
-                  src={reviewee.profilePicture}
+                  isAnonymous={true}
                   style={{ marginRight: 8 }}
                 />
-                <Text variant="body" weight="medium">
+                <Text >
                   {reviewee.displayName || reviewee.username}
                 </Text>
               </View>
@@ -511,7 +542,7 @@ export default function ReviewDetailScreen() {
                   key={index}
                   style={[styles.categoryChip, { backgroundColor: colors.primary + '20', borderColor: colors.primary + '40' }]}
                 >
-                  <Text variant="caption" style={{ color: colors.primary }}>
+                  <Text style={{ color: colors.primary }}>
                     {category}
                   </Text>
                 </View>
@@ -520,15 +551,15 @@ export default function ReviewDetailScreen() {
           )}
 
           {/* Review Content */}
-          <Text variant="body" style={styles.reviewContent}>
+          <Text style={styles.reviewContent}>
             {review.content}
           </Text>
 
           {/* Platform */}
           {review.platform && (
             <View style={styles.platformContainer}>
-              <Text variant="bodySmall" style={{ color: colors.textSecondary }}>
-                Platform: <Text variant="bodySmall" weight="medium">{review.platform}</Text>
+              <Text style={{ color: colors.textSecondary }}>
+                Platform: <Text >{review.platform}</Text>
               </Text>
             </View>
           )}
@@ -536,7 +567,7 @@ export default function ReviewDetailScreen() {
           {/* Images */}
           {review.images && review.images.length > 0 && (
             <View style={styles.mediaContainer}>
-              <Text variant="body" weight="medium" style={styles.mediaTitle}>
+              <Text style={styles.mediaTitle}>
                 Images
               </Text>
               <View style={styles.mediaGrid}>
@@ -566,9 +597,7 @@ export default function ReviewDetailScreen() {
                 fill={isLiked ? colors.error : 'none'}
                 strokeWidth={1.5}
               />
-              <Text
-                variant="bodySmall"
-                style={{
+              <Text style={{
                   color: isLiked ? colors.error : colors.textSecondary,
                   marginLeft: 6
                 }}
@@ -582,14 +611,14 @@ export default function ReviewDetailScreen() {
               style={styles.actionButton}
             >
               <MessageCircle size={20} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="bodySmall" style={{ color: colors.textSecondary, marginLeft: 6 }}>
+              <Text style={{ color: colors.textSecondary, marginLeft: 6 }}>
                 {comments.length}
               </Text>
             </Pressable>
 
             <Pressable onPress={handleShare} style={styles.actionButton}>
               <Share2 size={20} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text variant="bodySmall" style={{ color: colors.textSecondary, marginLeft: 6 }}>
+              <Text style={{ color: colors.textSecondary, marginLeft: 6 }}>
                 Share
               </Text>
             </Pressable>
@@ -599,14 +628,14 @@ export default function ReviewDetailScreen() {
         {/* Comments Section */}
         {showComments && (
           <Card style={styles.commentsCard}>
-            <Text variant="body" weight="medium" style={styles.commentsTitle}>
+            <Text style={styles.commentsTitle}>
               Comments ({comments.length})
             </Text>
             
             {comments.length === 0 ? (
               <View style={styles.emptyComments}>
                 <MessageCircle size={32} color={colors.textSecondary} strokeWidth={1} />
-                <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 12 }}>
+                <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 12 }}>
                   No comments yet. Be the first to comment!
                 </Text>
               </View>

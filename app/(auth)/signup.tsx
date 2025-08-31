@@ -11,26 +11,47 @@ import {
   Animated,
   Pressable,
   Alert,
-} from "react-native";
+  Text
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Check } from "lucide-react-native";
+import * as Sentry from "sentry-expo";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Input } from "@/components/ui/Input";
 import AnimatedPressable from "@/components/ui/AnimatedPressable";
+import { validateInput, checkRateLimit } from "@/utils/inputSanitization";
+import type {
+  SignUpFormData,
+  ValidationResult,
+  AuthError,
+  AuthFormState,
+  FirebaseAuthErrorCode
+} from '@/types/auth';
+import { generateMultipleUsernames } from "@/services/usernameGenerator";
 
 export default function SignUpScreen() {
   const router = useRouter();
   const { signUp, isLoading } = useAuth();
   const { colors } = useTheme();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // Form state with proper typing
+  const [formData, setFormData] = useState<SignUpFormData>({
+    email: "",
+    password: "",
+    confirmPassword: "",
+    agreeTerms: false
+  });
+
+  const [formState, setFormState] = useState<AuthFormState>({
+    isLoading: false,
+    error: ""
+  });
+
   const [showPassword, setShowPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [error, setError] = useState("");
+
+
+  // Remove username states - will be generated automatically
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -48,62 +69,143 @@ export default function SignUpScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // No username generation needed - will be done automatically
   }, [fadeAnim, slideAnim]);
 
-  const handleSignUp = async () => {
-    setError("");
-    
-    if (!email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return;
-    }
-    
-    if (!agreeTerms) {
-      setError("You must agree to the Terms of Service");
-      return;
-    }
-    
-    try {
-      await signUp({ email, password, name: email.split('@')[0] });
-      console.log('Sign up successful, waiting for auth state change...');
+  const handleSignUp = async (): Promise<void> => {
+    setFormState(prev => ({ ...prev, error: "" }));
 
-      // Show success message but don't manually navigate
-      // Let the AuthProvider and index.tsx handle navigation
-      Alert.alert("Success", "Account created successfully! You will be redirected to complete your profile.", [
-        { text: "OK" }
+    // Rate limiting check
+    const userKey = `signup_${formData.email || 'unknown'}`;
+    if (!checkRateLimit(userKey, 3, 300000)) { // 3 attempts per 5 minutes
+      setFormState(prev => ({
+        ...prev,
+        error: "Too many signup attempts. Please wait 5 minutes before trying again."
+      }));
+      return;
+    }
+
+    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword?.trim()) {
+      setFormState(prev => ({ ...prev, error: "Please fill in all fields" }));
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setFormState(prev => ({ ...prev, error: "Passwords do not match" }));
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setFormState(prev => ({ ...prev, error: "Password must be at least 6 characters long" }));
+      return;
+    }
+
+    if (!formData.agreeTerms) {
+      setFormState(prev => ({ ...prev, error: "You must agree to the Terms of Service" }));
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      // Validate and sanitize input
+      const validationResult = validateInput({
+        email: formData.email,
+        password: formData.password
+      }, 'signup') as ValidationResult<SignUpFormData>;
+
+      if (!validationResult.isValid) {
+        setFormState(prev => ({
+          ...prev,
+          error: validationResult.errors[0] || "Invalid input",
+          isLoading: false
+        }));
+        return;
+      }
+
+      const sanitizedData = validationResult.data;
+
+      // Generate anonymous username automatically
+      const anonymousUsername = generateMultipleUsernames(1)[0];
+
+      // Sentry breadcrumb for signup start
+      try {
+        const level = 'info' as const;
+        Sentry.Native.addBreadcrumb({
+          category: 'auth',
+          message: 'Signup started',
+          level
+        });
+      } catch (sentryError) {
+        console.warn('Sentry breadcrumb failed:', sentryError);
+      }
+
+      await signUp({
+        email: sanitizedData.email,
+        password: sanitizedData.password,
+        name: anonymousUsername,
+        isAnonymous: true
+      });
+
+      try {
+        const level = 'info' as const;
+        Sentry.Native.addBreadcrumb({
+          category: 'auth',
+          message: 'Signup completed',
+          level
+        });
+      } catch (sentryError) {
+        console.warn('Sentry breadcrumb failed:', sentryError);
+      }
+      if (__DEV__) {
+        console.log('Sign up successful, waiting for auth state change...');
+      }
+
+      // Show brief success message
+      // The auth state change will handle navigation automatically
+      Alert.alert("Success", "Account created successfully!", [
+        { text: "OK", onPress: () => {
+          // The auth state listener in AuthProvider will handle navigation
+          if (__DEV__) {
+            console.log('User acknowledged success, navigation will happen automatically');
+          }
+        }}
       ]);
-    } catch (err: any) {
-      const errorCode = err.code;
+    } catch (err: unknown) {
+      const authError = err as AuthError & { code?: FirebaseAuthErrorCode };
+      const errorCode = authError.code;
+
+      let errorMessage: string;
       switch (errorCode) {
         case 'auth/email-already-in-use':
-          setError('This email address is already in use.');
+          errorMessage = 'This email address is already in use.';
           break;
         case 'auth/invalid-email':
-          setError('Please enter a valid email address.');
+          errorMessage = 'Please enter a valid email address.';
           break;
         case 'auth/weak-password':
-          setError('The password is too weak.');
+          errorMessage = 'The password is too weak.';
           break;
         case 'auth/operation-not-allowed':
-          setError('Email/password accounts are not enabled.');
+          errorMessage = 'Email/password accounts are not enabled.';
           break;
         default:
-          setError(err.message || "Sign up failed");
+          errorMessage = authError.message || "Sign up failed";
       }
+
+      setFormState(prev => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false
+      }));
     }
   };
 
-  const isFormValid = email && password && confirmPassword && password === confirmPassword && agreeTerms;
+  const isFormValid = formData.email.trim() && formData.password.trim() &&
+                      formData.confirmPassword?.trim() &&
+                      formData.password === formData.confirmPassword &&
+                      formData.agreeTerms;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -124,7 +226,7 @@ export default function SignUpScreen() {
           >
             <ArrowLeft color={colors.text} size={24} />
           </Pressable>
-          <Text variant="h3" weight="semibold" style={{ color: colors.text }}>
+          <Text style={{ color: colors.text }}>
             Create Account
           </Text>
           <View style={{ width: 40 }} />
@@ -145,18 +247,22 @@ export default function SignUpScreen() {
             ]}
           >
             <View style={styles.welcomeSection}>
-              <Text variant="h2" weight="semibold" style={{ color: colors.text, textAlign: "center" }}>
-                Join MockTrae
+              <Text style={{ color: colors.text, textAlign: "center" }}>
+                Join LockerRoom Talk App
               </Text>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: "center" }}>
-                Create your account to start sharing and reading dating experiences
+              <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
+                Create your account to start sharing and reading dating experiences anonymously
               </Text>
             </View>
 
-            {error ? (
+            {formState.error ? (
               <Animated.View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-                <Text variant="bodySmall" style={{ color: colors.error, textAlign: "center" }}>
-                  {error}
+                <Text
+                  style={{ color: colors.error, textAlign: "center" }}
+                  accessibilityLabel={`Error: ${formState.error}`}
+                  accessibilityRole="text"
+                >
+                  {formState.error}
                 </Text>
               </Animated.View>
             ) : null}
@@ -164,24 +270,30 @@ export default function SignUpScreen() {
             <View style={styles.formContainer}>
               <Input
                 label="Email"
-                value={email}
-                onChangeText={setEmail}
+                value={formData.email}
+                onChangeText={(text: string) => setFormData(prev => ({ ...prev, email: text }))}
                 placeholder="Email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
                 containerStyle={{ marginBottom: 16 }}
+                accessibilityLabel="Email address input field"
+                accessibilityHint="Enter your email address to create an account"
               />
 
               <Input
                 label="Password"
-                value={password}
-                onChangeText={setPassword}
+                value={formData.password}
+                onChangeText={(text: string) => setFormData(prev => ({ ...prev, password: text }))}
                 placeholder="Password"
                 secureTextEntry={!showPassword}
                 leftIcon={<Lock size={18} color={colors.textSecondary} strokeWidth={1.5} />}
                 rightIcon={
-                  <Pressable onPress={() => setShowPassword(!showPassword)}>
+                  <Pressable
+                    onPress={() => setShowPassword(!showPassword)}
+                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                    accessibilityRole="button"
+                  >
                     {showPassword ? (
                       <EyeOff size={18} color={colors.textSecondary} strokeWidth={1.5} />
                     ) : (
@@ -190,32 +302,47 @@ export default function SignUpScreen() {
                   </Pressable>
                 }
                 containerStyle={{ marginBottom: 16 }}
+                accessibilityLabel="Password input field"
+                accessibilityHint="Enter a password, minimum 6 characters"
               />
 
               <Input
                 label="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                value={formData.confirmPassword || ""}
+                onChangeText={(text: string) => setFormData(prev => ({ ...prev, confirmPassword: text }))}
                 placeholder="Confirm password"
                 secureTextEntry={!showPassword}
                 leftIcon={<Lock size={18} color={colors.textSecondary} strokeWidth={1.5} />}
-                containerStyle={{ marginBottom: 24 }}
+                containerStyle={{ marginBottom: 16 }}
+                accessibilityLabel="Confirm password input field"
+                accessibilityHint="Re-enter your password to confirm"
               />
 
+              {/* Anonymous signup info */}
+              <View style={[styles.infoSection, { backgroundColor: colors.chipBg }]}>
+                <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+                  🎭 Your anonymous identity will be created automatically
+                </Text>
+              </View>
+
               <AnimatedPressable
-                onPress={() => setAgreeTerms(!agreeTerms)}
+                onPress={() => setFormData(prev => ({ ...prev, agreeTerms: !prev.agreeTerms }))}
                 style={styles.termsContainer}
+                accessibilityLabel="Terms and conditions agreement"
+                accessibilityHint="Tap to agree or disagree to terms of service and privacy policy"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: formData.agreeTerms }}
               >
                 <View style={[
                   styles.checkbox,
                   {
-                    backgroundColor: agreeTerms ? colors.primary : colors.surface,
-                    borderColor: agreeTerms ? colors.primary : colors.border,
+                    backgroundColor: formData.agreeTerms ? colors.primary : colors.surface,
+                    borderColor: formData.agreeTerms ? colors.primary : colors.border,
                   }
                 ]}>
-                  {agreeTerms && <Check size={16} color={colors.onPrimary} strokeWidth={2} />}
+                  {formData.agreeTerms && <Check size={16} color={colors.onPrimary} strokeWidth={2} />}
                 </View>
-                <Text variant="bodySmall" style={{ color: colors.textSecondary, flex: 1 }}>
+                <Text style={{ color: colors.textSecondary, flex: 1 }}>
                   I agree to the{" "}
                   <Text style={{ color: colors.primary }}>Terms of Service</Text>
                   {" "}and{" "}
@@ -233,12 +360,22 @@ export default function SignUpScreen() {
                   },
                 ]}
                 onPress={handleSignUp}
-                disabled={isLoading || !isFormValid}
+                disabled={formState.isLoading || isLoading || !isFormValid}
+                accessibilityLabel="Create account button"
+                accessibilityHint="Creates your anonymous account"
+                accessibilityRole="button"
               >
-                {isLoading ? (
-                  <ActivityIndicator color={colors.onPrimary} size="small" />
+                {(formState.isLoading || isLoading) ? (
+                  <ActivityIndicator
+                    color={colors.onPrimary}
+                    size="small"
+                    accessibilityLabel="Loading, please wait"
+                  />
                 ) : (
-                  <Text variant="body" weight="semibold" style={{ color: colors.onPrimary }}>
+                  <Text
+                    style={{ color: colors.onPrimary }}
+                    accessibilityLabel="Create Account"
+                  >
                     Create Account
                   </Text>
                 )}
@@ -246,14 +383,20 @@ export default function SignUpScreen() {
             </View>
 
             <View style={styles.signInContainer}>
-              <Text variant="body" style={{ color: colors.textSecondary }}>
+              <Text
+                style={{ color: colors.textSecondary }}
+                accessibilityLabel="Already have an account?"
+              >
                 Already have an account?{" "}
               </Text>
-              <Pressable 
+              <Pressable
                 onPress={() => router.push("/(auth)/signin")}
                 style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                accessibilityLabel="Sign in"
+                accessibilityHint="Navigate to sign in screen"
+                accessibilityRole="button"
               >
-                <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
+                <Text style={{ color: colors.primary }}>
                   Sign in
                 </Text>
               </Pressable>
@@ -331,5 +474,10 @@ const styles = StyleSheet.create({
   },
   welcomeSection: {
     marginBottom: 32,
+  },
+  infoSection: {
+    marginVertical: 16,
+    padding: 12,
+    borderRadius: 8,
   },
 });

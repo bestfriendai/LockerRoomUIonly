@@ -8,54 +8,107 @@ import {
   Platform,
   ActivityIndicator,
   Pressable,
-  Alert,
-} from "react-native";
+  Text
+} from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Lock } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Input } from "@/components/ui/Input";
+import { validateInput, checkRateLimit } from "@/utils/inputSanitization";
+import type {
+  SignInFormData,
+  ValidationResult,
+  AuthError,
+  AuthFormState,
+  AccessibilityProps,
+  FirebaseAuthErrorCode
+} from '@/types/auth';
 
 export default function SignInScreen() {
   const router = useRouter();
   const { signIn, isLoading } = useAuth();
   const { colors } = useTheme();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
-  const handleSignIn = async () => {
-    setError("");
+  // Form state with proper typing
+  const [formData, setFormData] = useState<SignInFormData>({
+    email: "",
+    password: ""
+  });
 
-    if (!email || !password) {
-      setError("Please enter both email and password");
+  const [formState, setFormState] = useState<AuthFormState>({
+    isLoading: false,
+    error: ""
+  });
+
+  const handleSignIn = async (): Promise<void> => {
+    setFormState(prev => ({ ...prev, error: "" }));
+
+    // Rate limiting check
+    const userKey = `signin_${formData.email || 'unknown'}`;
+    if (!checkRateLimit(userKey, 5, 300000)) { // 5 attempts per 5 minutes
+      setFormState(prev => ({
+        ...prev,
+        error: "Too many sign in attempts. Please wait 5 minutes before trying again."
+      }));
       return;
     }
 
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setFormState(prev => ({ ...prev, error: "Please enter both email and password" }));
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, isLoading: true }));
+
     try {
-      await signIn(email, password);
+      // Validate and sanitize input
+      const validationResult = validateInput(formData, 'signup') as ValidationResult<SignInFormData>;
+
+      if (!validationResult.isValid) {
+        setFormState(prev => ({
+          ...prev,
+          error: validationResult.errors[0] || "Invalid input",
+          isLoading: false
+        }));
+        return;
+      }
+
+      const sanitizedData = validationResult.data;
+
+      await signIn(sanitizedData.email, sanitizedData.password);
       // Don't manually navigate - let the AuthProvider and index.tsx handle navigation
       // This prevents race conditions and navigation conflicts
-      console.log('Sign in successful, waiting for auth state change...');
-    } catch (err: any) {
-      const errorCode = err.code;
+      if (__DEV__) {
+        console.log('Sign in successful, waiting for auth state change...');
+      }
+    } catch (err: unknown) {
+      const authError = err as AuthError & { code?: FirebaseAuthErrorCode };
+      const errorCode = authError.code;
+
+      let errorMessage: string;
       switch (errorCode) {
         case 'auth/invalid-credential':
-          setError('Invalid email or password');
+          errorMessage = 'Invalid email or password';
           break;
         case 'auth/user-not-found':
-          setError('No account found with this email');
+          errorMessage = 'No account found with this email';
           break;
         case 'auth/wrong-password':
-          setError('Incorrect password');
+          errorMessage = 'Incorrect password';
           break;
         case 'auth/too-many-requests':
-          setError('Too many failed attempts. Please try again later.');
+          errorMessage = 'Too many failed attempts. Please try again later.';
           break;
         default:
-          setError(err.message || 'Sign in failed');
+          errorMessage = authError.message || 'Sign in failed';
       }
+
+      setFormState(prev => ({
+        ...prev,
+        error: errorMessage,
+        isLoading: false
+      }));
     }
   };
 
@@ -66,12 +119,15 @@ export default function SignInScreen() {
         style={styles.keyboardView}
       >
         <View style={styles.header}>
-          <Pressable 
-            onPress={() => router.back()} 
+          <Pressable
+            onPress={() => router.back()}
             style={({ pressed }) => [
               styles.backButton,
               { opacity: pressed ? 0.5 : 1 }
             ]}
+            accessibilityLabel="Go back to previous screen"
+            accessibilityHint="Returns to the previous authentication screen"
+            accessibilityRole="button"
           >
             <ArrowLeft color={colors.text} size={24} strokeWidth={1.5} />
           </Pressable>
@@ -79,18 +135,29 @@ export default function SignInScreen() {
 
         <View style={styles.content}>
           <View style={styles.welcomeSection}>
-            <Text variant="h2" weight="semibold" style={{ color: colors.text, marginBottom: 8 }}>
-              Welcome back
+            <Text
+              style={{ color: colors.text, marginBottom: 8 }}
+              accessibilityRole="header"
+              accessibilityLabel="Welcome back to LockerRoom Talk App"
+            >
+              Welcome back to LockerRoom Talk App
             </Text>
-            <Text variant="body" style={{ color: colors.textSecondary }}>
-              Sign in to continue
+            <Text
+              style={{ color: colors.textSecondary }}
+              accessibilityLabel="Sign in instructions"
+            >
+              Sign in to continue your anonymous dating reviews
             </Text>
           </View>
 
-          {error ? (
+          {formState.error ? (
             <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-              <Text variant="bodySmall" style={{ color: colors.error }}>
-                {error}
+              <Text
+                style={{ color: colors.error }}
+                accessibilityLabel={`Error: ${formState.error}`}
+                accessibilityRole="text"
+              >
+                {formState.error}
               </Text>
             </View>
           ) : null}
@@ -98,30 +165,37 @@ export default function SignInScreen() {
           <View style={styles.formContainer}>
             <Input
               label="Email"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(text: string) => setFormData(prev => ({ ...prev, email: text }))}
               placeholder="Email address"
               keyboardType="email-address"
               autoCapitalize="none"
               leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
               containerStyle={{ marginBottom: 16 }}
+              accessibilityLabel="Email address input field"
+              accessibilityHint="Enter your email address to sign in"
             />
 
             <Input
               label="Password"
-              value={password}
-              onChangeText={setPassword}
+              value={formData.password}
+              onChangeText={(text: string) => setFormData(prev => ({ ...prev, password: text }))}
               placeholder="Password"
               secureTextEntry
               leftIcon={<Lock size={18} color={colors.textSecondary} strokeWidth={1.5} />}
               containerStyle={{ marginBottom: 8 }}
+              accessibilityLabel="Password input field"
+              accessibilityHint="Enter your password to sign in"
             />
 
-            <Pressable 
+            <Pressable
               style={styles.forgotPassword}
               onPress={() => router.push('/(auth)/forgot-password')}
+              accessibilityLabel="Forgot password"
+              accessibilityHint="Navigate to password reset screen"
+              accessibilityRole="button"
             >
-              <Text variant="bodySmall" style={{ color: colors.primary }}>
+              <Text style={{ color: colors.primary }}>
                 Forgot password?
               </Text>
             </Pressable>
@@ -131,15 +205,25 @@ export default function SignInScreen() {
             <TouchableOpacity
               style={[
                 styles.signInButton,
-                { backgroundColor: (!email || !password) ? colors.chipBg : colors.primary }
+                { backgroundColor: (!formData.email.trim() || !formData.password.trim()) ? colors.chipBg : colors.primary }
               ]}
               onPress={handleSignIn}
-              disabled={isLoading || !email || !password}
+              disabled={formState.isLoading || isLoading || !formData.email.trim() || !formData.password.trim()}
+              accessibilityLabel="Sign in button"
+              accessibilityHint="Signs you into your account"
+              accessibilityRole="button"
             >
-              {isLoading ? (
-                <ActivityIndicator color={colors.onPrimary} size="small" />
+              {(formState.isLoading || isLoading) ? (
+                <ActivityIndicator
+                  color={colors.onPrimary}
+                  size="small"
+                  accessibilityLabel="Loading, please wait"
+                />
               ) : (
-                <Text variant="body" weight="semibold" style={{ color: colors.onPrimary }}>
+                <Text
+                  style={{ color: colors.onPrimary }}
+                  accessibilityLabel="Sign In"
+                >
                   Sign In
                 </Text>
               )}
@@ -147,14 +231,20 @@ export default function SignInScreen() {
           </View>
 
           <View style={styles.signUpContainer}>
-            <Text variant="body" style={{ color: colors.textSecondary }}>
+            <Text
+              style={{ color: colors.textSecondary }}
+              accessibilityLabel="Don't have an account?"
+            >
               Don&apos;t have an account?{" "}
             </Text>
-            <Pressable 
+            <Pressable
               onPress={() => router.push("/(auth)/signup")}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+              accessibilityLabel="Sign up"
+              accessibilityHint="Navigate to sign up screen"
+              accessibilityRole="button"
             >
-              <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
+              <Text style={{ color: colors.primary }}>
                 Sign up
               </Text>
             </Pressable>

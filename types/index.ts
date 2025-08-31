@@ -1,13 +1,15 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface ChatRoom {
   id: string;
   _id?: string; // For compatibility with existing code
   participants: string[];
   memberIds?: string[]; // Alternative property name used in code
-  createdAt: any; // Firestore Timestamp
-  updatedAt: any; // Firestore Timestamp
-  _creationTime?: any; // Alternative timestamp property
+  createdAt: Timestamp | Date | number; // Firestore Timestamp
+  updatedAt: Timestamp | Date | number; // Firestore Timestamp
+  _creationTime?: Timestamp | Date | number; // Alternative timestamp property
   lastMessage: ChatMessage | string | null; // Can be either a ChatMessage object or string
-  lastMessageTime: any | null; // Firestore Timestamp
+  lastMessageTime: Timestamp | Date | number | null; // Firestore Timestamp
   unreadCount?: {
     [userId: string]: number;
   };
@@ -27,10 +29,10 @@ export interface ChatMessage {
   chatRoomId?: string; // Alternative property name
   senderId: string;
   content: string;
-  messageType: 'text' | 'image' | 'emoji';
-  type?: 'text' | 'image' | 'emoji'; // Alternative property name for compatibility
-  timestamp: any; // Firestore Timestamp
-  _creationTime?: any; // Alternative timestamp property
+  messageType: 'text' | 'image' | 'emoji' | 'file';
+  type?: 'text' | 'image' | 'emoji' | 'file'; // Alternative property name for compatibility
+  timestamp: Timestamp | Date | number; // Firestore Timestamp
+  _creationTime?: Timestamp | Date | number; // Alternative timestamp property
   isRead: boolean;
   read?: boolean; // Alternative property name for compatibility
   isDelivered: boolean;
@@ -59,13 +61,13 @@ export interface User {
   relationshipGoals?: string;
   verified?: boolean;
   profileComplete?: boolean;
-  lastSeen?: any; // Firestore Timestamp
-  lastActive?: any; // Alternative property name
+  lastSeen?: Timestamp | Date | number; // Firestore Timestamp
+  lastActive?: Timestamp | Date | number; // Alternative property name
   isOnline?: boolean;
   isActive?: boolean;
-  createdAt?: any; // Firestore Timestamp
-  updatedAt?: any; // Firestore Timestamp
-  _creationTime?: any; // Alternative timestamp property
+  createdAt?: Timestamp | Date | number; // Firestore Timestamp
+  updatedAt?: Timestamp | Date | number; // Firestore Timestamp
+  _creationTime?: Timestamp | Date | number; // Alternative timestamp property
   reviewsCount?: number;
   matchesCount?: number;
   rating?: number;
@@ -79,6 +81,19 @@ export interface User {
     interestedIn?: string[];
     gender?: string;
   };
+  // Anonymous user specific fields
+  isAnonymous?: boolean;
+  reputationScore?: number;
+  reviewCount?: number;
+  helpfulVotes?: number;
+  badges?: Array<{
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    description: string;
+    earnedAt: Timestamp | Date | number; // Firestore Timestamp
+  }>;
 }
 
 export interface Review {
@@ -93,10 +108,10 @@ export interface Review {
   content: string;
   comment?: string; // Alternative property name
   title?: string;
-  createdAt: any; // Firestore Timestamp
-  updatedAt: any; // Firestore Timestamp
-  timestamp?: any; // Alternative timestamp property
-  _creationTime?: any; // Another alternative timestamp property
+  createdAt: Timestamp | Date | number; // Firestore Timestamp
+  updatedAt: Timestamp | Date | number; // Firestore Timestamp
+  timestamp?: Timestamp | Date | number; // Alternative timestamp property
+  _creationTime?: Timestamp | Date | number; // Another alternative timestamp property
   likes: number;
   helpfulCount?: number; // Alternative property name
   likedBy?: string[];
@@ -124,9 +139,9 @@ export interface Comment {
   authorId: string;
   userId?: string; // Alternative property name
   content: string;
-  createdAt: any; // Firestore Timestamp
-  timestamp?: any; // Alternative timestamp property
-  _creationTime?: any; // Another alternative timestamp property
+  createdAt: Timestamp | Date | number; // Firestore Timestamp
+  timestamp?: Timestamp | Date | number; // Alternative timestamp property
+  _creationTime?: Timestamp | Date | number; // Another alternative timestamp property
   likes?: number;
   likesCount?: number; // Alternative property name
   likedBy?: string[];
@@ -139,12 +154,12 @@ export interface Notification {
   type: string;
   title: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>; // More specific than any
   isRead: boolean;
   read?: boolean; // Alternative property name
-  createdAt: any; // Firestore Timestamp
-  readAt?: any; // Firestore Timestamp
-  timestamp?: any; // Alternative timestamp property
+  createdAt: Timestamp | Date | number; // Firestore Timestamp
+  readAt?: Timestamp | Date | number; // Firestore Timestamp
+  timestamp?: Timestamp | Date | number; // Alternative timestamp property
 }
 
 // Context types for providers
@@ -178,5 +193,18 @@ export interface NotificationContextType {
   markAsRead: (notificationId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   clearAllNotifications: () => Promise<void>; // Required since it's being used
-  addNotification: (notification: any) => Promise<void>; // Simplified type to avoid conflicts
+  addNotification: (notification: Partial<Notification>) => Promise<void>; // More specific type
+}
+
+// Export Message type alias for compatibility
+export type Message = ChatMessage;
+
+// Connection state interface for network status
+export interface ConnectionState {
+  isConnected: boolean;
+  isOffline: boolean;
+  isSlowConnection: boolean;
+  networkStatus: 'online' | 'offline' | 'slow';
+  lastPing?: number;
+  error?: string | null;
 }

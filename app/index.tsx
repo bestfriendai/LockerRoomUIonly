@@ -1,142 +1,45 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import { useAuth } from "@/providers/AuthProvider";
-import { useTheme } from "@/providers/ThemeProvider";
-import Text from "@/components/ui/Text";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
+import { useAuth } from '@/providers/AuthProvider';
+import { useTheme } from '@/providers/ThemeProvider';
+import { Text } from '@/components/ui/Text';
 
 export default function IndexScreen() {
-  const router = useRouter();
   const { user, isLoading } = useAuth();
   const { colors } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
-      console.log('Auth loading complete. User:', user ? user.id : 'null');
+    // Wait for component to mount before attempting navigation
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
 
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && isMounted) {
       if (user) {
-        // User is authenticated, redirect to main app
-        console.log('Redirecting authenticated user to main app');
         router.replace('/(tabs)');
       } else {
-        // User is not authenticated, redirect to onboarding/signin
-        console.log('Redirecting unauthenticated user to auth flow');
         router.replace('/(auth)');
       }
-    } else {
-      console.log('Auth still loading...');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isMounted]);
 
-  // Show loading screen while checking authentication
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.content}>
-        {/* App Logo/Brand */}
-        <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
-          <Text 
-            variant="h1" 
-            weight="bold" 
-            style={[styles.logoText, { color: colors.background }]}
-          >
-            MT
-          </Text>
-        </View>
-        
-        {/* App Name */}
-        <Text 
-          variant="h2" 
-          weight="bold" 
-          style={[styles.appName, { color: colors.text }]}
-        >
-          MockTrae
-        </Text>
-        
-        {/* Tagline */}
-        <Text 
-          variant="body" 
-          style={[styles.tagline, { color: colors.textSecondary }]}
-        >
-          Connect. Review. Discover.
-        </Text>
-        
-        {/* Loading Indicator */}
-        <View style={styles.loadingContainer}>
-          <LoadingSpinner size="large" color={colors.primary} />
-          <Text 
-            variant="bodySmall" 
-            style={[styles.loadingText, { color: colors.textSecondary }]}
-          >
-            Loading...
-          </Text>
-        </View>
-      </View>
-      
-      {/* Footer */}
-      <View style={styles.footer}>
-        <Text 
-          variant="caption" 
-          style={[styles.footerText, { color: colors.textSecondary }]}
-        >
-          © 2024 MockTrae. Demo Version.
-        </Text>
-      </View>
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.surface
+    }}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={{ marginTop: 16, color: colors.textSecondary }}>
+        Loading...
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  appName: {
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  container: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-  },
-  content: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  footer: {
-    paddingBottom: 32,
-    paddingHorizontal: 32,
-  },
-  footerText: {
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    textAlign: 'center',
-  },
-  logoContainer: {
-    alignItems: 'center',
-    borderRadius: 40,
-    elevation: 4,
-    height: 80,
-    justifyContent: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    width: 80,
-  },
-  logoText: {
-    fontSize: 32,
-  },
-  tagline: {
-    marginBottom: 48,
-    textAlign: 'center',
-  },
-});

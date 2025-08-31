@@ -2,28 +2,40 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
-  SafeAreaView,
+  TouchableOpacity,
   Pressable,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
   Animated,
+  Text
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useRouter } from 'expo-router';
 import { ArrowLeft, MapPin, Navigation } from 'lucide-react-native';
-import Text from '@/components/ui/Text';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useAuth } from '@/providers/AuthProvider';
 import * as Location from 'expo-location';
+import type {
+  LocationAddress,
+  AuthError,
+  AuthFormState
+} from '@/types/auth';
 
 export default function LocationSetupScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user, updateProfile } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+
+  // State with proper typing
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [locationName, setLocationName] = useState('');
-  const [error, setError] = useState('');
+  const [locationName, setLocationName] = useState<string>('');
+  const [formState, setFormState] = useState<AuthFormState>({
+    isLoading: false,
+    error: ''
+  });
+
+  // Animation values
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(50);
 
@@ -42,46 +54,54 @@ export default function LocationSetupScreen() {
     ]).start();
   }, []);
 
-  const requestLocationPermission = async () => {
-    setIsLoading(true);
-    setError('');
+  const requestLocationPermission = async (): Promise<void> => {
+    setFormState(prev => ({ ...prev, isLoading: true, error: '' }));
 
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      
+
       if (status !== 'granted') {
-        setError('Location permission is required to find matches near you');
-        setIsLoading(false);
+        setFormState(prev => ({
+          ...prev,
+          error: 'Location permission is required to find matches near you',
+          isLoading: false
+        }));
         return;
       }
 
-      const currentLocation = await Location.getCurrentPositionAsync({
+      const currentLocation: Location.LocationObject = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
       setLocation(currentLocation);
 
       // Reverse geocode to get location name
-      const reverseGeocode = await Location.reverseGeocodeAsync({
+      const reverseGeocode: LocationAddress[] = await Location.reverseGeocodeAsync({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
       });
 
+      let locationStr = '';
       if (reverseGeocode.length > 0) {
         const address = reverseGeocode[0];
-        const locationStr = `${address.city || address.subregion || address.region}, ${address.country}`;
+        locationStr = `${address.city || address.subregion || address.region}, ${address.country}`;
         setLocationName(locationStr);
       }
 
       // Update user profile with location
       await updateProfile({
-        location: locationName,
+        location: locationStr,
       });
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to get location');
-    } finally {
-      setIsLoading(false);
+      setFormState(prev => ({ ...prev, isLoading: false }));
+
+    } catch (err: unknown) {
+      const authError = err as AuthError;
+      setFormState(prev => ({
+        ...prev,
+        error: authError.message || 'Failed to get location',
+        isLoading: false
+      }));
     }
   };
 
@@ -119,18 +139,24 @@ export default function LocationSetupScreen() {
             styles.backButton,
             { opacity: pressed ? 0.5 : 1 },
           ]}
+          accessibilityLabel="Go back to previous screen"
+          accessibilityHint="Returns to the previous authentication screen"
+          accessibilityRole="button"
         >
           <ArrowLeft color={colors.text} size={24} strokeWidth={1.5} />
         </Pressable>
-        
+
         <Pressable
           onPress={handleSkip}
           style={({ pressed }) => [
             styles.skipButton,
             { opacity: pressed ? 0.5 : 1 },
           ]}
+          accessibilityLabel="Skip location setup"
+          accessibilityHint="Skip location setup and continue to the app"
+          accessibilityRole="button"
         >
-          <Text variant="body" weight="medium" style={{ color: colors.primary }}>
+          <Text style={{ color: colors.primary }}>
             Skip for now
           </Text>
         </Pressable>
@@ -153,19 +179,19 @@ export default function LocationSetupScreen() {
 
         <View style={styles.textSection}>
           <Text
-            variant="h2"
-            weight="semibold"
             style={{ color: colors.text, marginBottom: 12, textAlign: 'center' }}
+            accessibilityRole="header"
+            accessibilityLabel="Enable Location screen title"
           >
             Enable Location
           </Text>
           <Text
-            variant="body"
             style={{
               color: colors.textSecondary,
               textAlign: 'center',
               lineHeight: 24,
             }}
+            accessibilityLabel="Location privacy information"
           >
             We use your location to show you people and reviews nearby. Your exact location is never shared with other users.
           </Text>
@@ -175,19 +201,22 @@ export default function LocationSetupScreen() {
           <View style={[styles.locationCard, { backgroundColor: colors.cardBg }]}>
             <Navigation color={colors.primary} size={20} strokeWidth={1.5} />
             <Text
-              variant="body"
-              weight="medium"
               style={{ color: colors.text, marginLeft: 12 }}
+              accessibilityLabel={`Current location: ${locationName}`}
             >
               {locationName}
             </Text>
           </View>
         ) : null}
 
-        {error ? (
+        {formState.error ? (
           <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-            <Text variant="bodySmall" style={{ color: colors.error, textAlign: 'center' }}>
-              {error}
+            <Text
+              style={{ color: colors.error, textAlign: 'center' }}
+              accessibilityLabel={`Error: ${formState.error}`}
+              accessibilityRole="text"
+            >
+              {formState.error}
             </Text>
           </View>
         ) : null}
@@ -200,17 +229,23 @@ export default function LocationSetupScreen() {
                 { backgroundColor: colors.primary },
               ]}
               onPress={requestLocationPermission}
-              disabled={isLoading}
+              disabled={formState.isLoading}
+              accessibilityLabel="Enable location services"
+              accessibilityHint="Requests permission to access your location for finding nearby matches"
+              accessibilityRole="button"
             >
-              {isLoading ? (
-                <ActivityIndicator color={colors.onPrimary} size="small" />
+              {formState.isLoading ? (
+                <ActivityIndicator
+                  color={colors.onPrimary}
+                  size="small"
+                  accessibilityLabel="Loading, please wait"
+                />
               ) : (
                 <>
                   <MapPin color={colors.onPrimary} size={20} strokeWidth={1.5} />
                   <Text
-                    variant="body"
-                    weight="semibold"
                     style={{ color: colors.onPrimary, marginLeft: 8 }}
+                    accessibilityLabel="Enable Location"
                   >
                     Enable Location
                   </Text>
@@ -224,11 +259,13 @@ export default function LocationSetupScreen() {
                 { backgroundColor: colors.primary },
               ]}
               onPress={handleContinue}
+              accessibilityLabel="Continue to app"
+              accessibilityHint="Continues to the main application"
+              accessibilityRole="button"
             >
               <Text
-                variant="body"
-                weight="semibold"
                 style={{ color: colors.onPrimary }}
+                accessibilityLabel="Continue"
               >
                 Continue
               </Text>
@@ -238,7 +275,6 @@ export default function LocationSetupScreen() {
 
         <View style={styles.privacyNote}>
           <Text
-            variant="caption"
             style={{
               color: colors.textSecondary,
               textAlign: 'center',

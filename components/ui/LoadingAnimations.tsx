@@ -1,9 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Animated,
+  Easing
+} from 'react-native';
+
 import { MotiView } from 'moti';
 import { useTheme } from '@/providers/ThemeProvider';
-import Text from './Text';
-import { Loader2, Wifi, WifiOff } from 'lucide-react-native';
+import { Text } from './Text';
+import { Ionicons } from '@expo/vector-icons';
 
 // Spinning loader with customizable size and color
 export interface SpinnerProps {
@@ -43,7 +49,7 @@ export function Spinner({ size = 24, color, style }: SpinnerProps) {
         style,
       ]}
     >
-      <Loader2 size={size} color={color || colors.primary} />
+      <Ionicons name="refresh" size={size} color={color || colors.primary} />
     </Animated.View>
   );
 }

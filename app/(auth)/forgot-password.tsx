@@ -1,44 +1,78 @@
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
-  StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
-  Platform,
-  Pressable,
+  StyleSheet,
   ActivityIndicator,
   Alert,
+  Platform,
+  Pressable,
+  TouchableOpacity,
+  Text
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail } from 'lucide-react-native';
-import Text from '@/components/ui/Text';
 import { Input } from '@/components/ui/Input';
-import { TouchableOpacity } from 'react-native-gesture-handler';
 import { useTheme } from '@/providers/ThemeProvider';
-import { app } from '@/utils/firebase';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
-
-const auth = getAuth(app);
+import { useAuth } from '@/providers/AuthProvider';
+import { validateInput, checkRateLimit } from '@/utils/inputSanitization';
+import type {
+  ForgotPasswordFormData,
+  ValidationResult,
+  AuthError,
+  AuthFormState
+} from '@/types/auth';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { resetPassword } = useAuth();
 
-  const handleResetPassword = async () => {
-    if (!email) {
-      setError('Please enter your email address');
+  // Form state with proper typing
+  const [formData, setFormData] = useState<ForgotPasswordFormData>({
+    email: ''
+  });
+
+  const [formState, setFormState] = useState<AuthFormState>({
+    isLoading: false,
+    error: ''
+  });
+
+  const handleResetPassword = async (): Promise<void> => {
+    if (!formData.email.trim()) {
+      setFormState(prev => ({ ...prev, error: 'Please enter your email address' }));
       return;
     }
 
-    setIsLoading(true);
-    setError('');
+    // Rate limit reset attempts: 3 per 10 minutes per email
+    const userKey = `reset_${formData.email || 'unknown'}`;
+    if (!checkRateLimit(userKey, 3, 600000)) {
+      setFormState(prev => ({
+        ...prev,
+        error: 'Too many reset attempts. Please try again in 10 minutes.'
+      }));
+      return;
+    }
+
+    setFormState(prev => ({ ...prev, isLoading: true, error: '' }));
 
     try {
-      await sendPasswordResetEmail(auth, email);
-      
+      // Validate input with proper typing
+      const validationResult = validateInput(formData, 'signup') as ValidationResult<ForgotPasswordFormData>;
+
+      if (!validationResult.isValid) {
+        setFormState(prev => ({
+          ...prev,
+          error: validationResult.errors[0] || 'Please enter a valid email address',
+          isLoading: false
+        }));
+        return;
+      }
+
+      // Use the useAuth hook's resetPassword method
+      await resetPassword(validationResult.data.email);
+
       Alert.alert(
         'Reset Email Sent',
         'We have sent a password reset link to your email address. Please check your inbox and follow the instructions.',
@@ -49,10 +83,13 @@ export default function ForgotPasswordScreen() {
           },
         ]
       );
-    } catch (err: any) {
-      setError(err.message || 'Failed to send reset email');
-    } finally {
-      setIsLoading(false);
+    } catch (err: unknown) {
+      const authError = err as AuthError;
+      setFormState(prev => ({
+        ...prev,
+        error: authError.message || 'Failed to send reset email',
+        isLoading: false
+      }));
     }
   };
 
@@ -69,6 +106,9 @@ export default function ForgotPasswordScreen() {
               styles.backButton,
               { opacity: pressed ? 0.5 : 1 },
             ]}
+            accessibilityLabel="Go back to previous screen"
+            accessibilityHint="Returns to the previous authentication screen"
+            accessibilityRole="button"
           >
             <ArrowLeft color={colors.text} size={24} strokeWidth={1.5} />
           </Pressable>
@@ -77,21 +117,28 @@ export default function ForgotPasswordScreen() {
         <View style={styles.content}>
           <View style={styles.welcomeSection}>
             <Text
-              variant="h2"
-              weight="semibold"
               style={{ color: colors.text, marginBottom: 8 }}
+              accessibilityRole="header"
+              accessibilityLabel="Reset Password screen title"
             >
               Reset Password
             </Text>
-            <Text variant="body" style={{ color: colors.textSecondary }}>
+            <Text
+              style={{ color: colors.textSecondary }}
+              accessibilityLabel="Instructions for password reset"
+            >
               Enter your email address and we will send you a reset link
             </Text>
           </View>
 
-          {error ? (
+          {formState.error ? (
             <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-              <Text variant="bodySmall" style={{ color: colors.error }}>
-                {error}
+              <Text
+                style={{ color: colors.error }}
+                accessibilityLabel={`Error: ${formState.error}`}
+                accessibilityRole="text"
+              >
+                {formState.error}
               </Text>
             </View>
           ) : null}
@@ -99,13 +146,15 @@ export default function ForgotPasswordScreen() {
           <View style={styles.formContainer}>
             <Input
               label="Email"
-              value={email}
-              onChangeText={setEmail}
+              value={formData.email}
+              onChangeText={(text: string) => setFormData(prev => ({ ...prev, email: text }))}
               placeholder="Email address"
               keyboardType="email-address"
               autoCapitalize="none"
               leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
               containerStyle={{ marginBottom: 16 }}
+              accessibilityLabel="Email address input field"
+              accessibilityHint="Enter your email address to receive a password reset link"
             />
           </View>
 
@@ -114,19 +163,25 @@ export default function ForgotPasswordScreen() {
               style={[
                 styles.resetButton,
                 {
-                  backgroundColor: !email ? colors.chipBg : colors.primary,
+                  backgroundColor: !formData.email.trim() ? colors.chipBg : colors.primary,
                 },
               ]}
               onPress={handleResetPassword}
-              disabled={isLoading || !email}
+              disabled={formState.isLoading || !formData.email.trim()}
+              accessibilityLabel="Send reset link button"
+              accessibilityHint="Sends a password reset link to your email address"
+              accessibilityRole="button"
             >
-              {isLoading ? (
-                <ActivityIndicator color={colors.onPrimary} size="small" />
+              {formState.isLoading ? (
+                <ActivityIndicator
+                  color={colors.onPrimary}
+                  size="small"
+                  accessibilityLabel="Loading, please wait"
+                />
               ) : (
                 <Text
-                  variant="body"
-                  weight="semibold"
                   style={{ color: colors.onPrimary }}
+                  accessibilityLabel="Send Reset Link"
                 >
                   Send Reset Link
                 </Text>
@@ -135,14 +190,20 @@ export default function ForgotPasswordScreen() {
           </View>
 
           <View style={styles.signInContainer}>
-            <Text variant="body" style={{ color: colors.textSecondary }}>
+            <Text
+              style={{ color: colors.textSecondary }}
+              accessibilityLabel="Remember your password?"
+            >
               Remember your password?{' '}
             </Text>
             <Pressable
               onPress={() => router.push('/(auth)/signin')}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+              accessibilityLabel="Sign in"
+              accessibilityHint="Navigate to sign in screen"
+              accessibilityRole="button"
             >
-              <Text variant="body" weight="semibold" style={{ color: colors.primary }}>
+              <Text style={{ color: colors.primary }}>
                 Sign in
               </Text>
             </Pressable>

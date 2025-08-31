@@ -1,11 +1,20 @@
 import React, { useState, useCallback } from "react";
-import { View, StyleSheet, ScrollView, Modal, Alert, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Dimensions,
+  _Modal,
+  Share as RNShare
+} from 'react-native';
+
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { X, Share, Flag, Heart, MessageCircle, Star, Users, Settings, Info } from "lucide-react-native";
+import { X, Share, _Flag, Heart, MessageCircle, Star, _Users, _Settings, Info } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import Text from "@/components/ui/Text";
 import { Button } from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Card from "@/components/ui/Card";
@@ -68,18 +77,17 @@ function UserActionsModal({ data, onClose }: { data: any; onClose: () => void })
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Avatar size="lg" name={user.username} src={user.profilePicture} />
-        <Text variant="h4" weight="bold" style={{ marginTop: 12 }}>
+        <Avatar size="lg" name={user.username} isAnonymous={true} />
+        <Text style={{ marginTop: 12 }}>
           {user.username}
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
           {user.bio}
         </Text>
       </View>
 
       <View style={styles.actionsList}>
         <Button
-          variant="outline"
           onPress={() => handleAction('message')}
           leftIcon={<MessageCircle size={20} color={colors.primary} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -88,7 +96,6 @@ function UserActionsModal({ data, onClose }: { data: any; onClose: () => void })
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('profile')}
           leftIcon={<Users size={20} color={colors.text} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -97,7 +104,6 @@ function UserActionsModal({ data, onClose }: { data: any; onClose: () => void })
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('block')}
           leftIcon={<X size={20} color={colors.warning} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -106,7 +112,6 @@ function UserActionsModal({ data, onClose }: { data: any; onClose: () => void })
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('report')}
           leftIcon={<Flag size={20} color={colors.error} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -156,17 +161,16 @@ function ReviewActionsModal({ data, onClose }: { data: any; onClose: () => void 
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Text variant="h4" weight="bold">
+        <Text >
           Review Actions
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
           {review.title}
         </Text>
       </View>
 
       <View style={styles.actionsList}>
         <Button
-          variant="outline"
           onPress={() => handleAction('like')}
           leftIcon={<Heart size={20} color={colors.error} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -175,7 +179,6 @@ function ReviewActionsModal({ data, onClose }: { data: any; onClose: () => void 
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('share')}
           leftIcon={<Share size={20} color={colors.primary} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -184,7 +187,6 @@ function ReviewActionsModal({ data, onClose }: { data: any; onClose: () => void 
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('view')}
           leftIcon={<Star size={20} color={colors.warning} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -193,7 +195,6 @@ function ReviewActionsModal({ data, onClose }: { data: any; onClose: () => void 
         </Button>
 
         <Button
-          variant="outline"
           onPress={() => handleAction('report')}
           leftIcon={<Flag size={20} color={colors.error} strokeWidth={1.5} />}
           style={styles.actionButton}
@@ -224,10 +225,10 @@ function ShareModal({ data, onClose }: { data: any; onClose: () => void }) {
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Text variant="h4" weight="bold">
+        <Text >
           Share
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
           {shareData.title}
         </Text>
       </View>
@@ -236,12 +237,11 @@ function ShareModal({ data, onClose }: { data: any; onClose: () => void }) {
         {shareOptions.map((option) => (
           <Button
             key={option.id}
-            variant="outline"
             onPress={() => handleShare(option.label)}
             style={styles.shareOption}
           >
             <Text style={{ fontSize: 24, marginBottom: 8 }}>{option.icon}</Text>
-            <Text variant="caption" style={{ textAlign: 'center' }}>
+            <Text style={{ textAlign: 'center' }}>
               {option.label}
             </Text>
           </Button>
@@ -281,10 +281,10 @@ function ReportModal({ data, onClose }: { data: any; onClose: () => void }) {
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Text variant="h4" weight="bold">
+        <Text >
           Report Content
         </Text>
-        <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
           Help us understand what's wrong
         </Text>
       </View>
@@ -297,9 +297,7 @@ function ReportModal({ data, onClose }: { data: any; onClose: () => void }) {
             onPress={() => setSelectedReason(reason)}
             style={styles.reasonButton}
           >
-            <Text
-              variant="body"
-              style={{
+            <Text style={{
                 color: selectedReason === reason ? colors.background : colors.text,
               }}
             >
@@ -322,7 +320,7 @@ function ReportModal({ data, onClose }: { data: any; onClose: () => void }) {
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
   const { colors } = useTheme();
-  const router = useRouter();
+  let router = useRouter();
 
   const settingsOptions = [
     { id: 'profile', label: 'Edit Profile', icon: Users },
@@ -352,7 +350,7 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Text variant="h4" weight="normal">
+        <Text >
           Settings
         </Text>
       </View>
@@ -363,7 +361,6 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           return (
             <Button
               key={option.id}
-              variant="outline"
               onPress={() => handleSettingPress(option.id)}
               leftIcon={<IconComponent size={20} color={colors.text} strokeWidth={1.5} />}
               style={styles.actionButton}
@@ -387,21 +384,21 @@ function InfoModal({ data, onClose }: { data: any; onClose: () => void }) {
   return (
     <View style={styles.modalContent}>
       <View style={styles.modalHeader}>
-        <Text variant="h4" weight="normal">
+        <Text >
           {info.title}
         </Text>
       </View>
 
       <ScrollView style={styles.infoContent}>
-        <Text variant="body" style={{ color: colors.text, lineHeight: 24 }}>
+        <Text style={{ color: colors.text, lineHeight: 24 }}>
           {info.content}
         </Text>
         
         <View style={styles.infoSection}>
-          <Text variant="bodySmall" weight="normal" style={{ marginBottom: 8 }}>
+          <Text style={{ marginBottom: 8 }}>
             Features:
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary, lineHeight: 20 }}>
+          <Text style={{ color: colors.textSecondary, lineHeight: 20 }}>
             • Connect with people in your area{"\n"}
             • Share and read honest reviews{"\n"}
             • Join chat rooms and conversations{"\n"}
@@ -411,10 +408,10 @@ function InfoModal({ data, onClose }: { data: any; onClose: () => void }) {
         </View>
 
         <View style={styles.infoSection}>
-          <Text variant="bodySmall" weight="normal" style={{ marginBottom: 8 }}>
+          <Text style={{ marginBottom: 8 }}>
             Version:
           </Text>
-          <Text variant="caption" style={{ color: colors.textSecondary }}>
+          <Text style={{ color: colors.textSecondary }}>
             MockTrae v1.0.0 (Demo)
           </Text>
         </View>
@@ -444,7 +441,7 @@ function ModalContent({ type, data, onClose }: ModalContentProps) {
     default:
       return (
         <View style={styles.modalContent}>
-          <Text variant="h4" weight="normal">
+          <Text >
             Modal Content
           </Text>
           <Button onPress={onClose} style={{ marginTop: 20 }}>
@@ -482,12 +479,11 @@ export default function ModalScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Button
-          variant="ghost"
           size="sm"
           onPress={handleClose}
           leftIcon={<X size={20} color={colors.text} strokeWidth={1.5} />}
         />
-        <Text variant="h3" weight="normal">
+        <Text >
           Modal Demo
         </Text>
         <View style={{ width: 40 }} />
@@ -495,7 +491,7 @@ export default function ModalScreen() {
 
       {/* Modal Type Selector */}
       <Card style={styles.selectorCard}>
-        <Text variant="body" weight="medium" style={{ marginBottom: 16 }}>
+        <Text style={{ marginBottom: 16 }}>
           Select Modal Type:
         </Text>
         <View style={styles.modalSelector}>
@@ -507,9 +503,7 @@ export default function ModalScreen() {
               onPress={() => setActiveModal(modal.type)}
               style={styles.selectorButton}
             >
-              <Text
-                variant="caption"
-                style={{
+              <Text style={{
                   color: activeModal === modal.type ? colors.background : colors.text,
                 }}
               >
@@ -533,10 +527,10 @@ export default function ModalScreen() {
 
       {/* Instructions */}
       <Card style={styles.instructionsCard}>
-        <Text variant="bodySmall" weight="medium" style={{ marginBottom: 8 }}>
+        <Text style={{ marginBottom: 8 }}>
           Instructions:
         </Text>
-        <Text variant="caption" style={{ color: colors.textSecondary, lineHeight: 18 }}>
+        <Text style={{ color: colors.textSecondary, lineHeight: 18 }}>
           This screen demonstrates different modal types used throughout the app. 
           In a real implementation, modals would be triggered by user actions and 
           receive appropriate data through navigation parameters.

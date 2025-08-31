@@ -150,7 +150,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     tokens,
   };
 
-  // Always provide context, even during loading
+  // Don't render children until theme is loaded
+  if (!isLoaded) {
+    return null; // or a loading spinner
+  }
+
   return (
     <ThemeContext.Provider value={contextValue}>
       {children}

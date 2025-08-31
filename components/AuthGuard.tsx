@@ -1,10 +1,14 @@
-import React, { useEffect } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  StyleSheet,
+  Text
+} from 'react-native';
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
-import Text from "@/components/ui/Text";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import * as Sentry from "sentry-expo";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -15,26 +19,60 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const segments = useSegments();
   const { colors } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return; // Still loading, don't redirect yet
+    // Wait for component to mount before attempting navigation
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 150);
 
-    const inAuthGroup = segments[0] === 'auth';
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || !isMounted) return; // Still loading or not mounted, don't redirect yet
+
+    const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
-    const inProtectedRoute = inTabsGroup || 
-      segments.includes('profile') || 
-      segments.includes('chat') || 
-      segments.includes('review') || 
+    const inProtectedRoute = inTabsGroup ||
+      segments.includes('profile') ||
+      segments.includes('chat') ||
+      segments.includes('review') ||
       segments.includes('notifications');
 
     if (!user && inProtectedRoute) {
       // User is not signed in but trying to access protected route
-      router.replace('/auth/signin');
+      if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+        try {
+          Sentry.Native.addBreadcrumb({
+            category: 'nav',
+            message: 'Redirect to /(auth)/signin',
+            level: 'info' as const
+          });
+        } catch (sentryError) {
+          console.warn('Sentry breadcrumb failed:', sentryError);
+        }
+      }
+
+      router.replace('/(auth)/signin');
     } else if (user && inAuthGroup) {
+      if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+        try {
+          Sentry.Native.addBreadcrumb({
+            category: 'nav',
+            message: 'Redirect to /(tabs)',
+            level: 'info' as const
+          });
+        } catch (sentryError) {
+          console.warn('Sentry breadcrumb failed:', sentryError);
+        }
+      }
+
       // User is signed in but on auth screen
       router.replace('/(tabs)');
     }
-  }, [user, segments, isLoading, router]);
+  }, [user, segments, isLoading, isMounted, router]);
 
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -43,21 +81,16 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         <View style={styles.content}>
           {/* App Logo/Brand */}
           <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
-            <Text 
-              variant="h1" 
-              weight="bold" 
-              style={[styles.logoText, { color: colors.background }]}
+            <Text style={[styles.logoText, { color: colors.background }]}
             >
               MT
             </Text>
           </View>
-          
+
           {/* Loading Indicator */}
           <View style={styles.loadingContainer}>
             <LoadingSpinner size="large" color={colors.primary} />
-            <Text 
-              variant="bodySmall" 
-              style={[styles.loadingText, { color: colors.textSecondary }]}
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}
             >
               Authenticating...
             </Text>

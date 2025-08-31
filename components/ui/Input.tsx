@@ -6,6 +6,7 @@ import {
   ViewStyle,
   StyleSheet,
   Pressable,
+  Text as RNText
 } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
@@ -152,7 +153,6 @@ export const Input = forwardRef<TextInput, InputProps>((
     <View style={containerStyle}>
       {label && (
         <Text
-          variant="label"
           color={hasError ? 'error' : 'textSecondary'}
           style={styles.label}
         >
@@ -197,7 +197,6 @@ export const Input = forwardRef<TextInput, InputProps>((
       
       {(error || helperText) && (
         <Text
-          variant="caption"
           color={hasError ? 'error' : 'textSecondary'}
           style={styles.helperText}
         >
