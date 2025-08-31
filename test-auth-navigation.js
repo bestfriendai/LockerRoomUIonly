@@ -1,8 +1,5 @@
 // Test script to check authentication state and navigation flow
-import { getAuth } from 'firebase/auth';
-import { app } from './utils/firebase.js';
-
-const auth = getAuth(app);
+import { auth } from './utils/firebase.js';
 
 console.log('=== Authentication Navigation Test ===');
 console.log('Current user:', auth.currentUser);

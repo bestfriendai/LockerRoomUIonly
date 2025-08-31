@@ -38,13 +38,13 @@ const CategoryPill = React.memo(({ category, isSelected, onPress, colors }: {
 }) => (
   <Pressable
     onPress={onPress}
-    style={[
+    style=[
       styles.categoryPill,
       {
         backgroundColor: isSelected ? colors.chipBgActive : colors.chipBg,
         borderColor: colors.chipBorder,
       }
-    ]}
+    ]
     accessibilityRole="button"
     accessibilityState={{ selected: isSelected }}
   >
@@ -71,7 +71,8 @@ export default function HomeScreen() {
   const [useRadiusFilter, setUseRadiusFilter] = useState(true);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [searchRadius, setSearchRadius] = useState(25);
+  // Default to 50 miles as requested
+  const [searchRadius, setSearchRadius] = useState(50);
   const [currentLocation, setCurrentLocation] = useState({
     city: "Washington",
     state: "DC",
@@ -124,7 +125,55 @@ export default function HomeScreen() {
   const handleLocationSelect = useCallback(async (location: any) => {
     setSelectedLocationData(location);
     await fetchReviewsForLocation(location);
-  }, []);
+  }, [fetchReviewsForLocation]);
+
+  // Normalize any location shape (string or object) to a display string
+  const normalizeLocationToString = (loc: any): string => {
+    if (!loc) return '';
+    if (typeof loc === 'string') return loc;
+    if (typeof loc === 'object') {
+      const { name, city, state, region, country, locality, adminArea, subregion } = loc as any;
+      // Join the most common fields, skipping empties
+      return [name, city, state ?? region ?? adminArea ?? subregion, country ?? locality]
+        .filter(Boolean)
+        .join(', ');
+    }
+    try { return String(loc); } catch { return ''; }
+  };
+
+  // Coordinate helpers
+  const extractCoords = (coords: any): { lat: number; lon: number } | null => {
+    if (!coords) return null;
+    if (Array.isArray(coords) && coords.length >= 2) {
+      const [lon, lat] = coords;
+      if (typeof lat === 'number' && typeof lon === 'number') return { lat, lon };
+    } else if (typeof coords === 'object') {
+      const lat = (coords as any).latitude ?? (coords as any).lat;
+      const lon = (coords as any).longitude ?? (coords as any).lon ?? (coords as any).lng;
+      if (typeof lat === 'number' && typeof lon === 'number') return { lat, lon };
+    }
+    return null;
+  };
+
+  const getSelectedCoords = (location: any): { lat: number; lon: number } | null => {
+    const data = location?.data ?? location;
+    return extractCoords(data?.coordinates) || extractCoords(data?.coords) || null;
+  };
+
+  const getReviewCoords = (review: any): { lat: number; lon: number } | null => {
+    return (
+      extractCoords((review as any).coordinates) ||
+      extractCoords((review as any).locationData?.data?.coordinates) ||
+      extractCoords((review as any).locationData?.coordinates) ||
+      null
+    );
+  };
+
+  const distanceMiles = (a: { lat: number; lon: number }, b: { lat: number; lon: number }) => {
+    // LocationService.calculateDistance returns kilometers
+    const km = LocationService.calculateDistance(a.lat, a.lon, b.lat, b.lon);
+    return km * 0.621371; // km to miles
+  };
 
   const fetchReviewsForLocation = useCallback(async (location: any) => {
     setIsLoadingReviews(true);
@@ -137,52 +186,65 @@ export default function HomeScreen() {
         ...(doc as any).data(),
       })) as Review[];
 
-      // Filter reviews based on location type
-      if (location.type === 'global') {
-        // Show all reviews for global
+      if (location?.type === 'global') {
         setReviews(reviewsData);
-      } else if (location.type === 'current' || location.type === 'selected') {
-        // Filter reviews by location proximity
-        const locationData = (location as any)?.data;
-        const coordinates = locationData?.coordinates;
+      } else {
+        const selectedCoords = getSelectedCoords(location);
 
-        if (coordinates) {
-          // Filter reviews within a reasonable distance (for demo purposes)
-          const filteredReviews = reviewsData.filter(review => {
-            // For demo, we'll use a simple location name matching
-            // In production, implement proper geospatial filtering
-            if (review.location) {
-              // Handle location as object with city/state properties
-              const reviewCity = review.location.city?.toLowerCase() || '';
-              const reviewState = review.location.state?.toLowerCase() || '';
-              const reviewLocationString = `${reviewCity}, ${reviewState}`;
-              
-              const selectedLocation = (location as any)?.data?.name?.toLowerCase() || '';
-
-              // Check if review location contains selected location terms
-              const locationTerms = selectedLocation.split(',')[0].trim(); // Get city name
-              return reviewCity.includes(locationTerms) ||
-                     reviewLocationString.includes(locationTerms) ||
-                     reviewCity.includes((location as any)?.data?.city?.toLowerCase() || '');
-            }
-            return false;
+        if (selectedCoords && useRadiusFilter) {
+          // Filter by radius
+          const filtered = reviewsData.filter((review) => {
+            const rc = getReviewCoords(review);
+            if (!rc) return false; // skip reviews without coordinates when radius filter is on
+            return distanceMiles(selectedCoords, rc) <= searchRadius;
           });
+          setReviews(filtered);
 
-          setReviews(filteredReviews);
-
-          // Show message if no reviews found for location
-          if (filteredReviews.length === 0) {
+          if (filtered.length === 0) {
             Alert.alert(
-              'No Reviews Found',
-              `No reviews found for ${(location as any)?.data?.name || 'this location'}. Showing all reviews instead.`,
+              'No Reviews Nearby',
+              `No reviews found within ${searchRadius} miles. Showing all reviews instead.`,
               [{ text: 'OK', onPress: () => setReviews(reviewsData) }]
             );
           }
         } else {
-          setReviews(reviewsData);
+          // Fallback to string-based matching if no coords or radius filter off
+          const locationData = (location as any)?.data;
+          const selectedLocationString = normalizeLocationToString(locationData).toLowerCase();
+          const locationTerms = (selectedLocationString.split(',')[0] || '').trim();
+          const selectedCity = ((locationData?.city) ?? '').toString().toLowerCase();
+          const selectedState = ((locationData?.state) ?? (locationData?.region) ?? '').toString().toLowerCase();
+
+          const filtered = reviewsData.filter((review) => {
+            if ((review as any).location) {
+              const reviewLocationString = normalizeLocationToString((review as any).location).toLowerCase();
+              const locationParts = reviewLocationString.split(',').map(part => part.trim());
+              const reviewCity = locationParts[0] || '';
+              const reviewState = locationParts[1] || '';
+
+              return (
+                (locationTerms && (
+                  reviewCity.includes(locationTerms) ||
+                  reviewState.includes(locationTerms) ||
+                  reviewLocationString.includes(locationTerms)
+                )) ||
+                (selectedCity && (
+                  reviewCity.includes(selectedCity) ||
+                  reviewState.includes(selectedCity) ||
+                  reviewLocationString.includes(selectedCity)
+                )) ||
+                (selectedState && (
+                  reviewCity.includes(selectedState) ||
+                  reviewState.includes(selectedState) ||
+                  reviewLocationString.includes(selectedState)
+                ))
+              );
+            }
+            return false;
+          });
+
+          setReviews(filtered.length > 0 ? filtered : reviewsData);
         }
-      } else {
-        setReviews(reviewsData);
       }
     } catch (error) {
       if (__DEV__) {
@@ -192,34 +254,59 @@ export default function HomeScreen() {
     } finally {
       setIsLoadingReviews(false);
     }
-  }, []);
+  }, [normalizeLocationToString, getSelectedCoords, getReviewCoords, distanceMiles, searchRadius, useRadiusFilter]);
 
-  // Load saved location on component mount
+  // Load saved location on component mount; if none, auto-detect current location
   useEffect(() => {
-    const loadSavedLocation = async () => {
+    const initLocation = async () => {
       const savedLocation = await LocationService.getSelectedLocation();
-      let locationData;
-
       if (savedLocation) {
-        locationData = {
-          type: 'selected',
-          data: savedLocation,
-        };
-      } else {
-        // Default to global
-        locationData = {
-          type: 'global',
-          data: { name: 'Global', coordinates: null },
-        };
+        const locationData = { type: 'selected', data: savedLocation };
+        setSelectedLocationData(locationData);
+        await fetchReviewsForLocation(locationData);
+        return;
       }
 
-      setSelectedLocationData(locationData);
-      // Fetch reviews for the loaded location
-      await fetchReviewsForLocation(locationData);
+      // Try auto-detect current location
+      const granted = await LocationService.requestLocationPermission();
+      if (granted) {
+        try {
+          const loc = await LocationService.getCurrentLocation();
+          const place = await LocationService.reverseGeocode(loc.latitude, loc.longitude);
+          const currentData = {
+            name: place?.name || place?.formatted || `${place?.city || ''}, ${place?.region || ''}`,
+            city: place?.city || '',
+            region: place?.region || '',
+            state: place?.region || '',
+            country: place?.country || '',
+            coordinates: { latitude: loc.latitude, longitude: loc.longitude },
+          };
+          await LocationService.saveSelectedLocation(currentData);
+          const locationData = { type: 'current', data: currentData };
+          setSelectedLocationData(locationData);
+          await fetchReviewsForLocation(locationData);
+        } catch (e) {
+          // Fallback to global if detection fails
+          const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
+          setSelectedLocationData(locationData);
+          await fetchReviewsForLocation(locationData);
+        }
+      } else {
+        const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
+        setSelectedLocationData(locationData);
+        await fetchReviewsForLocation(locationData);
+      }
     };
 
-    loadSavedLocation();
+    initLocation();
   }, [fetchReviewsForLocation]);
+
+  // Re-apply location filtering when radius or toggle changes
+  useEffect(() => {
+    if (selectedLocationData) {
+      fetchReviewsForLocation(selectedLocationData);
+    }
+  }, [searchRadius, useRadiusFilter, selectedLocationData, fetchReviewsForLocation]);
 
   const handleCurrentLocation = useCallback(async () => {
     try {
@@ -236,19 +323,39 @@ export default function HomeScreen() {
 
       // Reverse geocode to get city and state
       const reverseGeocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+      let city = 'Unknown';
+      let region = 'Unknown';
       if (reverseGeocode.length > 0) {
-        const { city, region } = reverseGeocode[0];
-        setCurrentLocation({
-          city: city || 'Unknown',
-          state: region || 'Unknown',
-          coords: { latitude, longitude }
-        });
+        city = reverseGeocode[0].city || 'Unknown';
+        region = reverseGeocode[0].region || 'Unknown';
       }
+
+      setCurrentLocation({
+        city,
+        state: region,
+        coords: { latitude, longitude }
+      });
+
+      // Also set as selected location and refetch
+      const selected = {
+        type: 'current',
+        data: {
+          name: `${city}, ${region}`,
+          city,
+          region,
+          state: region,
+          coordinates: { latitude, longitude },
+        }
+      };
+      setSelectedLocationData(selected);
+      await LocationService.saveSelectedLocation(selected.data);
+      await fetchReviewsForLocation(selected);
+
       setShowLocationModal(false);
     } catch (error) {
       Alert.alert('Error', 'Failed to get current location. Please try again.');
     }
-  }, []);
+  }, [fetchReviewsForLocation]);
 
   const handleManualLocation = useCallback(() => {
     if (locationInput.trim()) {
@@ -313,8 +420,8 @@ export default function HomeScreen() {
             {selectedLocationData.type === 'global'
               ? 'Showing reviews from everywhere'
               : selectedLocationData.type === 'current'
-              ? 'Showing reviews near your current location'
-              : `Showing reviews near ${(selectedLocationData as any)?.data.name}`
+              ? `Showing reviews within ${searchRadius} miles of your location`
+              : `Showing reviews within ${searchRadius} miles of ${(selectedLocationData as any)?.data.name}`
             }
           </Text>
         )}
@@ -378,6 +485,13 @@ export default function HomeScreen() {
             Radius Filter
           </Text>
         </Pressable>
+        {/* Quick radius selector trigger */}
+        <Pressable
+          onPress={() => setShowRadiusModal(true)}
+          style={[styles.filterButton, { marginLeft: 8, backgroundColor: colors.surfaceElevated }]}
+        >
+          <Text style={{ color: colors.text }}>{searchRadius} mi</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -414,7 +528,7 @@ export default function HomeScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowRadiusModal(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}> 
             <Text style={styles.modalTitle}>
               Search Radius
             </Text>
@@ -455,7 +569,7 @@ export default function HomeScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowLocationModal(false)}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.card }]}> 
             <Text style={styles.modalTitle}>
               Change Location
             </Text>
@@ -533,6 +647,8 @@ const styles = StyleSheet.create({
   },
   filterToggle: {
     marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   header: {
     paddingBottom: 16,

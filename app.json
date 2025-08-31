@@ -3,10 +3,12 @@
     "name": "LockerRoom Talk App",
     "slug": "lockerroom-talk-app",
     "version": "1.0.0",
+    "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "lockerroom-talk-app",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -26,9 +28,15 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      ["sentry-expo", {
-        "project": "locker-room-talk-app"
-      }]
+      [
+        "sentry-expo",
+        {
+          "project": "locker-room-talk-app"
+        }
+      ],
+      "expo-font",
+      "expo-router",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

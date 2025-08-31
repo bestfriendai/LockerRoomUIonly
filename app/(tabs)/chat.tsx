@@ -282,11 +282,12 @@ export default function ChatScreen() {
     } catch (error) {
       if (__DEV__) {
         console.error("Error fetching chat rooms: ", error);
+        const errorObj = error as any;
         console.error("Error details:", {
-          name: error.name,
-          message: error.message,
-          code: error.code,
-          stack: error.stack
+          name: errorObj?.name,
+          message: errorObj?.message,
+          code: errorObj?.code,
+          stack: errorObj?.stack
         });
       }
       Alert.alert("Error", "Could not fetch chat rooms. Please check your connection and try again.");
@@ -352,10 +353,19 @@ export default function ChatScreen() {
       await fetchChatRooms();
       Alert.alert('Success', 'You have joined the room!');
     } catch (error) {
-      if (__DEV__) {
-        console.error("Error joining room: ", error);
-      }
-      Alert.alert('Error', 'Could not join the room. Please try again.');
+      console.error('Error joining room:', error);
+      Alert.alert('Error', 'Failed to join room');
+      
+      // Log error details for debugging
+      const errorObj = error as any;
+      console.log('Join room error details:', {
+        roomId,
+        userId: user?.id,
+        name: errorObj?.name,
+        message: errorObj?.message,
+        code: errorObj?.code,
+        stack: errorObj?.stack
+      });
     }
   }, [user?.id]);
 

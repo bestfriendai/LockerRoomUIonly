@@ -10,15 +10,7 @@ export default function AuthLayout() {
           headerShown: false,
           animation: 'slide_from_right',
         }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="signin" />
-        <Stack.Screen name="signup" />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="reset-password" />
-        <Stack.Screen name="profile-setup" />
-        <Stack.Screen name="location" />
-      </Stack>
+      />
     </>
   );
 }
