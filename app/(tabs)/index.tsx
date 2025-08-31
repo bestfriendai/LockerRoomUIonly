@@ -152,13 +152,18 @@ export default function HomeScreen() {
             // For demo, we'll use a simple location name matching
             // In production, implement proper geospatial filtering
             if (review.location) {
-              const reviewLocation = review.location.toLowerCase();
+              // Handle location as object with city/state properties
+              const reviewCity = review.location.city?.toLowerCase() || '';
+              const reviewState = review.location.state?.toLowerCase() || '';
+              const reviewLocationString = `${reviewCity}, ${reviewState}`;
+              
               const selectedLocation = (location as any)?.data?.name?.toLowerCase() || '';
 
               // Check if review location contains selected location terms
               const locationTerms = selectedLocation.split(',')[0].trim(); // Get city name
-              return reviewLocation.includes(locationTerms) ||
-                     reviewLocation.includes((location as any)?.data?.city?.toLowerCase() || '');
+              return reviewCity.includes(locationTerms) ||
+                     reviewLocationString.includes(locationTerms) ||
+                     reviewCity.includes((location as any)?.data?.city?.toLowerCase() || '');
             }
             return false;
           });

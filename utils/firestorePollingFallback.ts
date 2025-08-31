@@ -23,11 +23,11 @@ export class FirestorePollingFallback {
     query: Query<DocumentData>,
     onNext: (snapshot: QuerySnapshot<DocumentData>) => void,
     onError: (error: FirestoreError) => void,
-    intervalMs: number = 2000,
+    intervalMs: number = 3000,
     onDataReceived?: () => void
   ): () => void {
     if (__DEV__) {
-      console.log(`Starting polling fallback for listener: ${listenerId}`);
+      console.log(`[FirestorePollingFallback] Starting polling for listener: ${listenerId} with ${intervalMs}ms interval`);
     }
     
     this.isActive.set(listenerId, true);
@@ -39,27 +39,54 @@ export class FirestorePollingFallback {
         const snapshot = await getDocs(query);
         const lastSnapshot = this.lastSnapshots.get(listenerId);
         
-        // Check if data has changed by comparing document count and last doc timestamp
+        // Always call onNext for the first fetch
+        if (!lastSnapshot) {
+          this.lastSnapshots.set(listenerId, snapshot);
+          onDataReceived?.();
+          onNext(snapshot);
+          if (__DEV__) {
+            console.log(`[FirestorePollingFallback] Initial data loaded for ${listenerId}: ${snapshot.size} documents`);
+          }
+          return;
+        }
+        
+        // Check if data has changed by comparing document count and content
         let hasChanged = false;
         
-        if (!lastSnapshot || lastSnapshot.size !== snapshot.size) {
+        if (lastSnapshot.size !== snapshot.size) {
           hasChanged = true;
         } else {
-          // Compare document IDs and modification times
-          const currentDocs = snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
-          const lastDocs = lastSnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() }));
+          // More efficient comparison - check document IDs first, then data
+          const currentDocIds = snapshot.docs.map(doc => doc.id).sort();
+          const lastDocIds = lastSnapshot.docs.map(doc => doc.id).sort();
           
-          hasChanged = JSON.stringify(currentDocs) !== JSON.stringify(lastDocs);
+          if (JSON.stringify(currentDocIds) !== JSON.stringify(lastDocIds)) {
+            hasChanged = true;
+          } else {
+            // If IDs are the same, check if any document data changed
+            for (let i = 0; i < snapshot.docs.length; i++) {
+              const currentDoc = snapshot.docs[i];
+              const lastDoc = lastSnapshot.docs.find(doc => doc.id === currentDoc.id);
+              
+              if (!lastDoc || JSON.stringify(currentDoc.data()) !== JSON.stringify(lastDoc.data())) {
+                hasChanged = true;
+                break;
+              }
+            }
+          }
         }
         
         if (hasChanged) {
           this.lastSnapshots.set(listenerId, snapshot);
           onDataReceived?.();
           onNext(snapshot);
+          if (__DEV__) {
+            console.log(`[FirestorePollingFallback] Data changed for ${listenerId}: ${snapshot.size} documents`);
+          }
         }
       } catch (error) {
         if (__DEV__) {
-          console.error(`Polling error for ${listenerId}:`, error);
+          console.error(`[FirestorePollingFallback] Polling error for ${listenerId}:`, error);
         }
         onError(error as FirestoreError);
       }
@@ -83,7 +110,7 @@ export class FirestorePollingFallback {
    */
   stopPolling(listenerId: string): void {
     if (__DEV__) {
-      console.log(`Stopping polling fallback for listener: ${listenerId}`);
+      console.log(`[FirestorePollingFallback] Stopping polling for listener: ${listenerId}`);
     }
     
     this.isActive.set(listenerId, false);
@@ -103,7 +130,7 @@ export class FirestorePollingFallback {
    */
   stopAllPolling(): void {
     if (__DEV__) {
-      console.log('Stopping all polling fallbacks');
+      console.log('[FirestorePollingFallback] Stopping all polling fallbacks');
     }
     
     for (const listenerId of this.pollingIntervals.keys()) {

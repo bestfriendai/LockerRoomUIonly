@@ -16,7 +16,7 @@ import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
-import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import type { ChatRoom } from "@/types/index";
 import { toMillis } from "@/utils/timestampHelpers";
@@ -37,7 +37,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   const { user } = useAuth();
 
   let isOwner = room.createdBy === user?.id;
-  const memberCount = room.memberIds?.length || 0;
+  const memberCount = room.participants?.length || room.memberIds?.length || 0;
   const lastMessage = room.lastMessage;
   const isPrivate = room.type === 'private';
 
@@ -194,20 +194,102 @@ export default function ChatScreen() {
 
   useEffect(() => {
     fetchChatRooms();
-  }, []);
+  }, [user?.id]);
 
   const fetchChatRooms = async () => {
     setRefreshing(true);
     try {
+      // Check if user is authenticated before making Firestore query
+      if (!user?.id) {
+        if (__DEV__) {
+          console.log("User not authenticated, skipping chat rooms fetch");
+        }
+        setChatRooms([]);
+        return;
+      }
+
+      if (__DEV__) {
+        console.log("Fetching chat rooms for user:", user.id);
+      }
+
       const roomsCollection = collection(db, "chatRooms");
-      const roomsSnapshot = await getDocs(roomsCollection);
-      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc as any)?.data() } as ChatRoom));
-      setChatRooms(roomsList);
+      
+      // First, try to get all public rooms to see if there's any data
+      if (__DEV__) {
+        console.log("Querying for public rooms...");
+      }
+      
+      const publicQuery = query(
+        roomsCollection,
+        where("isPublic", "==", true)
+      );
+      
+      const publicSnapshot = await getDocs(publicQuery);
+      
+      if (__DEV__) {
+        console.log(`Found ${publicSnapshot.size} public rooms`);
+      }
+      
+      // Query for rooms where user is a participant
+      if (__DEV__) {
+        console.log("Querying for participant rooms...");
+      }
+      
+      const participantQuery = query(
+        roomsCollection,
+        where("participants", "array-contains", user.id)
+      );
+      
+      const participantSnapshot = await getDocs(participantQuery);
+      
+      if (__DEV__) {
+        console.log(`Found ${participantSnapshot.size} participant rooms`);
+      }
+      
+      // Combine results and remove duplicates
+      const participantRooms = participantSnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        _id: doc.id, 
+        ...doc.data() 
+      } as ChatRoom));
+      const publicRooms = publicSnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        _id: doc.id, 
+        ...doc.data() 
+      } as ChatRoom));
+      
+      // Remove duplicates by room ID
+      const allRooms = [...participantRooms];
+      publicRooms.forEach(room => {
+        if (!allRooms.find(existingRoom => existingRoom._id === room._id)) {
+          allRooms.push(room);
+        }
+      });
+      
+      if (__DEV__) {
+        console.log(`Total rooms after deduplication: ${allRooms.length}`);
+      }
+      
+      setChatRooms(allRooms);
+      
+      // If no rooms found, let's create some test data
+      if (allRooms.length === 0) {
+        if (__DEV__) {
+          console.log("No chat rooms found. Consider creating test data.");
+        }
+      }
+      
     } catch (error) {
       if (__DEV__) {
         console.error("Error fetching chat rooms: ", error);
+        console.error("Error details:", {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
       }
-      Alert.alert("Error", "Could not fetch chat rooms.");
+      Alert.alert("Error", "Could not fetch chat rooms. Please check your connection and try again.");
     } finally {
       setRefreshing(false);
     }
@@ -220,7 +302,10 @@ export default function ChatScreen() {
     // Filter by tab
     switch (activeTab) {
       case 'joined':
-        rooms = rooms.filter(room => room.memberIds?.includes(user?.id || ''));
+        rooms = rooms.filter(room => 
+          room.participants?.includes(user?.id || '') || 
+          room.memberIds?.includes(user?.id || '')
+        );
         break;
       case 'my_rooms':
         rooms = rooms.filter(room => room.createdBy === user?.id);
@@ -262,7 +347,7 @@ export default function ChatScreen() {
     try {
       const roomRef = doc(db, "chatRooms", roomId);
       await updateDoc(roomRef, {
-        memberIds: arrayUnion(user.id)
+        participants: arrayUnion(user.id)
       });
       await fetchChatRooms();
       Alert.alert('Success', 'You have joined the room!');
@@ -279,7 +364,7 @@ export default function ChatScreen() {
     try {
       const roomRef = doc(db, "chatRooms", roomId);
       await updateDoc(roomRef, {
-        memberIds: arrayRemove(user.id)
+        participants: arrayRemove(user.id)
       });
       await fetchChatRooms();
       Alert.alert('Success', 'You have left the room.');
@@ -303,7 +388,7 @@ export default function ChatScreen() {
     const userId = user?.id;
     if (!userId) return null;
 
-    const isJoined = item.memberIds?.includes(userId) || false;
+    const isJoined = item.participants?.includes(userId) || item.memberIds?.includes(userId) || false;
     const isOwner = item.createdBy === userId;
     let isMember = isJoined || isOwner;
 

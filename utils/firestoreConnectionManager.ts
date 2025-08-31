@@ -100,6 +100,10 @@ export class FirestoreConnectionManager {
     this.initializeNetworkStatusListener();
     this.lastSuccessfulConnection = Date.now();
     
+    // Start in polling mode to avoid ERR_ABORTED errors
+    this.circuitBreakerState = 'OPEN';
+    this.networkQuality = 'poor';
+    
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.handleNetworkOnline.bind(this));
       window.addEventListener('offline', this.handleNetworkOffline.bind(this));
@@ -117,6 +121,65 @@ export class FirestoreConnectionManager {
     });
     
     this.initializeConnectionPooling();
+    
+    if (__DEV__) {
+      console.log('[FirestoreConnectionManager] Starting in polling mode to avoid ERR_ABORTED errors');
+    }
+    
+    // Schedule a transition attempt to real-time after 45 seconds
+    setTimeout(() => {
+      this.attemptTransitionToRealtime();
+    }, 45000);
+  }
+  
+  /**
+   * Attempt to transition from polling back to real-time listeners
+   */
+  private attemptTransitionToRealtime(): void {
+    if (this.consecutiveAbortedRequests === 0 && this.consecutiveNetworkErrors === 0) {
+      if (__DEV__) {
+        console.log('[FirestoreConnectionManager] Attempting transition back to real-time listeners');
+      }
+      this.circuitBreakerState = 'HALF_OPEN';
+      this.networkQuality = 'good';
+      
+      // Try to switch one listener back to real-time as a test
+      const firstListener = Array.from(this.activeListeners.values())[0];
+      if (firstListener && firstListener.isUsingPollingFallback) {
+        this.switchListenerBackToRealtime(firstListener);
+      }
+    } else {
+      if (__DEV__) {
+        console.log('[FirestoreConnectionManager] Still have network errors, staying in polling mode');
+      }
+      // Try again in another 30 seconds
+      setTimeout(() => {
+        this.attemptTransitionToRealtime();
+      }, 30000);
+    }
+  }
+
+  /**
+   * Switch a listener back from polling to real-time
+   */
+  private switchListenerBackToRealtime(listener: ActiveListener): void {
+    if (!listener.isUsingPollingFallback) return;
+    
+    if (__DEV__) {
+      console.log(`[FirestoreConnectionManager] Switching listener ${listener.id} back to real-time`);
+    }
+    
+    // Stop polling
+    firestorePollingFallback.stopPolling(listener.id);
+    
+    // Reset listener state
+    listener.isUsingPollingFallback = false;
+    listener.isPolling = false;
+    listener.retryCount = 0;
+    listener.consecutiveNetworkErrors = 0;
+    
+    // Start real-time listener
+    this.startListener(listener);
   }
 
   /**
@@ -158,10 +221,9 @@ export class FirestoreConnectionManager {
       if (message.includes('net::ERR_ABORTED') && message.includes('firestore.googleapis.com')) {
         this.consecutiveAbortedRequests++;
         this.updateNetworkQuality('poor');
-        console.warn(`[FirestoreConnectionManager] Window error event detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), switching to polling`);
-        if (this.consecutiveAbortedRequests >= 2) {
-          this.switchAllListenersToPolling();
-        }
+        console.warn(`[FirestoreConnectionManager] Window error event detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), immediately switching to polling`);
+        // Immediately switch to polling on first ERR_ABORTED error
+        this.switchAllListenersToPolling();
       }
     });
     
@@ -171,12 +233,34 @@ export class FirestoreConnectionManager {
       if (reason.toString().includes('net::ERR_ABORTED') && reason.toString().includes('firestore.googleapis.com')) {
         this.consecutiveAbortedRequests++;
         this.updateNetworkQuality('poor');
-        console.warn(`[FirestoreConnectionManager] Unhandled rejection detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), switching to polling`);
-        if (this.consecutiveAbortedRequests >= 2) {
-          this.switchAllListenersToPolling();
-        }
+        console.warn(`[FirestoreConnectionManager] Unhandled rejection detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), immediately switching to polling`);
+        // Immediately switch to polling on first ERR_ABORTED error
+        this.switchAllListenersToPolling();
       }
     });
+    
+    // Monitor fetch errors that might indicate network issues
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      try {
+        const response = await originalFetch(...args);
+        if (!response.ok && args[0]?.toString().includes('firestore.googleapis.com')) {
+          console.warn('[FirestoreConnectionManager] Firestore fetch failed, considering polling fallback');
+          this.consecutiveAbortedRequests++;
+          if (this.consecutiveAbortedRequests >= 2) {
+            this.switchAllListenersToPolling();
+          }
+        }
+        return response;
+      } catch (error) {
+        if (args[0]?.toString().includes('firestore.googleapis.com')) {
+          console.warn('[FirestoreConnectionManager] Firestore fetch error:', error);
+          this.consecutiveAbortedRequests++;
+          this.switchAllListenersToPolling();
+        }
+        throw error;
+      }
+    };
     
     // Reset counter and improve network quality on successful operations
     setInterval(() => {
@@ -258,10 +342,36 @@ export class FirestoreConnectionManager {
   private startListener(listener: ActiveListener): void {
     if (!listener.isActive) return;
     
+    // Always start with polling for the first 30 seconds or if we have any network issues
+    const timeSinceStart = Date.now() - this.lastSuccessfulConnection;
+    if (this.consecutiveAbortedRequests > 0 || this.circuitBreakerState === 'OPEN' || timeSinceStart < 30000) {
+      if (__DEV__) {
+        console.log(`[FirestoreConnectionManager] Starting listener ${listener.id} with polling (errors: ${this.consecutiveAbortedRequests}, circuit: ${this.circuitBreakerState}, time: ${timeSinceStart}ms)`);
+      }
+      this.switchToPollingFallback(listener.id);
+      return;
+    }
+    
     try {
+      // Set a timeout for the initial connection attempt
+      const connectionTimeout = setTimeout(() => {
+        if (__DEV__) {
+          console.warn(`[FirestoreConnectionManager] Connection timeout for listener ${listener.id}, switching to polling`);
+        }
+        this.switchToPollingFallback(listener.id);
+      }, 10000); // 10 second timeout
+      
+      listener.connectionTimeout = connectionTimeout;
+      
       listener.unsubscribe = onSnapshot(
         listener.query,
         (snapshot) => {
+          // Clear connection timeout on successful connection
+          if (listener.connectionTimeout) {
+            clearTimeout(listener.connectionTimeout);
+            listener.connectionTimeout = undefined;
+          }
+          
           this.updateLastDataReceived();
           this.consecutiveNetworkErrors = 0;
           listener.consecutiveNetworkErrors = 0;
@@ -270,14 +380,17 @@ export class FirestoreConnectionManager {
           listener.onNext(snapshot);
         },
         (error) => {
+          // Clear connection timeout on error
+          if (listener.connectionTimeout) {
+            clearTimeout(listener.connectionTimeout);
+            listener.connectionTimeout = undefined;
+          }
           this.handleListenerError(error, listener);
         }
       );
       
       if (__DEV__) {
-      
         console.log(`[FirestoreConnectionManager] Real-time listener started: ${listener.id}`);
-      
       }
     } catch (error) {
       if (__DEV__) {
@@ -306,23 +419,21 @@ export class FirestoreConnectionManager {
     const isNetworkError = this.isNetworkError(error);
     const isTransientError = this.isTransientError(error);
     
-    // Check for network-related errors
+    // Check for network-related errors - be more aggressive
     if (isNetworkAborted || isNetworkError) {
       this.consecutiveAbortedRequests++;
       this.updateNetworkQuality('poor');
       
       console.warn(`[FirestoreConnectionManager] Network error detected (${this.consecutiveAbortedRequests} consecutive). Circuit breaker state: ${this.circuitBreakerState}`);
       
-      // Force circuit breaker to open after just 1 network error
-      if (this.consecutiveAbortedRequests >= 1) {
-        this.circuitBreakerState = 'OPEN';
-        this.lastFailureTime = Date.now();
-        if (__DEV__) {
-          console.warn('[FirestoreConnectionManager] Circuit breaker OPENED due to network errors. Switching all listeners to polling.');
-        }
-        this.switchAllListenersToPolling();
-        return;
+      // Immediately switch to polling on any network error
+      this.circuitBreakerState = 'OPEN';
+      this.lastFailureTime = Date.now();
+      if (__DEV__) {
+        console.warn('[FirestoreConnectionManager] Circuit breaker OPENED due to network errors. Immediately switching all listeners to polling.');
       }
+      this.switchAllListenersToPolling();
+      return;
     }
     
     if (this.circuitBreakerState === 'OPEN') {
@@ -384,24 +495,40 @@ export class FirestoreConnectionManager {
     if (!listener || listener.isUsingPollingFallback) return;
     
     if (__DEV__) {
-    
       console.log(`[FirestoreConnectionManager] Switching listener ${listenerId} to polling fallback`);
+    }
     
+    // Clear any existing connection timeout
+    if (listener.connectionTimeout) {
+      clearTimeout(listener.connectionTimeout);
+      listener.connectionTimeout = undefined;
     }
     
     if (listener.unsubscribe) {
-      listener.unsubscribe();
+      try {
+        listener.unsubscribe();
+      } catch (error) {
+        if (__DEV__) {
+          console.warn(`[FirestoreConnectionManager] Error unsubscribing listener ${listenerId}:`, error);
+        }
+      }
       listener.unsubscribe = null;
     }
     
     listener.isUsingPollingFallback = true;
     listener.isPolling = true;
     
+    // Use adaptive polling interval based on network quality - more aggressive
+    const pollingInterval = this.networkQuality === 'good' ? 1500 : 
+                           this.networkQuality === 'poor' ? 3000 : 8000;
+    
     firestorePollingFallback.startPolling(
       listenerId,
       listener.query,
       listener.onNext,
-      listener.onError || ((error: FirestoreError) => console.error('Polling error:', error))
+      listener.onError || ((error: FirestoreError) => console.error('Polling error:', error)),
+      pollingInterval,
+      () => this.updateLastDataReceived() // Callback when data is received
     );
   }
 

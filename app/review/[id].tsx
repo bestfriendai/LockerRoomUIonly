@@ -506,7 +506,7 @@ export default function ReviewDetailScreen() {
             <View style={styles.ratingContainer}>
               {renderStars(review.rating)}
               <Text style={{ marginLeft: 8 }}>
-                {review.rating}.0
+                {review.rating || 0}.0
               </Text>
             </View>
           </View>
