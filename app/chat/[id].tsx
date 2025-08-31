@@ -12,7 +12,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Send, MoreVertical, _Users, _Settings, _UserPlus, _UserMinus, _Flag, _Smile, Paperclip, Image as _ImageIcon, Camera } from "lucide-react-native";
+import { ArrowLeft, Send, MoreVertical, Users, Settings, UserPlus, UserMinus, Flag, Smile, Paperclip, Image as ImageIcon, Camera } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";

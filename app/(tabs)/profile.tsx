@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   TouchableOpacity,
   Pressable,
@@ -8,32 +9,31 @@ import {
   Alert,
   Dimensions,
   ActivityIndicator,
-  _Modal,
-  Share as _RNShare,
+  Modal,
+  Share,
   Animated,
   RefreshControl
 } from 'react-native';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from '@/components/ui/Text';
 import {
-  _Settings,
+  Settings,
   Edit3,
   Star,
   Activity,
   MessageCircle,
   Heart,
-  _Eye,
-  _Calendar,
-  _MapPin,
+  Eye,
+  Calendar,
+  MapPin,
   LogOut,
-  Share,
+  Share as ShareIcon,
   User as UserIcon,
   Shield,
   Trophy,
-  _Target,
-  _Zap,
+  Target,
+  Zap,
   RefreshCw,
   ChevronRight,
   Award,
@@ -150,7 +150,7 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
   };
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+    let date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
@@ -212,13 +212,13 @@ export default function ProfileScreen() {
       // Fetch reviews written by the user
       const userReviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.id));
       const userReviewsSnapshot = await getDocs(userReviewsQuery);
-      const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...(doc as unknown)?.data(), id: doc.id } as unknown as Review));
+      const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...(doc as any).data(), id: doc.id } as Review));
       setUserReviews(userReviewsData);
 
       // Fetch reviews received by the user
       const receivedReviewsQuery = query(collection(db, "reviews"), where("targetId", "==", user.id));
       const receivedReviewsSnapshot = await getDocs(receivedReviewsQuery);
-      const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...(doc as unknown)?.data(), id: doc.id } as unknown as Review));
+      const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...(doc as any).data(), id: doc.id } as Review));
       setReceivedReviews(receivedReviewsData);
 
     } catch (error) {
@@ -345,7 +345,7 @@ export default function ProfileScreen() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'reviews': {
-        const allReviews = [...(userReviews as unknown), ...receivedReviews].sort(
+        const allReviews = [...userReviews, ...receivedReviews].sort(
           (a, b) => {
             const timeA = toMillis(a.timestamp);
             const timeB = toMillis(b.timestamp);
@@ -442,7 +442,7 @@ export default function ProfileScreen() {
                 </View>
                 {user?.age && (
                   <View style={styles.detailItem}>
-                    <_Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
+                    <Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
                     <Text style={{ marginLeft: 12, color: colors.text }}>
                       {user.age} years old
                     </Text>
@@ -551,14 +551,14 @@ export default function ProfileScreen() {
             <Button
               size="sm"
               onPress={handleShare}
-              leftIcon={<Share size={16} color={colors.primary} strokeWidth={1.5} />}
+              leftIcon={<ShareIcon size={16} color={colors.primary} strokeWidth={1.5} />}
             >
               Share
             </Button>
             <Button
               size="sm"
               onPress={handleSettings}
-              leftIcon={<_Settings size={16} color={colors.primary} strokeWidth={1.5} />}
+              leftIcon={<Settings size={16} color={colors.primary} strokeWidth={1.5} />}
             >
               Settings
             </Button>
@@ -677,7 +677,7 @@ export default function ProfileScreen() {
         <View style={[styles.tabsContainer, { borderBottomColor: colors.border }]}>
           <View style={styles.tabsWrapper}>
             {tabs.map((tab, index) => {
-              const Icon = tab.icon;
+              let Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <Pressable
@@ -690,10 +690,11 @@ export default function ProfileScreen() {
                     color={isActive ? colors.primary : colors.textSecondary}
                     strokeWidth={1.5}
                   />
-                  <Text weight={isActive ? "medium" : "normal"}
+                  <Text
                     style={{
                       color: isActive ? colors.primary : colors.textSecondary,
-                      marginLeft: 6
+                      marginLeft: 6,
+                      fontWeight: isActive ? "500" : "normal"
                     }}
                   >
                     {tab.label}
@@ -745,7 +746,7 @@ export default function ProfileScreen() {
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setIsEditingUsername(false)}>
-              <Text style={[styles.cancel_Button, { color: colors.primary }]}>Cancel</Text>
+              <Text style={[styles.cancelButton, { color: colors.primary }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Choose New Identity</Text>
             <View style={{ width: 60 }} />

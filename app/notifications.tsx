@@ -10,7 +10,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Bell, Heart, MessageCircle, _Users, Star, _Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
+import { ArrowLeft, Bell, Heart, MessageCircle, Users, Star, Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useNotifications } from "@/providers/NotificationProvider";
@@ -77,8 +77,8 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     }
   };
 
-  const formatTimestamp = (timestamp: unknown) => {
-    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp);
+  const formatTimestamp = (timestamp: any) => {
+    const date = timestamp?.toDate ? timestamp.toDate() : new Date(timestamp as any);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -269,7 +269,7 @@ export default function NotificationsScreen() {
     return notifications.filter(n => filter === 'all' || !n.read);
   }, [notifications, filter]);
 
-  const unreadCount = useMemo(() => {
+  let unreadCount = useMemo(() => {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
 

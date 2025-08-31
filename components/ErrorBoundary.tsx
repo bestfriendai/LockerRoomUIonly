@@ -4,6 +4,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { Button } from '@/components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import * as Sentry from 'sentry-expo';
 
 interface Props {
@@ -68,7 +69,9 @@ class ErrorBoundary extends React.Component<Props, State> {
     }
 
     // Trigger haptic feedback
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+    }
 
     // Call custom error handler
     this.props.onError?.(error, errorInfo);
@@ -93,7 +96,9 @@ class ErrorBoundary extends React.Component<Props, State> {
   };
 
   resetError = () => {
-    Haptics.selectionAsync().catch(() => {});
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync().catch(() => {});
+    }
     this.setState({ 
       hasError: false, 
       error: null, 

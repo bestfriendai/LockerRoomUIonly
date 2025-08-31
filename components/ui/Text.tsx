@@ -77,7 +77,7 @@ export const Text: React.FC<TextProps> = ({
     textTransform: transform,
   };
 
-  const combinedStyle = StyleSheet.compose(dynamicStyle, style);
+  const combinedStyle = StyleSheet.compose(dynamicStyle, style) as TextStyle;
 
   return (
     <RNText style={combinedStyle} {...props}>

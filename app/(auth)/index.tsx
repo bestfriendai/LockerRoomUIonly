@@ -82,7 +82,7 @@ export default function WelcomeScreen() {
     ]).start();
   }, []);
 
-  const handleScroll = (event: unknown) => {
+  const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffset / width);
     if (index !== currentIndex && index >= 0 && index < onboardingData.length) {

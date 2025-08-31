@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   ScrollView,
@@ -12,7 +13,6 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Text } from '@/components/ui/Text';
 import { ArrowLeft, Star, Activity, User, MessageCircle, Heart, Eye, Calendar, MapPin, Flag, Share, MoreVertical, UserPlus, UserMinus } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -185,7 +185,7 @@ export default function UserProfileScreen() {
       setLoading(true);
       try {
         // Fetch user
-        const userData = await getUserById(id as string);
+        let userData = await getUserById(id as string);
         if (userData) {
           setUser(userData);
           
@@ -347,7 +347,7 @@ export default function UserProfileScreen() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'reviews':
-        const allReviews = [...(userReviews as any), ...receivedReviews].sort(
+        const allReviews = [...userReviews, ...receivedReviews].sort(
           (a, b) => toMillis(b._creationTime || b.createdAt) - toMillis(a._creationTime || a.createdAt)
         );
         
@@ -662,10 +662,11 @@ export default function UserProfileScreen() {
                     color={isActive ? colors.primary : colors.textSecondary}
                     strokeWidth={1.5}
                   />
-                  <Text weight={isActive ? "medium" : "normal"}
+                  <Text
                     style={{
                       color: isActive ? colors.primary : colors.textSecondary,
-                      marginLeft: 6
+                      marginLeft: 6,
+                      fontWeight: isActive ? "500" : "400"
                     }}
                   >
                     {tab.label}

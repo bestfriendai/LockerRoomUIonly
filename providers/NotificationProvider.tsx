@@ -106,7 +106,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const unsubscribeNotifications = subscribeToFirestore(
       `notifications-${user.id}`,
       notificationsQuery,
-      (snapshot) => {
+      (snapshot: any) => {
         const userNotifications = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
@@ -234,7 +234,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     isConnected,
     connectionState,
     reconnect,
-    addNotification: async (notification: Partial<Notification>) => {
+    addNotification: async (notification: unknown) => {
       // Placeholder implementation
       if (__DEV__) {
         console.log('Adding notification:', notification);

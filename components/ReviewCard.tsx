@@ -39,7 +39,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
     onPress();
   };
 
-  const handleLikePress = async (e: unknown) => {
+  const handleLikePress = async (e: any) => {
     e.stopPropagation();
     
     if (isLiking) return;
@@ -65,7 +65,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
     }
   };
   
-  const handleShare = async (e: unknown) => {
+  const handleShare = async (e: any) => {
     e.stopPropagation();
     
     if (isSharing) return;

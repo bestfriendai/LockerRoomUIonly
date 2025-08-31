@@ -5,7 +5,8 @@ import {
   Pressable,
   Alert,
   TextInput,
-  RefreshControl
+  RefreshControl,
+  Text,
 } from 'react-native';
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +16,6 @@ import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
-import { Text } from "@/components/ui/Text";
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import type { ChatRoom } from "@/types/index";
@@ -36,7 +36,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   const { colors } = useTheme();
   const { user } = useAuth();
 
-  const isOwner = room.createdBy === user?.id;
+  let isOwner = room.createdBy === user?.id;
   const memberCount = room.memberIds?.length || 0;
   const lastMessage = room.lastMessage;
   const isPrivate = room.type === 'private';
@@ -201,7 +201,7 @@ export default function ChatScreen() {
     try {
       const roomsCollection = collection(db, "chatRooms");
       const roomsSnapshot = await getDocs(roomsCollection);
-      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc as unknown)?.data() } as ChatRoom));
+      const roomsList = roomsSnapshot.docs.map(doc => ({ _id: doc.id, ...(doc as any)?.data() } as ChatRoom));
       setChatRooms(roomsList);
     } catch (error) {
       if (__DEV__) {
@@ -305,7 +305,7 @@ export default function ChatScreen() {
 
     const isJoined = item.memberIds?.includes(userId) || false;
     const isOwner = item.createdBy === userId;
-    const isMember = isJoined || isOwner;
+    let isMember = isJoined || isOwner;
 
     return (
       <ChatRoomItem
@@ -406,10 +406,11 @@ export default function ChatScreen() {
                 color={isActive ? colors.primary : colors.textSecondary}
                 strokeWidth={1.5}
               />
-              <Text weight={isActive ? "medium" : "normal"}
+              <Text
                 style={{
                   color: isActive ? colors.primary : colors.textSecondary,
-                  marginLeft: 6
+                  marginLeft: 6,
+                  fontWeight: isActive ? "500" : "400",
                 }}
               >
                 {tab.label}

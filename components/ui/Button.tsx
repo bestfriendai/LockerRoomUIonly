@@ -4,10 +4,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   View,
-  Text as RNText
+  Text
 } from 'react-native';
 import { AnimatedPressable } from './AnimatedPressable';
-import { Text } from './Text';
 import { useTheme } from '../../providers/ThemeProvider';
 import { SPACING } from '../../constants/spacing';
 import { BORDER_RADIUS } from '../../constants/shadows';
@@ -65,7 +64,7 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
 }) => {
   // Use try-catch to handle cases where ThemeProvider is not available
-  let colors, isDark;
+  let colors: any, isDark: boolean;
   try {
     const theme = useTheme();
     colors = theme.colors;
@@ -248,9 +247,7 @@ export const Button: React.FC<ButtonProps> = ({
           />
           {typeof children === 'string' && (
             <Text
-              variant={textVariant}
-              color={textColor as any}
-              style={styles.loadingText}
+              style={[styles.loadingText, { color: textColor }]}
             >
               {children}
             </Text>
@@ -263,7 +260,7 @@ export const Button: React.FC<ButtonProps> = ({
       <>
         {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
         {typeof children === 'string' ? (
-          <Text variant={textVariant} color={textColor as any}>
+          <Text style={{ color: textColor }}>
             {children}
           </Text>
         ) : (

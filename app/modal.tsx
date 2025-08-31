@@ -6,13 +6,13 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  _Modal,
+  Modal,
   Share as RNShare
 } from 'react-native';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { X, Share, _Flag, Heart, MessageCircle, Star, _Users, _Settings, Info } from "lucide-react-native";
+import { X, Share, Flag, Heart, MessageCircle, Star, Users, Settings, Info } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/Button";
@@ -32,7 +32,7 @@ interface ModalContentProps {
 
 function UserActionsModal({ data, onClose }: { data: any; onClose: () => void }) {
   const { colors } = useTheme();
-  const router = useRouter();
+  let router = useRouter();
   const user = data?.user;
 
   const handleAction = useCallback((action: string) => {

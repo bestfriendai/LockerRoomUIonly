@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
-  Text as RNText,
+  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -15,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, User, Cake, Book } from "lucide-react-native";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
-import { Text } from "@/components/ui/Text";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -52,11 +51,7 @@ export default function ProfileSetupScreen() {
       ]);
     } catch (err: unknown) {
       const error = err as Error;
-      setFormState(prev => ({
-        ...prev,
-        error: error.message || "Failed to update profile.",
-        isLoading: false
-      }));
+      setError((error as any)?.message || "Failed to update profile.");
     }
   };
 
@@ -75,7 +70,7 @@ export default function ProfileSetupScreen() {
           >
             <ArrowLeft color={colors.text} size={24} />
           </TouchableOpacity>
-          <Text variant="h3" weight="semibold" style={{ color: colors.text }}>
+          <Text style={{ color: colors.text }}>
             Setup Your Profile
           </Text>
           <View style={{ width: 40 }} />
@@ -128,13 +123,11 @@ export default function ProfileSetupScreen() {
             {/* Anonymous Profile Notice */}
             <View style={styles.anonymousNotice}>
               <Text
-                variant="h4"
-                weight="semibold"
                 style={{ color: colors.text, marginBottom: 12 }}
               >
                 Anonymous Profile
               </Text>
-              <Text variant="body" style={{ color: colors.textSecondary, textAlign: 'center' }}>
+              <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
                 🎭 Your identity remains completely anonymous. No profile photos are needed -
                 your reviews and interactions speak for themselves!
               </Text>
@@ -145,7 +138,7 @@ export default function ProfileSetupScreen() {
               loading={isLoading}
               style={{ marginTop: 32 }}
             >
-              <Text weight="semibold" style={{ color: colors.onPrimary }}>
+              <Text style={{ color: colors.onPrimary }}>
                 Save and Continue
               </Text>
             </Button>

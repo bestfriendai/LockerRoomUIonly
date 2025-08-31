@@ -84,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
   });
 
   const contentAnimatedStyle = useAnimatedStyle(() => {
-    const baseStyle: unknown = {
+    const baseStyle: any = {
       opacity: opacity.value,
     };
 

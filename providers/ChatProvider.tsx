@@ -91,7 +91,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const unsubscribeChatRooms = subscribeToFirestore(
       `chatRooms-${user.id}`,
       chatRoomsQuery,
-      (snapshot) => {
+      (snapshot: any) => {
         const rooms = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
@@ -133,7 +133,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     const unsubscribeMessages = subscribeToFirestore(
       `messages-${activeChatRoom.id}`,
       messagesQuery,
-      (snapshot) => {
+      (snapshot: any) => {
         const roomMessages = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()

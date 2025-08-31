@@ -33,11 +33,11 @@ const retryOperation = async <T>(
     } catch (error: unknown) {
       lastError = error;
       if (__DEV__) {
-        console.log(`Attempt ${i + 1} failed:`, error?.message || error);
+        console.log(`Attempt ${i + 1} failed:`, (error as any)?.message || error);
       }
       
       // Don't retry on authentication errors
-      if (error?.code === 'permission-denied' && i < maxRetries - 1) {
+      if ((error as any)?.code === 'permission-denied' && i < maxRetries - 1) {
         if (__DEV__) {
           console.log(`Retrying in ${delay}ms...`);
         }
@@ -52,7 +52,7 @@ const retryOperation = async <T>(
 };
 
 // Create or update user profile with retry logic
-export const createUser = async (userId: string, userData: unknown) => {
+export const createUser = async (userId: string, userData: any) => {
   try {
     if (__DEV__) {
       console.log('Creating user with ID:', userId);
@@ -83,7 +83,7 @@ export const createUser = async (userId: string, userData: unknown) => {
 
     const userDoc = {
       id: userId,
-      ...userData,
+      ...(userData as any),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       isOnline: true,
@@ -117,7 +117,7 @@ export const createUser = async (userId: string, userData: unknown) => {
     }
   } catch (error: unknown) {
     // Enhanced error messages for common Firestore permission errors
-    if (error?.code === 'permission-denied') {
+    if ((error as any)?.code === 'permission-denied') {
       if (__DEV__) {
         console.error('Firestore permission denied. Please check security rules.', {
         userId,
@@ -130,8 +130,8 @@ export const createUser = async (userId: string, userData: unknown) => {
     if (__DEV__) {
     
       console.error('Error creating user:', {
-      code: error?.code,
-      message: error?.message,
+      code: (error as any)?.code,
+      message: (error as any)?.message,
       userId
     });
     
@@ -179,7 +179,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
     return updatedUser;
   } catch (error: unknown) {
     // Enhanced error messages
-    if (error?.code === 'permission-denied') {
+    if ((error as any)?.code === 'permission-denied') {
       if (__DEV__) {
         console.error('Firestore permission denied during update.', {
         userId,
@@ -201,7 +201,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
 // Get users by location (for matching)
 export async function getUsersByLocation(location: string, excludeUserId?: string): Promise<User[]> {
   try {
-    const q = query(
+    let q = query(
       collection(db, USERS_COLLECTION),
       where('location', '==', location),
       where('isActive', '==', true),
@@ -234,7 +234,7 @@ export async function getUsersByLocation(location: string, excludeUserId?: strin
 // Search users by interests
 export async function getUsersByInterests(interests: string[], excludeUserId?: string): Promise<User[]> {
   try {
-    const q = query(
+    let q = query(
       collection(db, USERS_COLLECTION),
       where('interests', 'array-contains-any', interests),
       where('isActive', '==', true),

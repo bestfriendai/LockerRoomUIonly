@@ -6,13 +6,14 @@ import {
   ScrollView,
   Alert,
   TextInput,
-  _Modal,
-  RefreshControl
+  Modal,
+  RefreshControl,
+  Text
 } from 'react-native';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { _MapPin, _ChevronDown, Search, Bell, _Target, Navigation, Edit3 } from "lucide-react-native";
+import { MapPin, ChevronDown, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
 import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
 import { useAuth } from "@/providers/AuthProvider";
@@ -20,7 +21,6 @@ import { MasonryReviewCard } from "@/components/MasonryReviewCard";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Review } from "@/types";
 import { Button } from "@/components/ui/Button";
-import { Text } from "@/components/ui/Text";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/utils/firebase";
 import { FILTER_CATEGORIES } from "@/constants/categories";
@@ -30,16 +30,11 @@ import { LocationService } from "@/services/locationService";
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
 // Memoized category pill component for better performance
-const CategoryPill = memo(({
-  category,
-  isSelected,
-  onPress,
-  colors
-}: {
+const CategoryPill = React.memo(({ category, isSelected, onPress, colors }: {
   category: { id: string; label: string };
   isSelected: boolean;
   onPress: () => void;
-  colors: unknown;
+  colors: any;
 }) => (
   <Pressable
     onPress={onPress}
@@ -53,9 +48,10 @@ const CategoryPill = memo(({
     accessibilityRole="button"
     accessibilityState={{ selected: isSelected }}
   >
-    <Text weight={isSelected ? "medium" : "normal"}
+    <Text
       style={{
-        color: isSelected ? colors.chipTextActive : colors.chipText
+        color: isSelected ? colors.chipTextActive : colors.chipText,
+        fontWeight: isSelected ? "500" : "400",
       }}
     >
       {category.label}
@@ -96,7 +92,7 @@ export default function HomeScreen() {
     try {
       const reviewsCollection = collection(db, "reviews");
       const reviewsSnapshot = await getDocs(reviewsCollection);
-      const reviewsList = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc as unknown)?.data() } as Review));
+      const reviewsList = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data() } as Review));
       setReviews(reviewsList);
     } catch (error) {
       if (__DEV__) {
@@ -109,7 +105,7 @@ export default function HomeScreen() {
   };
 
   // Filter reviews based on selected category
-  const filteredReviews = useMemo(() => {
+  let filteredReviews = useMemo(() => {
     if (selectedCategory === "All") {
       return reviews;
     }
@@ -125,12 +121,12 @@ export default function HomeScreen() {
   }, []);
 
   // Location handling functions
-  const handleLocationSelect = useCallback(async (location: unknown) => {
+  const handleLocationSelect = useCallback(async (location: any) => {
     setSelectedLocationData(location);
     await fetchReviewsForLocation(location);
   }, []);
 
-  const fetchReviewsForLocation = useCallback(async (location: unknown) => {
+  const fetchReviewsForLocation = useCallback(async (location: any) => {
     setIsLoadingReviews(true);
     try {
       // Fetch all reviews first
@@ -138,7 +134,7 @@ export default function HomeScreen() {
       const snapshot = await getDocs(reviewsQuery);
       const reviewsData = snapshot.docs.map(doc => ({
         id: doc.id,
-        ...(doc as unknown)?.data(),
+        ...(doc as any).data(),
       })) as Review[];
 
       // Filter reviews based on location type
@@ -147,7 +143,7 @@ export default function HomeScreen() {
         setReviews(reviewsData);
       } else if (location.type === 'current' || location.type === 'selected') {
         // Filter reviews by location proximity
-        const locationData = (location as unknown)?.data;
+        const locationData = (location as any)?.data;
         const coordinates = locationData?.coordinates;
 
         if (coordinates) {
@@ -157,12 +153,12 @@ export default function HomeScreen() {
             // In production, implement proper geospatial filtering
             if (review.location) {
               const reviewLocation = review.location.toLowerCase();
-              const selectedLocation = (location as unknown)?.data.name.toLowerCase();
+              const selectedLocation = (location as any)?.data?.name?.toLowerCase() || '';
 
               // Check if review location contains selected location terms
               const locationTerms = selectedLocation.split(',')[0].trim(); // Get city name
               return reviewLocation.includes(locationTerms) ||
-                     reviewLocation.includes((location as unknown)?.data.city?.toLowerCase() || '');
+                     reviewLocation.includes((location as any)?.data?.city?.toLowerCase() || '');
             }
             return false;
           });
@@ -173,7 +169,7 @@ export default function HomeScreen() {
           if (filteredReviews.length === 0) {
             Alert.alert(
               'No Reviews Found',
-              `No reviews found for ${(location as unknown)?.data.name}. Showing all reviews instead.`,
+              `No reviews found for ${(location as any)?.data?.name || 'this location'}. Showing all reviews instead.`,
               [{ text: 'OK', onPress: () => setReviews(reviewsData) }]
             );
           }
@@ -286,7 +282,7 @@ export default function HomeScreen() {
         <View style={styles.headerActions}>
           <Pressable
             onPress={() => router.push("/search")}
-            style={[styles.header_Button, { backgroundColor: colors.surfaceElevated }]}
+            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }]}
           >
             <Search size={18} color={colors.text} strokeWidth={1.5} />
           </Pressable>
@@ -313,7 +309,7 @@ export default function HomeScreen() {
               ? 'Showing reviews from everywhere'
               : selectedLocationData.type === 'current'
               ? 'Showing reviews near your current location'
-              : `Showing reviews near ${(selectedLocationData as unknown)?.data.name}`
+              : `Showing reviews near ${(selectedLocationData as any)?.data.name}`
             }
           </Text>
         )}

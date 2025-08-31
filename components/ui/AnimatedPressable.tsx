@@ -5,7 +5,8 @@ import {
   Animated as RNAnimated,
   ViewStyle,
   Pressable,
-  PressableProps
+  PressableProps,
+  GestureResponderEvent
 } from 'react-native';
 
 import Animated, {
@@ -15,6 +16,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Platform } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 
 // Fallback colors when ThemeProvider is not available
@@ -67,12 +69,12 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   const opacity = useSharedValue(1);
 
   const hapticButtonPress = () => {
-    if (hapticOnPress && !disabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticOnPress && !disabled && Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     }
   };
 
-  const handlePressIn = (event: unknown) => {
+  const handlePressIn = (event: GestureResponderEvent) => {
     scale.value = withSpring(scaleTo, {
       damping: 15,
       stiffness: 300,
@@ -86,7 +88,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     onPressIn?.(event);
   };
 
-  const handlePressOut = (event: unknown) => {
+  const handlePressOut = (event: GestureResponderEvent) => {
     scale.value = withSpring(scaleFrom, {
       damping: 15,
       stiffness: 300,
@@ -99,7 +101,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
     onPressOut?.(event);
   };
 
-  const handlePress = (event: unknown) => {
+  const handlePress = (event: GestureResponderEvent) => {
     if (!disabled) {
       onPress?.(event);
     }

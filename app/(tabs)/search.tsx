@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
   View,
+  Text,
   StyleSheet,
   Pressable,
   TextInput
@@ -8,8 +9,7 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Text } from '@/components/ui/Text';
-import { Search as SearchIcon, X, TrendingUp, Clock, _Users, SlidersHorizontal, _MapPin, Star, _Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
+import { Search as SearchIcon, X, TrendingUp, Clock, Users, SlidersHorizontal, MapPin, Star, Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useChat } from "@/providers/ChatProvider";
@@ -140,15 +140,15 @@ export default function SearchScreen() {
 
     // Apply filters
     if (selectedCategory !== "All" && activeTab === 'reviews') {
-      results = results.filter((item: unknown) => item.category === selectedCategory);
+      results = results.filter((item: any) => item.category === selectedCategory);
     }
 
     if (selectedRating && activeTab === 'reviews') {
-      results = results.filter((item: unknown) => item.rating >= selectedRating);
+      results = results.filter((item: any) => item.rating >= selectedRating);
     }
 
     // Apply sorting
-    results.sort((a: unknown, b: unknown) => {
+    results.sort((a: any, b: any) => {
       switch (sortBy) {
         case 'date':
           const dateA = new Date(a._creationTime || 0).getTime();
@@ -194,7 +194,7 @@ export default function SearchScreen() {
     searchInputRef.current?.focus();
   };
 
-  const renderSearchResult = ({ item, index }: { item: unknown; index: number }) => {
+  const renderSearchResult = ({ item, index }: { item: any; index: number }) => {
     switch (activeTab) {
       case 'reviews':
         return (
@@ -372,7 +372,7 @@ export default function SearchScreen() {
         </View>
         <Pressable
           onPress={() => setShowFilters(!showFilters)}
-          style={[styles.filter_Button, { backgroundColor: colors.surfaceElevated }]}
+          style={[styles.filterButton, { backgroundColor: colors.surfaceElevated }]}
         >
           <SlidersHorizontal size={18} color={colors.text} strokeWidth={1.5} />
         </Pressable>
@@ -397,10 +397,11 @@ export default function SearchScreen() {
                 color={isActive ? colors.primary : colors.textSecondary}
                 strokeWidth={1.5}
               />
-              <Text weight={isActive ? "medium" : "normal"}
+              <Text
                 style={{
                   color: isActive ? colors.primary : colors.textSecondary,
-                  marginLeft: 6
+                  marginLeft: 6,
+                  fontWeight: isActive ? "500" : "normal"
                 }}
               >
                 {tab.label}
@@ -418,7 +419,7 @@ export default function SearchScreen() {
           estimatedItemSize={120}
           contentContainerStyle={styles.resultsContainer}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item: unknown) => item._id || item.id}
+          keyExtractor={(item: any) => item._id || item.id}
         />
       ) : (
         renderEmptyState()

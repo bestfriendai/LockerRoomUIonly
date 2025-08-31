@@ -4,6 +4,7 @@ import {
   TextInputProps,
   View,
   ViewStyle,
+  TextStyle,
   StyleSheet,
   Pressable,
   Text as RNText
@@ -22,7 +23,7 @@ interface InputProps extends TextInputProps {
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
   containerStyle?: ViewStyle;
-  inputStyle?: ViewStyle;
+  inputStyle?: TextStyle;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'filled' | 'underlined';
 }
@@ -160,7 +161,7 @@ export const Input = forwardRef<TextInput, InputProps>((
         </Text>
       )}
       
-      <View style={[containerStyles, style]}>
+      <View style={[containerStyles, style as ViewStyle]}>
         {leftIcon && (
           <View style={styles.iconContainer}>
             {leftIcon}
@@ -169,7 +170,7 @@ export const Input = forwardRef<TextInput, InputProps>((
         
         <TextInput
           ref={ref}
-          style={[textInputStyles, inputStyle]}
+          style={[textInputStyles, inputStyle as TextStyle]}
           placeholderTextColor={colors.textTertiary}
           selectionColor={colors.primary}
           editable={editable}

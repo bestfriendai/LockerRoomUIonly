@@ -409,20 +409,23 @@ export class FirestoreConnectionManager {
    * Network error classification methods
    */
   private isNetworkAborted(error: unknown): boolean {
-    const message = error?.message || error?.code || '';
+    const errorObj = error as any;
+    const message = errorObj?.message || errorObj?.code || '';
     return message.includes('ERR_ABORTED') || message.includes('aborted');
   }
 
   private isNetworkError(error: unknown): boolean {
+    const errorObj = error as any;
     const networkCodes = ['unavailable', 'deadline-exceeded', 'resource-exhausted'];
-    return networkCodes.includes(error?.code) || 
-           error?.message?.includes('network') ||
-           error?.message?.includes('timeout');
+    return networkCodes.includes(errorObj?.code) || 
+           errorObj?.message?.includes('network') ||
+           errorObj?.message?.includes('timeout');
   }
 
   private isTransientError(error: unknown): boolean {
+    const errorObj = error as any;
     const transientCodes = ['deadline-exceeded', 'resource-exhausted', 'internal'];
-    return transientCodes.includes(error?.code);
+    return transientCodes.includes(errorObj?.code);
   }
 
   /**
@@ -507,8 +510,9 @@ export class FirestoreConnectionManager {
 
   private isConnectionValid(connectionInfo: unknown): boolean {
     const now = Date.now();
-    const age = now - connectionInfo.created;
-    const timeSinceLastUse = now - connectionInfo.lastUsed;
+    const connInfo = connectionInfo as any;
+    const age = now - connInfo.created;
+    const timeSinceLastUse = now - connInfo.lastUsed;
     
     return age < this.connectionTimeout && timeSinceLastUse < this.connectionTimeout;
   }

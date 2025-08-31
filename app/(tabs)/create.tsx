@@ -3,15 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   ScrollView,
   Alert,
   Platform,
+  Pressable,
   Dimensions,
   TextInput,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Image,
 } from 'react-native';
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Camera, Image as ImageIcon, X, ChevronDown, Check, Flag } from "lucide-react-native";
@@ -88,7 +88,7 @@ export default function CreateReviewScreen() {
   ];
 
   // New location handling
-  const handleLocationSelect = useCallback((locationData: unknown) => {
+  const handleLocationSelect = useCallback((locationData: any) => {
     setSelectedLocationData(locationData);
     // Also update the old location field for backward compatibility
     if (locationData.data && locationData.data.name) {
@@ -105,7 +105,7 @@ export default function CreateReviewScreen() {
           type: 'selected',
           data: savedLocation,
         });
-        setLocation((savedLocation as unknown).name || (savedLocation as unknown).city || 'Unknown Location');
+        setLocation((savedLocation as any).name || (savedLocation as any).city || 'Unknown Location');
       }
     };
 
@@ -123,8 +123,8 @@ export default function CreateReviewScreen() {
 
       const _currentLocation = await Location.getCurrentPositionAsync({});
       const reverseGeocode = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
+        latitude: _currentLocation.coords.latitude,
+        longitude: _currentLocation.coords.longitude,
       });
 
       if (reverseGeocode.length > 0) {
@@ -422,7 +422,7 @@ export default function CreateReviewScreen() {
               </Text>
             )}
             <View style={styles.categoriesGrid}>
-              {categories.map((category) => {
+              {_categories.map((category: string) => {
                 const isSelected = selectedCategories.includes(category);
                 return (
                   <Pressable
