@@ -1,19 +1,44 @@
-import { View, Text, Button } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '../providers/AuthProvider';
+import { useTheme } from '../providers/ThemeProvider';
 
 export default function IndexScreen() {
+  const { user, isLoading } = useAuth();
+  const { colors } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Wait for component to mount before attempting navigation
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && isMounted) {
+      if (user) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)');
+      }
+    }
+  }, [user, isLoading, isMounted]);
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text style={{ fontSize: 24, marginBottom: 20 }}>Welcome to LockerRoom Talk</Text>
-      <Button 
-        title="Go to Auth" 
-        onPress={() => router.push('/(auth)/signin')}
-      />
-      <View style={{ height: 20 }} />
-      <Button 
-        title="Go to Tabs" 
-        onPress={() => router.push('/(tabs)')}
-      />
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.surface
+    }}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={{ marginTop: 16, color: colors.textSecondary }}>
+        Loading...
+      </Text>
     </View>
   );
 }
