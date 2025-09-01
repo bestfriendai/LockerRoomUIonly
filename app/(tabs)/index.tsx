@@ -128,49 +128,56 @@ export default function HomeScreen() {
   }, []);
 
   // Location handling functions
-  const handleLocationSelect = useCallback(async (location: any) => {
+  const handleLocationSelect = useCallback(async (location: {
+    type: 'current' | 'selected' | 'global';
+    data: any;
+  }) => {
     setSelectedLocationData(location);
     await fetchReviewsForLocation(location);
   }, []);
 
   // Normalize any location shape (string or object) to a display string
-  const normalizeLocationToString = (loc: any): string => {
+  const normalizeLocationToString = (loc: unknown): string => {
     if (!loc) return '';
     if (typeof loc === 'string') return loc;
-    if (typeof loc === 'object') {
-      const { name, city, state, region, country, locality, adminArea, subregion } = loc as any;
+    if (typeof loc === 'object' && loc !== null) {
+      const locationObj = loc as Record<string, unknown>;
+      const { name, city, state, region, country, locality, adminArea, subregion } = locationObj;
       // Join the most common fields, skipping empties
       return [name, city, state ?? region ?? adminArea ?? subregion, country ?? locality]
-        .filter(Boolean)
+        .filter((item): item is string => typeof item === 'string' && item.length > 0)
         .join(', ');
     }
     try { return String(loc); } catch { return ''; }
   };
 
   // Coordinate helpers
-  const extractCoords = (coords: any): { lat: number; lon: number } | null => {
+  const extractCoords = (coords: unknown): { lat: number; lon: number } | null => {
     if (!coords) return null;
     if (Array.isArray(coords) && coords.length >= 2) {
       const [lon, lat] = coords;
       if (typeof lat === 'number' && typeof lon === 'number') return { lat, lon };
-    } else if (typeof coords === 'object') {
-      const lat = (coords as any).latitude ?? (coords as any).lat;
-      const lon = (coords as any).longitude ?? (coords as any).lon ?? (coords as any).lng;
+    } else if (typeof coords === 'object' && coords !== null) {
+      const coordObj = coords as Record<string, unknown>;
+      const lat = coordObj.latitude ?? coordObj.lat;
+      const lon = coordObj.longitude ?? coordObj.lon ?? coordObj.lng;
       if (typeof lat === 'number' && typeof lon === 'number') return { lat, lon };
     }
     return null;
   };
 
-  const getSelectedCoords = (location: any): { lat: number; lon: number } | null => {
-    const data = location?.data ?? location;
-    return extractCoords(data?.coordinates) || extractCoords(data?.coords) || null;
+  const getSelectedCoords = (location: unknown): { lat: number; lon: number } | null => {
+    const locationObj = location as Record<string, unknown>;
+    const data = locationObj?.data ?? location;
+    const dataObj = data as Record<string, unknown>;
+    return extractCoords(dataObj?.coordinates) || extractCoords(dataObj?.coords) || null;
   };
 
   const getReviewCoords = (review: any): { lat: number; lon: number } | null => {
     return (
-      extractCoords((review as any).coordinates) ||
-      extractCoords((review as any).locationData?.data?.coordinates) ||
-      extractCoords((review as any).locationData?.coordinates) ||
+      extractCoords(review?.coordinates) ||
+      extractCoords(review?.locationData?.data?.coordinates) ||
+      extractCoords(review?.locationData?.coordinates) ||
       null
     );
   };

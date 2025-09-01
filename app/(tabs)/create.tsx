@@ -128,7 +128,7 @@ export default function CreateReviewScreen() {
       });
 
       if (reverseGeocode.length > 0) {
-        const address = reverseGeocode[0];
+        const address = reverseGeocode[0] as any;
         const locationString = `${address.city}, ${address.region}, ${address.country}`;
         setLocation(locationString);
       }
@@ -309,7 +309,7 @@ export default function CreateReviewScreen() {
           }
         ]
       );
-    } catch (_error) {
+    } catch {
       Alert.alert('Error', 'Failed to submit review. Please try again.');
     } finally {
       setIsSubmitting(false);
