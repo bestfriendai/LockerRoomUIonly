@@ -1,6 +1,14 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { 
+  getAuth, 
+  initializeAuth,
+  type Auth 
+} from 'firebase/auth';
+// @ts-ignore
+import { getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore, type Firestore } from 'firebase/firestore';
+import { Platform } from 'react-native';
 
 // Validate required environment variables
 const requiredEnvVars = [
@@ -34,9 +42,14 @@ let db: Firestore;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
   
-  // Firebase v10 automatically handles persistence on React Native
-  // AsyncStorage is used internally when available
-  auth = getAuth(app);
+  // Use React Native persistence on native platforms
+  if (Platform.OS !== 'web') {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } else {
+    auth = getAuth(app);
+  }
   
   db = getFirestore(app);
 } else {
