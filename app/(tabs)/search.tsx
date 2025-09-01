@@ -198,7 +198,7 @@ export default function SearchScreen() {
     searchInputRef.current?.focus();
   };
 
-  const renderSearchResult = ({ item, index }: { item: any; index: number }) => {
+  const renderSearchResult = useCallback(({ item, index }: { item: any; index: number }) => {
     switch (activeTab) {
       case 'reviews':
         return (
@@ -279,7 +279,17 @@ export default function SearchScreen() {
       default:
         return null;
     }
-  };
+  }, [activeTab, router, colors, typography]);
+
+  const keyExtractor = useCallback((item: any) => item._id || item.id, []);
+
+  const getItemType = useCallback((item: any) => {
+    // Group by type for better recycling
+    if (activeTab === 'reviews') {
+      return item.category || 'review';
+    }
+    return activeTab;
+  }, [activeTab]);
 
   const renderEmptyState = () => {
     if (searchQuery.length === 0) {
@@ -431,7 +441,9 @@ export default function SearchScreen() {
           estimatedItemSize={120}
           contentContainerStyle={styles.resultsContainer}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item: any) => item._id || item.id}
+          keyExtractor={keyExtractor}
+          getItemType={getItemType}
+          removeClippedSubviews={true}
         />
       ) : (
         renderEmptyState()

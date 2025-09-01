@@ -34,6 +34,9 @@ interface ButtonProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  testID?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -48,6 +51,9 @@ export const Button: React.FC<ButtonProps> = ({
   leftIcon,
   rightIcon,
   fullWidth = false,
+  accessibilityLabel,
+  accessibilityHint,
+  testID,
 }) => {
   // Handle cases where ThemeProvider might not be available (e.g., in ErrorBoundary)
   let colors;
@@ -273,6 +279,18 @@ export const Button: React.FC<ButtonProps> = ({
     );
   };
 
+  // Generate default accessibility label from children if not provided
+  const getDefaultAccessibilityLabel = () => {
+    if (accessibilityLabel) return accessibilityLabel;
+    if (typeof children === 'string') {
+      return `${children}${loading ? ', loading' : ''}${disabled ? ', disabled' : ''}`;
+    }
+    return `${variant} button${loading ? ', loading' : ''}${disabled ? ', disabled' : ''}`;
+  };
+
+  // Ensure minimum touch target size (44x44pt)
+  const hitSlop = size === 'sm' ? { top: 4, bottom: 4, left: 8, right: 8 } : undefined;
+
   return (
     <AnimatedPressable
       style={[buttonStyle, ...(style ? [style] : [])].flat()}
@@ -280,6 +298,15 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       hapticOnPress={hapticOnPress}
       scaleTo={0.96}
+      accessibilityRole="button"
+      accessibilityLabel={getDefaultAccessibilityLabel()}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{
+        disabled: disabled || loading,
+        busy: loading,
+      }}
+      hitSlop={hitSlop}
+      testID={testID}
     >
       {renderContent()}
     </AnimatedPressable>

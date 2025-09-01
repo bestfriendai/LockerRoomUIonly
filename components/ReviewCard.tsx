@@ -115,6 +115,9 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
         onPress={handlePress}
         hapticOnPress={false}
         padding={0}
+        accessibilityRole="button"
+        accessibilityLabel={`Review: ${review.title || 'Untitled'}. Category: ${review.category || 'General'}. ${likeCount} likes.`}
+        accessibilityHint="Tap to view full review"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -190,6 +193,11 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
               style={styles.footerItem}
               hapticOnPress={false}
               scaleTo={0.95}
+              accessibilityRole="button"
+              accessibilityLabel={`Like button, ${likeCount} likes${isLiked ? ', liked' : ''}`}
+              accessibilityHint="Double tap to like or unlike this review"
+              accessibilityState={{ selected: isLiked }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <ThumbsUp
                 size={12}
@@ -206,7 +214,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
               </Text>
             </AnimatedPressable>
 
-            <View style={styles.footerItem}>
+            <View style={styles.footerItem} accessibilityRole="text" accessibilityLabel={`${review.comments?.length || 0} comments`}>
               <MessageCircle size={12} color={colors.textSecondary} strokeWidth={1.5} />
               <Text style={{ marginLeft: 4, color: colors.textSecondary }}>
                 {review.comments?.length || 0}
@@ -219,6 +227,10 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
               hapticOnPress={false}
               scaleTo={0.95}
               disabled={isSharing}
+              accessibilityRole="button"
+              accessibilityLabel="Share review"
+              accessibilityHint="Double tap to share this review"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Share2 size={12} color={colors.textSecondary} strokeWidth={1.5} />
             </AnimatedPressable>

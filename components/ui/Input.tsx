@@ -25,6 +25,8 @@ interface InputProps extends TextInputProps {
   inputStyle?: TextStyle;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'filled' | 'underlined';
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 export const Input = forwardRef<TextInput, InputProps>((
@@ -41,6 +43,8 @@ export const Input = forwardRef<TextInput, InputProps>((
     variant = 'default',
     style,
     editable = true,
+    accessibilityLabel,
+    accessibilityHint,
     ...props
   },
   ref
@@ -154,6 +158,7 @@ export const Input = forwardRef<TextInput, InputProps>((
       {label && (
         <RNText
           style={[styles.label, { color: hasError ? colors.error : colors.textSecondary }]}
+          accessibilityRole="text"
         >
           {label}
         </RNText>
@@ -180,6 +185,13 @@ export const Input = forwardRef<TextInput, InputProps>((
             setIsFocused(false);
             props.onBlur?.(e);
           }}
+          accessibilityLabel={accessibilityLabel || label || props.placeholder}
+          accessibilityHint={accessibilityHint}
+          accessibilityRole="text"
+          accessibilityState={{
+            disabled: !editable,
+            selected: isFocused,
+          }}
           {...props}
         />
         
@@ -188,6 +200,9 @@ export const Input = forwardRef<TextInput, InputProps>((
             style={styles.iconContainer}
             onPress={onRightIconPress}
             disabled={!onRightIconPress}
+            accessibilityRole="button"
+            accessibilityLabel="Input action"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             {rightIcon}
           </Pressable>
@@ -197,6 +212,8 @@ export const Input = forwardRef<TextInput, InputProps>((
       {(error || helperText) && (
         <RNText
           style={[styles.helperText, { color: hasError ? colors.error : colors.textSecondary }]}
+          accessibilityRole="text"
+          accessibilityLiveRegion={hasError ? "assertive" : "polite"}
         >
           {error || helperText}
         </RNText>

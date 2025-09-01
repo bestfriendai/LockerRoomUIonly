@@ -3,7 +3,8 @@ import {
   View,
   ViewStyle,
   StyleSheet,
-  
+  AccessibilityRole,
+  AccessibilityState,
 } from 'react-native';
 import AnimatedPressable from './AnimatedPressable';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -19,6 +20,11 @@ interface CardProps {
   onPress?: () => void;
   disabled?: boolean;
   hapticOnPress?: boolean;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
+  testID?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -30,6 +36,11 @@ export const Card: React.FC<CardProps> = ({
   onPress,
   disabled = false,
   hapticOnPress = true,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
+  testID,
 }) => {
   const { colors } = useTheme();
 
@@ -60,6 +71,11 @@ export const Card: React.FC<CardProps> = ({
         disabled={disabled}
         hapticOnPress={hapticOnPress}
         scaleTo={0.98}
+        accessibilityRole={accessibilityRole || 'button'}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityState={accessibilityState}
+        testID={testID}
       >
         <View style={contentStyle}>
           {children}

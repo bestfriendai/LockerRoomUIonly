@@ -179,6 +179,8 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   );
 });
 
+ChatRoomItem.displayName = 'ChatRoomItem';
+
 export default function ChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -401,7 +403,7 @@ export default function ChatScreen() {
     );
   }, []);
 
-  const renderRoomItem = ({ item }: { item: ChatRoom }) => {
+  const renderRoomItem = useCallback(({ item }: { item: ChatRoom }) => {
     const userId = user?.id;
     if (!userId) return null;
 
@@ -419,7 +421,14 @@ export default function ChatScreen() {
         isMember={isMember}
       />
     );
-  };
+  }, [user?.id, handleRoomPress, handleJoinRoom, handleLeaveRoom]);
+
+  const keyExtractor = useCallback((item: ChatRoom) => item._id || item.id, []);
+
+  const getItemType = useCallback((item: ChatRoom) => {
+    // Group by room type for better recycling
+    return item.type || 'default';
+  }, []);
 
   const renderEmptyState = () => {
     // Determine the type of empty state based on context
@@ -528,7 +537,9 @@ export default function ChatScreen() {
           estimatedItemSize={120}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
-          keyExtractor={(item) => item._id || item.id}
+          keyExtractor={keyExtractor}
+          getItemType={getItemType}
+          removeClippedSubviews={true}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

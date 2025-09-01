@@ -136,6 +136,9 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
           style={[styles.imageContainer, { height: imageHeight }]}
           onPress={handleCardPress}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`Review image for ${review.title || 'Untitled Review'}. Rating: ${review.rating || 5} out of 5 stars`}
+          accessibilityHint="Tap to view full review"
         >
           {review.images && review.images[0] ? (
             <Image
@@ -173,6 +176,9 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
           style={styles.content}
           onPress={handleCardPress}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`Review: ${review.title || 'Untitled'}. Target: ${review.targetUserId || 'Anonymous'}. ${likeCount} likes`}
+          accessibilityHint="Tap to read full review"
         >
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
             {review.title || 'Untitled Review'}
@@ -219,7 +225,10 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
               style={styles.statItem}
               onPress={handleLike}
               accessibilityRole="button"
-              accessibilityLabel="Like review"
+              accessibilityLabel={`Like button, ${likeCount} likes${liked ? ', liked' : ''}`}
+              accessibilityHint="Double tap to like or unlike"
+              accessibilityState={{ selected: liked }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <ThumbsUp
                 size={14}
@@ -237,18 +246,20 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
               disabled={isSharing}
               accessibilityRole="button"
               accessibilityLabel="Share review"
+              accessibilityHint="Double tap to share this review"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Share2 size={14} color={colors.textSecondary} />
             </TouchableOpacity>
             
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel="0 comments">
               <MessageCircle size={14} color={colors.textSecondary} />
               <Text style={[styles.statText, { color: colors.textSecondary }]}>
                 0
               </Text>
             </View>
 
-            <View style={styles.statItem}>
+            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`Posted ${formatDate()}`}>
               <Text style={[styles.dateText, { color: colors.textSecondary }]}>
                 {formatDate()}
               </Text>

@@ -403,6 +403,13 @@ export default function HomeScreen() {
     </View>
   ), [router]);
 
+  const keyExtractor = useCallback((item: Review) => item._id || item.id, []);
+
+  const getItemType = useCallback((item: Review) => {
+    // Group items by category for better recycling
+    return item.category || 'default';
+  }, []);
+
   const renderHeader = () => (
     <View style={styles.header}>
       {/* App Header */}
@@ -558,7 +565,10 @@ export default function HomeScreen() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         estimatedItemSize={350}
-        keyExtractor={(item) => item._id || item.id}
+        keyExtractor={keyExtractor}
+        getItemType={getItemType}
+        removeClippedSubviews={true}
+        drawDistance={500}
       />
       )}
 
