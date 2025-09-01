@@ -1,184 +1,111 @@
-import { useState, useEffect } from 'react';
+import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
+import { useEffect, useState } from 'react';
 
-interface NetworkInformation extends EventTarget {
-  readonly downlink: number;
-  readonly effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
-  readonly rtt: number;
-  readonly saveData: boolean;
-  readonly type: 'bluetooth' | 'cellular' | 'ethernet' | 'none' | 'wifi' | 'wimax' | 'other' | 'unknown';
-  onChange: ((this: NetworkInformation, ev: Event) => any) | null;
-  onchange: ((this: NetworkInformation, ev: Event) => any) | null;
-}
-
-// Network status interface
-export interface NetworkStatus {
-  isOnline: boolean;
-  isSlowConnection: boolean;
-  connectionType: string;
-  effectiveType: string;
-}
-
-// Network status hook
-export const useNetworkStatus = (): NetworkStatus => {
-  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
-    isOnline: navigator.onLine,
-    isSlowConnection: false,
-    connectionType: 'unknown',
-    effectiveType: 'unknown'
-  });
+/**
+ * Hook to monitor network connectivity status
+ * @returns Network state information including connectivity and internet reachability
+ */
+export function useNetwork() {
+  const [state, setState] = useState<NetInfoState | null>(null);
 
   useEffect(() => {
-    const updateNetworkStatus = () => {
-      const connection = (navigator as any).connection || 
-                        (navigator as any).mozConnection || 
-                        (navigator as any).webkitConnection;
-      
-      const isSlowConnection = connection ? 
-        (connection.effectiveType === 'slow-2g' || 
-         connection.effectiveType === '2g' ||
-         connection.downlink < 1.5) : false;
+    // Subscribe to network state updates
+    const unsubscribe = NetInfo.addEventListener((networkState) => {
+      setState(networkState);
+    });
 
-      setNetworkStatus({
-        isOnline: navigator.onLine,
-        isSlowConnection,
-        connectionType: connection?.type || 'unknown',
-        effectiveType: connection?.effectiveType || 'unknown'
-      });
-    };
+    // Fetch initial state
+    NetInfo.fetch().then((networkState) => {
+      setState(networkState);
+    });
 
-    const handleOnline = () => {
-      updateNetworkStatus();
-      if (__DEV__) {
-        console.log('Network: Back online');
-      }
-    };
-
-    const handleOffline = () => {
-      updateNetworkStatus();
-      if (__DEV__) {
-        console.log('Network: Gone offline');
-      }
-    };
-
-    const handleConnectionChange = () => {
-      updateNetworkStatus();
-    };
-
-    // Initial status
-    updateNetworkStatus();
-
-    // Add event listeners
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    const connection = (navigator as any).connection || 
-                      (navigator as any).mozConnection || 
-                      (navigator as any).webkitConnection;
-    
-    if (connection) {
-      connection.addEventListener('change', handleConnectionChange);
-    }
-
+    // Cleanup subscription
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      if (connection) {
-        connection.removeEventListener('change', handleConnectionChange);
-      }
+      unsubscribe();
     };
   }, []);
 
-  return networkStatus;
-};
+  const isConnected = state?.isConnected ?? false;
+  const isInternetReachable = state?.isInternetReachable ?? null;
+  const type = state?.type ?? 'unknown';
 
-// Network status manager class
-export class NetworkStatusManager {
-  private static instance: NetworkStatusManager;
-  private listeners: ((status: NetworkStatus) => void)[] = [];
-  private currentStatus: NetworkStatus;
+  return {
+    state,
+    isConnected,
+    isInternetReachable,
+    type,
+  };
+}
+
+/**
+ * Singleton network manager for non-hook contexts
+ */
+class NetworkManager {
+  private static instance: NetworkManager;
+  private currentState: NetInfoState | null = null;
+  private listeners: Set<(state: NetInfoState) => void> = new Set();
+  private unsubscribe: (() => void) | null = null;
 
   private constructor() {
-    this.currentStatus = {
-      isOnline: navigator.onLine,
-      isSlowConnection: false,
-      connectionType: 'unknown',
-      effectiveType: 'unknown'
-    };
-    this.initializeListeners();
+    this.initialize();
   }
 
-  public static getInstance(): NetworkStatusManager {
-    if (!NetworkStatusManager.instance) {
-      NetworkStatusManager.instance = new NetworkStatusManager();
+  public static getInstance(): NetworkManager {
+    if (!NetworkManager.instance) {
+      NetworkManager.instance = new NetworkManager();
     }
-    return NetworkStatusManager.instance;
+    return NetworkManager.instance;
   }
 
-  private initializeListeners() {
-    const updateStatus = () => {
-      const connection = (navigator as any).connection || 
-                        (navigator as any).mozConnection || 
-                        (navigator as any).webkitConnection;
-      
-      const isSlowConnection = connection ? 
-        (connection.effectiveType === 'slow-2g' || 
-         connection.effectiveType === '2g' ||
-         connection.downlink < 1.5) : false;
+  private initialize() {
+    // Subscribe to network state updates
+    this.unsubscribe = NetInfo.addEventListener((state) => {
+      this.currentState = state;
+      this.notifyListeners(state);
+    });
 
-      this.currentStatus = {
-        isOnline: navigator.onLine,
-        isSlowConnection,
-        connectionType: connection?.type || 'unknown',
-        effectiveType: connection?.effectiveType || 'unknown'
-      };
+    // Fetch initial state
+    NetInfo.fetch().then((state) => {
+      this.currentState = state;
+      this.notifyListeners(state);
+    });
+  }
 
-      this.notifyListeners();
-    };
+  private notifyListeners(state: NetInfoState) {
+    this.listeners.forEach((listener) => listener(state));
+  }
 
-    window.addEventListener('online', updateStatus);
-    window.addEventListener('offline', updateStatus);
-    
-    const connection = (navigator as any).connection || 
-                      (navigator as any).mozConnection || 
-                      (navigator as any).webkitConnection;
-    
-    if (connection) {
-      connection.addEventListener('change', updateStatus);
+  public addListener(listener: (state: NetInfoState) => void) {
+    this.listeners.add(listener);
+    // Immediately notify with current state if available
+    if (this.currentState) {
+      listener(this.currentState);
     }
-
-    // Initial update
-    updateStatus();
   }
 
-  private notifyListeners() {
-    this.listeners.forEach(listener => listener(this.currentStatus));
+  public removeListener(listener: (state: NetInfoState) => void) {
+    this.listeners.delete(listener);
   }
 
-  public subscribe(listener: (status: NetworkStatus) => void): () => void {
-    this.listeners.push(listener);
-    // Immediately call with current status
-    listener(this.currentStatus);
-    
-    return () => {
-      const index = this.listeners.indexOf(listener);
-      if (index > -1) {
-        this.listeners.splice(index, 1);
-      }
-    };
+  public getCurrentState(): NetInfoState | null {
+    return this.currentState;
   }
 
-  public getCurrentStatus(): NetworkStatus {
-    return { ...this.currentStatus };
+  public isConnected(): boolean {
+    return this.currentState?.isConnected ?? false;
   }
 
-  public isOnline(): boolean {
-    return this.currentStatus.isOnline;
+  public isInternetReachable(): boolean | null {
+    return this.currentState?.isInternetReachable ?? null;
   }
 
-  public isSlowConnection(): boolean {
-    return this.currentStatus.isSlowConnection;
+  public cleanup() {
+    if (this.unsubscribe) {
+      this.unsubscribe();
+      this.unsubscribe = null;
+    }
+    this.listeners.clear();
   }
 }
 
-// Export singleton instance
-export const networkStatusManager = NetworkStatusManager.getInstance();
+export const networkManager = NetworkManager.getInstance();

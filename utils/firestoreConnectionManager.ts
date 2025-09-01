@@ -7,7 +7,8 @@ import {
   DocumentData,
   getDocs
 } from 'firebase/firestore';
-import { networkStatusManager, NetworkStatus } from './networkStatus';
+import { networkManager } from './networkStatus';
+import type { NetInfoState } from '@react-native-community/netinfo';
 import { firestorePollingFallback } from './firestorePollingFallback';
 
 export interface ConnectionState {
@@ -17,7 +18,7 @@ export interface ConnectionState {
   isSlowConnection: boolean;
   lastError?: FirestoreError | null;
   reconnectAttempts?: number;
-  networkStatus: NetworkStatus | 'online' | 'offline' | 'slow';
+  networkStatus: 'online' | 'offline' | 'slow';
   lastPing?: number;
   error?: string | null;
 }
@@ -42,12 +43,12 @@ interface ActiveListener {
   isActive: boolean;
   lastError: FirestoreError | null;
   fallbackToPolling?: boolean;
-  pollingInterval?: NodeJS.Timeout;
+  pollingInterval?: ReturnType<typeof setTimeout>;
   isPolling: boolean;
   isUsingPollingFallback: boolean;
   consecutiveNetworkErrors: number;
   hasReceivedData?: boolean;
-  connectionTimeout?: NodeJS.Timeout;
+  connectionTimeout?: ReturnType<typeof setTimeout>;
 }
 
 export class FirestoreConnectionManager {
@@ -59,7 +60,7 @@ export class FirestoreConnectionManager {
     isSlowConnection: false,
     lastError: null,
     reconnectAttempts: 0,
-    networkStatus: networkStatusManager.getCurrentStatus()
+    networkStatus: networkManager.isConnected() ? 'online' : 'offline'
   };
 
   private activeListeners: Map<string, ActiveListener> = new Map();
@@ -648,15 +649,15 @@ export class FirestoreConnectionManager {
    * Network status management
    */
   private initializeNetworkStatusListener(): void {
-    this.networkStatusUnsubscribe = networkStatusManager.subscribe((networkStatus) => {
+    networkManager.addListener((networkState: NetInfoState) => {
       const wasOffline = this.connectionState.isOffline;
-      const isNowOffline = !networkStatus.isOnline;
+      const isNowOffline = !networkState.isConnected;
       
       this.updateConnectionState({
         isOffline: isNowOffline,
-        isSlowConnection: networkStatus.isSlowConnection,
-        networkStatus,
-        isConnected: networkStatus.isOnline && this.connectionState.isConnected
+        isSlowConnection: false, // NetInfo doesn't provide slow connection info
+        networkStatus: networkState.isConnected ? 'online' : 'offline',
+        isConnected: networkState.isConnected && this.connectionState.isConnected
       });
 
       if (wasOffline && !isNowOffline) {
@@ -676,6 +677,10 @@ export class FirestoreConnectionManager {
         this.attemptRealtimeReconnection();
       }
     }, 30000);
+    
+    this.networkStatusUnsubscribe = () => {
+      // Cleanup handled by networkManager
+    };
   }
 
   private updateConnectionState(updates: Partial<ConnectionState>): void {
