@@ -17,7 +17,7 @@ import { MapPin, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-na
 import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
 import { useAuth } from "../../providers/AuthProvider";
-import { MasonryReviewCard } from "../../components/MasonryReviewCard";
+import MasonryReviewCard from "../../components/MasonryReviewCard";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Review } from "../../types";
 import { Button } from "../../components/ui/Button";

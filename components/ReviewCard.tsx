@@ -15,7 +15,7 @@ import Card from "./ui/Card";
 import AnimatedPressable from "./ui/AnimatedPressable";
 import { useTheme } from "../providers/ThemeProvider";
 import { SHADOWS } from "../constants/shadows";
-import { tokens } from "../constants/tokens";
+import { tokens as defaultTokens } from "../constants/tokens";
 import type { Review } from "../types";
 
 type ReviewCardProps = {
@@ -24,7 +24,7 @@ type ReviewCardProps = {
   style?: ViewStyle;
 };
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
+const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
   const { colors, tokens } = useTheme();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(review.likes || 0);
@@ -247,34 +247,34 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
 // Create styles using imported tokens
 const createStyles = () => StyleSheet.create({
   badge: {
-    borderRadius: tokens.radii.full,
-    paddingHorizontal: tokens.spacing.sm,
+    borderRadius: defaultTokens.radii.full,
+    paddingHorizontal: defaultTokens.spacing.sm,
     paddingVertical: 4,
     ...SHADOWS.xs,
   },
   badges: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: tokens.spacing.xs,
+    gap: defaultTokens.spacing.xs,
   },
   categoryPill: {
-    borderRadius: tokens.radii.full,
-    paddingHorizontal: tokens.spacing.sm,
+    borderRadius: defaultTokens.radii.full,
+    paddingHorizontal: defaultTokens.spacing.sm,
     paddingVertical: 4,
     ...SHADOWS.xs,
   },
   content: {
     flex: 1,
-    paddingBottom: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.lg,
+    paddingBottom: defaultTokens.spacing.md,
+    paddingHorizontal: defaultTokens.spacing.lg,
   },
   footer: {
     alignItems: "center",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: tokens.spacing.lg,
-    paddingVertical: tokens.spacing.md,
+    paddingHorizontal: defaultTokens.spacing.lg,
+    paddingVertical: defaultTokens.spacing.md,
   },
   footerItem: {
     alignItems: "center",
@@ -285,7 +285,7 @@ const createStyles = () => StyleSheet.create({
   footerLeft: {
     alignItems: "center",
     flexDirection: "row",
-    gap: tokens.spacing.lg,
+    gap: defaultTokens.spacing.lg,
   },
   footerRight: {
     alignItems: "center",
@@ -296,9 +296,9 @@ const createStyles = () => StyleSheet.create({
     fontWeight: '500',
   },
   header: {
-    paddingBottom: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.lg,
-    paddingTop: tokens.spacing.lg,
+    paddingBottom: defaultTokens.spacing.md,
+    paddingHorizontal: defaultTokens.spacing.lg,
+    paddingTop: defaultTokens.spacing.lg,
   },
   headerLeft: {
     flex: 1,
@@ -308,17 +308,17 @@ const createStyles = () => StyleSheet.create({
     width: "100%",
   },
   imageContainer: {
-    borderRadius: tokens.radii.lg,
-    marginBottom: tokens.spacing.md,
-    marginHorizontal: tokens.spacing.lg,
+    borderRadius: defaultTokens.radii.lg,
+    marginBottom: defaultTokens.spacing.md,
+    marginHorizontal: defaultTokens.spacing.lg,
     overflow: "hidden",
     ...SHADOWS.sm,
   },
   metaContainer: {
     alignItems: "center",
     flexDirection: "row",
-    gap: tokens.spacing.sm,
-    marginTop: tokens.spacing.xs,
+    gap: defaultTokens.spacing.sm,
+    marginTop: defaultTokens.spacing.xs,
   },
 });
 

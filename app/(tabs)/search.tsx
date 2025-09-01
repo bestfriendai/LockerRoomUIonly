@@ -15,7 +15,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { useChat } from "../../providers/ChatProvider";
 import { reviewService } from "../../services/reviewService";
 import { searchUsers } from "../../services/userService";
-import { ReviewCard } from "../../components/ReviewCard";
+import ReviewCard from "../../components/ReviewCard";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
 import type { Review, User as UserType, ChatRoom } from "../../types";

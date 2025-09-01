@@ -44,7 +44,7 @@ import { useAuth } from "../../providers/AuthProvider";
 import { Button } from "../../components/ui/Button";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
-import { ReviewCard } from "../../components/ReviewCard";
+import ReviewCard from "../../components/ReviewCard";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import type { Review, User } from "../../types";

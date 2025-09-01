@@ -21,10 +21,9 @@ interface MasonryReviewCardProps {
 }
 
 // Simplified MasonryReviewCard for MockTrae
-export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
+const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
   review,
   onPress,
-  index = 0,
 }) => {
   const { colors } = useTheme();
   const [liked, setLiked] = React.useState(false);
@@ -79,7 +78,7 @@ export const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
         title: review.title || 'Review',
       };
       
-      const result = await Share.share(shareContent);
+      await Share.share(shareContent);
     } catch (error: any) {
       if (__DEV__) {
         console.error('Error sharing review:', error);

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   
 } from 'react-native';
-import { AnimatedPressable } from './AnimatedPressable';
+import AnimatedPressable from './AnimatedPressable';
 import { useTheme } from '../../providers/ThemeProvider';
 import { SPACING } from '../../constants/spacing';
 import { createCardStyle, CARD_SHADOWS } from '../../constants/shadows';

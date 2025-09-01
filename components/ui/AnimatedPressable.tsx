@@ -2,7 +2,6 @@ import React, { ReactNode } from 'react';
 import {
   Text as RNText,
   StyleSheet,
-  Animated as RNAnimated,
   ViewStyle,
   Pressable,
   PressableProps,
@@ -42,7 +41,7 @@ interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
 
 const AnimatedPressableComponent = Animated.createAnimatedComponent(Pressable);
 
-export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
+const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   children,
   style,
   scaleFrom = 1,
@@ -151,5 +150,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// Default export for backward compatibility
 export default AnimatedPressable;

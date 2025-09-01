@@ -20,7 +20,7 @@ import { useAuth } from "../../providers/AuthProvider";
 import { Button } from "../../components/ui/Button";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
-import { ReviewCard } from "../../components/ReviewCard";
+import ReviewCard from "../../components/ReviewCard";
 import { getUserById } from "../../services/userService";
 import { ReviewService } from "../../services/reviewService";
 import type { Review, User as UserType } from "../../types";

@@ -6,25 +6,11 @@ import {
   View,
   Text
 } from 'react-native';
-import { AnimatedPressable } from './AnimatedPressable';
+import AnimatedPressable from './AnimatedPressable';
 import { useTheme } from '../../providers/ThemeProvider';
 import { SPACING } from '../../constants/spacing';
 import { BORDER_RADIUS } from '../../constants/shadows';
-import { tokens } from '../../constants/tokens';
 
-// Fallback colors when ThemeProvider is not available
-const fallbackColors = {
-  primary: '#007AFF',
-  surface: '#ffffff',
-  surfaceDisabled: '#f5f5f5',
-  border: '#e0e0e0',
-  text: '#000000',
-  textDisabled: '#999999',
-  white: '#ffffff',
-  black: '#000000',
-  error: '#FF3B30',
-  success: '#34C759',
-};
 
 type ButtonVariant = 
   | 'primary'
@@ -64,11 +50,10 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
 }) => {
   // Handle cases where ThemeProvider might not be available (e.g., in ErrorBoundary)
-  let colors, isDark;
+  let colors;
   try {
     const theme = useTheme();
     colors = theme.colors;
-    isDark = theme.isDark;
   } catch {
     // Fallback colors when ThemeProvider is not available
     colors = {
@@ -87,15 +72,17 @@ export const Button: React.FC<ButtonProps> = ({
       surface: '#FFFFFF',
       onSurface: '#000000',
       surfaceElevated: '#F2F2F7',
+      surfaceDisabled: '#f5f5f5',
       text: '#000000',
       textSecondary: '#3C3C43',
       textTertiary: '#C7C7CC',
+      textDisabled: '#999999',
       border: '#C6C6C8',
       divider: '#C6C6C8',
       overlay: 'rgba(0, 0, 0, 0.4)',
       scrim: 'rgba(0, 0, 0, 0.6)',
+      black: '#000000',
     };
-    isDark = false;
   }
 
   // Calculate padding based on size
@@ -143,15 +130,7 @@ export const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  // Calculate text size based on size
-  const getTextVariant = () => {
-    switch (size) {
-      case 'sm':
-        return 'buttonSmall' as const;
-      default:
-        return 'button' as const;
-    }
-  };
+
 
   // Calculate border radius based on size
   const getBorderRadius = () => {
@@ -259,7 +238,6 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const textColor = getTextColor();
-  const textVariant = getTextVariant();
 
   const renderContent = () => {
     if (loading) {
