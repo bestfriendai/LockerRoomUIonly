@@ -11,14 +11,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search as SearchIcon, X, TrendingUp, Clock, Users, SlidersHorizontal, MapPin, Star, Calendar, MessageCircle, ArrowUpDown } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useChat } from "@/providers/ChatProvider";
-import { reviewService } from "@/services/reviewService";
-import { searchUsers } from "@/services/userService";
-import { ReviewCard } from "@/components/ReviewCard";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import type { Review, User as UserType, ChatRoom } from "@/types";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useChat } from "../../providers/ChatProvider";
+import { reviewService } from "../../services/reviewService";
+import { searchUsers } from "../../services/userService";
+import { ReviewCard } from "../../components/ReviewCard";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
+import type { Review, User as UserType, ChatRoom } from "../../types";
+import { createTypographyStyles } from "../../styles/typography";
 
 type SearchTab = 'reviews' | 'users' | 'rooms';
 type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
@@ -26,6 +27,7 @@ type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
 export default function SearchScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
+  const typography = createTypographyStyles(colors);
   const { chatRooms } = useChat();
   const searchInputRef = useRef<TextInput>(null);
 
@@ -218,19 +220,19 @@ export default function SearchScreen() {
           >
             <Avatar size="md" name={item.username} isAnonymous={true} />
             <View style={styles.userInfo}>
-              <Text >
+              <Text style={typography.body}>
                 {item.username}
               </Text>
               {item.bio && (
-                <Text style={{ color: colors.textSecondary }} numberOfLines={2}>
+                <Text style={typography.caption} numberOfLines={2}>
                   {item.bio}
                 </Text>
               )}
               <View style={styles.userStats}>
-                <Text style={{ color: colors.textSecondary }}>
+                <Text style={typography.caption}>
                   {item.reviewCount || 0} reviews
                 </Text>
-                <Text style={{ color: colors.textSecondary }}>
+                <Text style={typography.caption}>
                   • {item.averageRating?.toFixed(1) || '0.0'} ★
                 </Text>
               </View>
@@ -253,19 +255,19 @@ export default function SearchScreen() {
               <MessageCircle size={20} color={colors.surface} strokeWidth={1.5} />
             </View>
             <View style={styles.roomInfo}>
-              <Text >
+              <Text style={typography.body}>
                 {item.name}
               </Text>
               {item.description && (
-                <Text style={{ color: colors.textSecondary }} numberOfLines={2}>
+                <Text style={typography.caption} numberOfLines={2}>
                   {item.description}
                 </Text>
               )}
               <View style={styles.roomStats}>
-                <Text style={{ color: colors.textSecondary }}>
+                <Text style={typography.caption}>
                   {item.memberIds?.length || 0} members
                 </Text>
-                <Text style={{ color: colors.textSecondary }}>
+                <Text style={typography.caption}>
                   • {item.type}
                 </Text>
               </View>
@@ -286,7 +288,7 @@ export default function SearchScreen() {
             <View style={styles.searchSection}>
               <View style={styles.sectionHeader}>
                 <Clock size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ marginLeft: 8 }}>
+                <Text style={[typography.body, { marginLeft: 8 }]}>
                   Recent Searches
                 </Text>
               </View>
@@ -296,7 +298,7 @@ export default function SearchScreen() {
                   onPress={() => handleSearch(search)}
                   style={styles.searchItem}
                 >
-                  <Text style={{ color: colors.text }}>
+                  <Text style={typography.body}>
                     {search}
                   </Text>
                 </Pressable>
@@ -308,7 +310,7 @@ export default function SearchScreen() {
           <View style={styles.searchSection}>
             <View style={styles.sectionHeader}>
               <TrendingUp size={16} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ marginLeft: 8 }}>
+              <Text style={[typography.body, { marginLeft: 8 }]}>
                 Trending
               </Text>
             </View>
@@ -318,7 +320,7 @@ export default function SearchScreen() {
                 onPress={() => handleSearch(search)}
                 style={styles.searchItem}
               >
-                <Text style={{ color: colors.text }}>
+                <Text style={typography.body}>
                   {search}
                 </Text>
               </Pressable>
@@ -331,7 +333,7 @@ export default function SearchScreen() {
     if (debouncedQuery.length < 2) {
       return (
         <View style={styles.emptyContainer}>
-          <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
+          <Text style={[typography.body, { textAlign: "center" }]}>
             Type at least 2 characters to search
           </Text>
         </View>
@@ -340,7 +342,7 @@ export default function SearchScreen() {
 
     return (
       <View style={styles.emptyContainer}>
-        <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
+        <Text style={[typography.body, { textAlign: "center" }]}>
           No results found for "{debouncedQuery}"
         </Text>
       </View>
@@ -398,11 +400,14 @@ export default function SearchScreen() {
                 strokeWidth={1.5}
               />
               <Text
-                style={{
-                  color: isActive ? colors.primary : colors.textSecondary,
-                  marginLeft: 6,
-                  fontWeight: isActive ? "500" : "normal"
-                }}
+                style={[
+                  typography.body,
+                  {
+                    color: isActive ? colors.primary : colors.textSecondary,
+                    marginLeft: 6,
+                    fontWeight: isActive ? "500" : "normal"
+                  }
+                ]}
               >
                 {tab.label}
               </Text>

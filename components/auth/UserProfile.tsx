@@ -11,8 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { LogOut, Settings, User, MapPin } from 'lucide-react-native';
 import { Text } from '../ui/Text';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
 
 export default function UserProfile() {
   const router = useRouter();

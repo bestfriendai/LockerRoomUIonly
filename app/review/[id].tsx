@@ -15,14 +15,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, ThumbsUp, ThumbsDown, Calendar, MapPin, Camera, Play } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import { Review, Comment, User } from "@/types";
-import { ReviewService } from "@/services/reviewService";
-import { getUserById } from "@/services/userService";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
+import { Review, Comment, User } from "../../types";
+import { ReviewService } from "../../services/reviewService";
+import { getUserById } from "../../services/userService";
 
 const { width: screenWidth } = Dimensions.get('window');
 

@@ -15,16 +15,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Star, Activity, User, MessageCircle, Heart, Eye, Calendar, MapPin, Flag, Share, MoreVertical, UserPlus, UserMinus } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import { ReviewCard } from "@/components/ReviewCard";
-import { getUserById } from "@/services/userService";
-import { ReviewService } from "@/services/reviewService";
-import type { Review, User as UserType } from "@/types";
-import { toMillis, formatDate } from "@/utils/timestampHelpers";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
+import { ReviewCard } from "../../components/ReviewCard";
+import { getUserById } from "../../services/userService";
+import { ReviewService } from "../../services/reviewService";
+import type { Review, User as UserType } from "../../types";
+import { toMillis, formatDate } from "../../utils/timestampHelpers";
+import { createTypographyStyles } from "../../styles/typography";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -40,6 +41,7 @@ interface StatCardProps {
 
 const StatCard = ({ title, value, subtitle, icon, onPress }: StatCardProps) => {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
   
   const baseStyle = [
     styles.statCard,
@@ -63,10 +65,10 @@ const StatCard = ({ title, value, subtitle, icon, onPress }: StatCardProps) => {
         <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
           {icon}
         </View>
-        <Text style={styles.statValue}>
+        <Text style={[typography.h2, styles.statValue]}>
           {value}
         </Text>
-        <Text style={styles.statTitle}>
+        <Text style={[typography.body, styles.statTitle]}>
           {title}
         </Text>
         {subtitle && (
@@ -83,10 +85,10 @@ const StatCard = ({ title, value, subtitle, icon, onPress }: StatCardProps) => {
       <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
         {icon}
       </View>
-      <Text style={styles.statValue}>
+      <Text style={[typography.h2, styles.statValue]}>
         {value}
       </Text>
-      <Text style={styles.statTitle}>
+      <Text style={[typography.body, styles.statTitle]}>
         {title}
       </Text>
       {subtitle && (
@@ -108,6 +110,7 @@ interface ActivityItemProps {
 
 const ActivityItem = ({ type, title, description, timestamp, metadata }: ActivityItemProps) => {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
   
   const getIcon = () => {
     switch (type) {
@@ -146,13 +149,13 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
         {getIcon()}
       </View>
       <View style={styles.activityContent}>
-        <Text >
+        <Text style={typography.h2}>
           {title}
         </Text>
-        <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
+        <Text style={[typography.body, { marginTop: 2 }]}>
           {description}
         </Text>
-        <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+        <Text style={[typography.caption, { marginTop: 4 }]}>
           {formatTime(timestamp)}
         </Text>
       </View>
@@ -167,6 +170,7 @@ export default function UserProfileScreen() {
   const { user: currentUser } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
+  const typography = createTypographyStyles(colors);
 
   // State
   const [activeTab, setActiveTab] = useState<ProfileTab>('reviews');
@@ -176,6 +180,7 @@ export default function UserProfileScreen() {
   const [userReviews, setUserReviews] = useState<Review[]>([]);
   const [receivedReviews, setReceivedReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load user data
   React.useEffect(() => {
@@ -183,24 +188,27 @@ export default function UserProfileScreen() {
     
     const loadUserData = async () => {
       setLoading(true);
+      setError(null);
       try {
         // Fetch user
         let userData = await getUserById(id as string);
-        if (userData) {
-          setUser(userData);
-          
-          // Fetch reviews by user
-          const givenReviews = await ReviewService.getReviewsByUser(userData.id);
-          setUserReviews(givenReviews);
-          
-          // Fetch reviews about user
-          const aboutReviews = await ReviewService.getReviewsAboutUser(userData.id);
-          setReceivedReviews(aboutReviews);
+        if (!userData) {
+          throw new Error("User not found.");
         }
-      } catch (error) {
+        setUser(userData);
+          
+        // Fetch reviews by user
+        let givenReviews = await ReviewService.getReviewsByUser(userData.id);
+        setUserReviews(givenReviews);
+          
+        // Fetch reviews about user
+        const aboutReviews = await ReviewService.getReviewsAboutUser(userData.id);
+        setReceivedReviews(aboutReviews);
+      } catch (err) {
         if (__DEV__) {
-          console.error('Error loading user data:', error);
+          console.error('Error loading user data:', err);
         }
+        setError("Failed to load profile. The user may not exist.");
       } finally {
         setLoading(false);
       }
@@ -347,7 +355,7 @@ export default function UserProfileScreen() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'reviews':
-        const allReviews = [...userReviews, ...receivedReviews].sort(
+        const allReviews = [...(userReviews as any), ...receivedReviews].sort(
           (a, b) => toMillis(b._creationTime || b.createdAt) - toMillis(a._creationTime || a.createdAt)
         );
         
@@ -355,10 +363,10 @@ export default function UserProfileScreen() {
           return (
             <View style={styles.emptyState}>
               <Star size={48} color={colors.textSecondary} strokeWidth={1} />
-              <Text style={{ marginTop: 16, textAlign: 'center' }}>
+              <Text style={[typography.h2, { marginTop: 16, textAlign: 'center' }]}>
                 No Reviews Yet
               </Text>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>
                 This user hasn't given or received any reviews yet.
               </Text>
             </View>
@@ -386,10 +394,10 @@ export default function UserProfileScreen() {
           return (
             <View style={styles.emptyState}>
               <Activity size={48} color={colors.textSecondary} strokeWidth={1} />
-              <Text style={{ marginTop: 16, textAlign: 'center' }}>
+              <Text style={[typography.h2, { marginTop: 16, textAlign: 'center' }]}>
                 No Activity Yet
               </Text>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+              <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>
                 This user's recent activities will appear here.
               </Text>
             </View>
@@ -416,23 +424,23 @@ export default function UserProfileScreen() {
             showsVerticalScrollIndicator={false}
           >
             <Card style={styles.aboutSection}>
-              <Text style={styles.aboutTitle}>
+              <Text style={[typography.h2, styles.aboutTitle]}>
                 Bio
               </Text>
-              <Text style={{ color: colors.text, lineHeight: 22 }}>
+              <Text style={[typography.body, { lineHeight: 22 }]}>
                 {user?.bio || 'No bio available.'}
               </Text>
             </Card>
 
             <Card style={styles.aboutSection}>
-              <Text style={styles.aboutTitle}>
+              <Text style={[typography.h2, styles.aboutTitle]}>
                 Details
               </Text>
               <View style={styles.detailsList}>
                 {user?.age && (
                   <View style={styles.detailItem}>
                     <Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={{ marginLeft: 12 }}>
+                    <Text style={[typography.body, { marginLeft: 12 }]}>
                       {user.age} years old
                     </Text>
                   </View>
@@ -440,14 +448,14 @@ export default function UserProfileScreen() {
                 {user?.location && (
                   <View style={styles.detailItem}>
                     <MapPin size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={{ marginLeft: 12 }}>
+                    <Text style={[typography.body, { marginLeft: 12 }]}>
                       {user.location}
                     </Text>
                   </View>
                 )}
                 <View style={styles.detailItem}>
                   <User size={16} color={colors.textSecondary} strokeWidth={1.5} />
-                  <Text style={{ marginLeft: 12 }}>
+                  <Text style={[typography.body, { marginLeft: 12 }]}>
                     Member since {formatDate(user?._creationTime || Date.now(), { month: 'long', year: 'numeric' })}
                   </Text>
                 </View>
@@ -456,16 +464,16 @@ export default function UserProfileScreen() {
 
             {user?.datingPreferences && (
               <Card style={styles.aboutSection}>
-                <Text style={styles.aboutTitle}>
+                <Text style={[typography.h2, styles.aboutTitle]}>
                   Preferences
                 </Text>
                 <View style={styles.preferencesList}>
                   {user.datingPreferences.ageRange && (
                     <View style={styles.preferenceItem}>
-                      <Text style={{ color: colors.textSecondary }}>
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
                         Age Range
                       </Text>
-                      <Text >
+                      <Text style={typography.body}>
                         {Array.isArray(user.datingPreferences.ageRange)
                           ? `${user.datingPreferences.ageRange[0]} - ${user.datingPreferences.ageRange[1]} years`
                           : `${user.datingPreferences.ageRange.min} - ${user.datingPreferences.ageRange.max} years`
@@ -475,10 +483,10 @@ export default function UserProfileScreen() {
                   )}
                   {user.datingPreferences.gender && (
                     <View style={styles.preferenceItem}>
-                      <Text style={{ color: colors.textSecondary }}>
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
                         Looking for
                       </Text>
-                      <Text style={{ textTransform: 'capitalize' }}>
+                      <Text style={[typography.body, { textTransform: 'capitalize' }]}>
                         {user.datingPreferences.gender}
                       </Text>
                     </View>

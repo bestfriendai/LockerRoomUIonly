@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { router } from 'expo-router';
-import { useAuth } from '@/providers/AuthProvider';
-import { useTheme } from '@/providers/ThemeProvider';
+import { useAuth } from 'providers/AuthProvider';
+import { useTheme } from 'providers/ThemeProvider';
 
 export default function IndexScreen() {
   const { user, isLoading } = useAuth();

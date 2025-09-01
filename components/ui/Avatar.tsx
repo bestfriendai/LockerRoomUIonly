@@ -5,13 +5,12 @@ import {
   ViewStyle,
   Text
 } from 'react-native';
-import { Image } from "expo-image";
 import { User } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
-import AnimatedPressable from "@/components/ui/AnimatedPressable";
+import { useTheme } from "../../providers/ThemeProvider";
+import AnimatedPressable from "../../components/ui/AnimatedPressable";
+import { createTypographyStyles } from "../../styles/typography";
 
 export interface AvatarProps {
-  // Removed src and imageUrl for anonymous app
   alt?: string;
   name?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
@@ -24,12 +23,10 @@ export interface AvatarProps {
   fallbackColor?: string;
   verified?: boolean;
   status?: "online" | "offline" | "away" | "busy";
-  // Anonymous-specific props
   isAnonymous?: boolean;
 }
 
 export default function Avatar({
-  // Removed src and imageUrl for anonymous app
   alt,
   name,
   size = "md",
@@ -42,11 +39,10 @@ export default function Avatar({
   fallbackColor,
   verified = false,
   status,
-  isAnonymous = true, // Default to anonymous
+  isAnonymous = true,
 }: AvatarProps) {
   const { colors, tokens } = useTheme();
-  const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const typography = createTypographyStyles(colors);
 
   const getSize = () => {
     switch (size) {
@@ -124,25 +120,22 @@ export default function Avatar({
   };
 
   const renderContent = () => {
-    // For anonymous app, always show anonymous icon or initials
-    // No profile images allowed
-
-    // Show initials if name is provided (anonymous username)
     if (name && !isAnonymous) {
       return (
         <Text
-          style={{
-            fontSize,
-            fontWeight: "600",
-            color: fallbackColor || colors.text,
-          }}
+          style={[
+            typography.body, // Example style, adjust as needed
+            { 
+              fontSize,
+              color: fallbackColor || colors.text,
+            }
+          ]}
         >
           {getInitials(name)}
         </Text>
       );
     }
 
-    // Show anonymous user icon (default for anonymous app)
     return (
       <User
         size={fontSize}

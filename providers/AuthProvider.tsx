@@ -30,8 +30,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
+    let mounted = true;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!mounted) return;
+
       try {
         Sentry.Native.setTag('auth_state', firebaseUser ? 'authenticated' : 'unauthenticated');
       } catch (sentryError) {
@@ -81,14 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           if (userData) {
-            setUser(userData);
-            // Subscribe to real-time updates for this user
-            userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
-              if (__DEV__) {
-                console.log('User data updated from Firestore');
-              }
-              setUser(updatedUser);
-            });
+            if (mounted) {
+              setUser(userData);
+              // Subscribe to real-time updates for this user
+              userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
+                if (__DEV__) {
+                  console.log('User data updated from Firestore');
+                }
+                if (mounted) {
+                  setUser(updatedUser);
+                }
+              });
+            }
           } else {
             if (__DEV__) {
               console.log('User not found in Firestore, creating new user document...');
@@ -124,15 +131,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (__DEV__) {
                 console.log('New user created successfully');
               }
-              setUser(createdUser);
+              if (mounted) {
+                setUser(createdUser);
 
-              // Subscribe to real-time updates for the new user
-              userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
-                if (__DEV__) {
-                  console.log('New user data updated from Firestore');
-                }
-                setUser(updatedUser);
-              });
+                // Subscribe to real-time updates for the new user
+                userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
+                  if (__DEV__) {
+                    console.log('New user data updated from Firestore');
+                  }
+                  if (mounted) {
+                    setUser(updatedUser);
+                  }
+                });
+              }
             } catch (createError: any) {
               if (__DEV__) {
                 console.error('Failed to create user document:', createError);
@@ -147,28 +158,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
 
               // Set a minimal user object to prevent auth loops
-              setUser({
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
-                email: firebaseUser.email || '',
-                age: 25,
-                bio: '',
-                photos: [],
-                location: '',
-                interests: [],
-                verified: false,
-                profileComplete: false,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                lastActive: new Date(),
-                isOnline: true,
-                // Anonymous user fields
-                isAnonymous: true,
-                reputationScore: 0,
-                reviewCount: 0,
-                helpfulVotes: 0,
-                badges: [],
-              });
+              if (mounted) {
+                setUser({
+                  id: firebaseUser.uid,
+                  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User',
+                  email: firebaseUser.email || '',
+                  age: 25,
+                  bio: '',
+                  photos: [],
+                  location: '',
+                  interests: [],
+                  verified: false,
+                  profileComplete: false,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  lastActive: new Date(),
+                  isOnline: true,
+                  // Anonymous user fields
+                  isAnonymous: true,
+                  reputationScore: 0,
+                  reviewCount: 0,
+                  helpfulVotes: 0,
+                  badges: [],
+                });
+              }
             }
 
 	          try {
@@ -186,20 +199,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (__DEV__) {
             console.log('No Firebase user, setting user to null');
           }
-          setUser(null);
+          if (mounted) {
+            setUser(null);
+          }
         }
       } catch (error) {
         if (__DEV__) {
           console.error('Auth state change error:', error);
         }
-        setUser(null);
+        if (mounted) {
+          setUser(null);
+        }
       } finally {
-        setIsLoading(false);
-        setAuthTransitioning(false);
+        if (mounted) {
+          setIsLoading(false);
+          setAuthTransitioning(false);
+        }
       }
     });
 
     return () => {
+      mounted = false;
       if (userUnsubscribe) {
         userUnsubscribe();
       }

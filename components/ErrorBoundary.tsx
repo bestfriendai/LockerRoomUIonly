@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, AppState, AppStateStatus, Text } from 'react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import { Button } from '@/components/ui/Button';
+import { useTheme } from '../providers/ThemeProvider';
+import { Button } from '../components/ui/Button';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';

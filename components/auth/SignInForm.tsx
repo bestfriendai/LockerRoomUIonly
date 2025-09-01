@@ -12,8 +12,8 @@ import { useRouter } from 'expo-router';
 import { Mail, Lock } from 'lucide-react-native';
 import { Text } from '../ui/Text';
 import { Input } from '../ui/Input';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
 
 export default function SignInForm() {
   const router = useRouter();

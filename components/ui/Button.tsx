@@ -63,16 +63,7 @@ export const Button: React.FC<ButtonProps> = ({
   rightIcon,
   fullWidth = false,
 }) => {
-  // Use try-catch to handle cases where ThemeProvider is not available
-  let colors: any, isDark: boolean;
-  try {
-    const theme = useTheme();
-    colors = theme.colors;
-    isDark = theme.isDark;
-  } catch {
-    colors = fallbackColors;
-    isDark = false;
-  }
+  const { colors, isDark } = useTheme();
 
   // Calculate padding based on size
   const getPadding = () => {
@@ -191,13 +182,13 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
       case 'destructive':
       case 'success':
-        return colors.white;
+        return colors.onPrimary;
       case 'secondary':
       case 'outline':
       case 'ghost':
         return colors.text;
       default:
-        return colors.white;
+        return colors.onPrimary;
     }
   };
 

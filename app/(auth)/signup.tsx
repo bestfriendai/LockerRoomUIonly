@@ -16,24 +16,26 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Check } from "lucide-react-native";
 import * as Sentry from "sentry-expo";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Input } from "@/components/ui/Input";
-import AnimatedPressable from "@/components/ui/AnimatedPressable";
-import { validateInput, checkRateLimit } from "@/utils/inputSanitization";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Input } from "../../components/ui/Input";
+import AnimatedPressable from "../../components/ui/AnimatedPressable";
+import { validateInput, checkRateLimit } from "../../utils/inputSanitization";
 import type {
   SignUpFormData,
   ValidationResult,
   AuthError,
   AuthFormState,
   FirebaseAuthErrorCode
-} from '@/types/auth';
-import { generateMultipleUsernames } from "@/services/usernameGenerator";
+} from '../../types/auth';
+import { generateMultipleUsernames } from "../../services/usernameGenerator";
+import { createTypographyStyles } from '../../styles/typography';
 
 export default function SignUpScreen() {
   const router = useRouter();
   const { signUp, isLoading } = useAuth();
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
 
   // Form state with proper typing
   const [formData, setFormData] = useState<SignUpFormData>({
@@ -226,7 +228,7 @@ export default function SignUpScreen() {
           >
             <ArrowLeft color={colors.text} size={24} />
           </Pressable>
-          <Text style={{ color: colors.text }}>
+          <Text style={typography.h2}>
             Create Account
           </Text>
           <View style={{ width: 40 }} />
@@ -247,10 +249,10 @@ export default function SignUpScreen() {
             ]}
           >
             <View style={styles.welcomeSection}>
-              <Text style={{ color: colors.text, textAlign: "center" }}>
+              <Text style={[typography.h2, { textAlign: "center" }]}>
                 Join LockerRoom Talk App
               </Text>
-              <Text style={{ color: colors.textSecondary, textAlign: "center" }}>
+              <Text style={[typography.body, { textAlign: "center" }]}>
                 Create your account to start sharing and reading dating experiences anonymously
               </Text>
             </View>
@@ -320,7 +322,7 @@ export default function SignUpScreen() {
 
               {/* Anonymous signup info */}
               <View style={[styles.infoSection, { backgroundColor: colors.chipBg }]}>
-                <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+                <Text style={[typography.body, { textAlign: 'center' }]}>
                   🎭 Your anonymous identity will be created automatically
                 </Text>
               </View>
@@ -342,7 +344,7 @@ export default function SignUpScreen() {
                 ]}>
                   {formData.agreeTerms && <Check size={16} color={colors.onPrimary} strokeWidth={2} />}
                 </View>
-                <Text style={{ color: colors.textSecondary, flex: 1 }}>
+                <Text style={typography.body}>
                   I agree to the{" "}
                   <Text style={{ color: colors.primary }}>Terms of Service</Text>
                   {" "}and{" "}
@@ -373,7 +375,7 @@ export default function SignUpScreen() {
                   />
                 ) : (
                   <Text
-                    style={{ color: colors.onPrimary }}
+                    style={typography.button}
                     accessibilityLabel="Create Account"
                   >
                     Create Account
@@ -384,7 +386,7 @@ export default function SignUpScreen() {
 
             <View style={styles.signInContainer}>
               <Text
-                style={{ color: colors.textSecondary }}
+                style={typography.body}
                 accessibilityLabel="Already have an account?"
               >
                 Already have an account?{" "}

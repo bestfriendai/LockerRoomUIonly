@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 
 import { MotiView } from 'moti';
-import { useTheme } from '@/providers/ThemeProvider';
+import { useTheme } from '../../providers/ThemeProvider';
 import { Text } from './Text';
 import { Ionicons } from '@expo/vector-icons';
 

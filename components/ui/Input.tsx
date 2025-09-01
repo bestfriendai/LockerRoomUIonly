@@ -10,7 +10,6 @@ import {
   Text as RNText
 } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from './Text';
 import { SPACING } from '../../constants/spacing';
 import { BORDER_RADIUS } from '../../constants/shadows';
 import { tokens } from '../../constants/tokens';
@@ -153,12 +152,11 @@ export const Input = forwardRef<TextInput, InputProps>((
   return (
     <View style={containerStyle}>
       {label && (
-        <Text
-          color={hasError ? 'error' : 'textSecondary'}
-          style={styles.label}
+        <RNText
+          style={[styles.label, { color: hasError ? colors.error : colors.textSecondary }]}
         >
           {label}
-        </Text>
+        </RNText>
       )}
       
       <View style={[containerStyles, style as ViewStyle]}>
@@ -197,12 +195,11 @@ export const Input = forwardRef<TextInput, InputProps>((
       </View>
       
       {(error || helperText) && (
-        <Text
-          color={hasError ? 'error' : 'textSecondary'}
-          style={styles.helperText}
+        <RNText
+          style={[styles.helperText, { color: hasError ? colors.error : colors.textSecondary }]}
         >
           {error || helperText}
-        </Text>
+        </RNText>
       )}
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, memo } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -13,46 +13,51 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MapPin, ChevronDown, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
+import { MapPin, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
 import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
-import { useAuth } from "@/providers/AuthProvider";
-import { MasonryReviewCard } from "@/components/MasonryReviewCard";
-import { useTheme } from "@/providers/ThemeProvider";
-import { Review } from "@/types";
-import { Button } from "@/components/ui/Button";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/utils/firebase";
-import { FILTER_CATEGORIES } from "@/constants/categories";
-import { LocationSelector } from "@/components/LocationSelector";
-import { LocationService } from "@/services/locationService";
+import { useAuth } from "../../providers/AuthProvider";
+import { MasonryReviewCard } from "../../components/MasonryReviewCard";
+import { useTheme } from "../../providers/ThemeProvider";
+import { Review } from "../../types";
+import { Button } from "../../components/ui/Button";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../utils/firebase";
+import { FILTER_CATEGORIES } from "../../constants/categories";
+import { LocationSelector } from "../../components/LocationSelector";
+import { LocationService } from "../../services/locationService";
+import { createTypographyStyles } from "../../styles/typography";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
 // Memoized category pill component for better performance
-const CategoryPill = React.memo(({ category, isSelected, onPress, colors }: {
+const CategoryPill = React.memo(({ category, isSelected, onPress, colors, typography }: {
   category: { id: string; label: string };
   isSelected: boolean;
   onPress: () => void;
   colors: any;
+  typography: any;
 }) => (
   <Pressable
     onPress={onPress}
-    style=[
+    style={[
       styles.categoryPill,
       {
         backgroundColor: isSelected ? colors.chipBgActive : colors.chipBg,
         borderColor: colors.chipBorder,
       }
-    ]
-    accessibilityRole="button"
-    accessibilityState={{ selected: isSelected }}
+    ]}
+    accessible={true}
+    accessibilityLabel={`${category.label} category ${isSelected ? 'selected' : 'not selected'}`}
   >
     <Text
-      style={{
-        color: isSelected ? colors.chipTextActive : colors.chipText,
-        fontWeight: isSelected ? "500" : "400",
-      }}
+      style={[
+        typography.body,
+        {
+          color: isSelected ? colors.chipTextActive : colors.chipText,
+          fontWeight: isSelected ? "500" : "400",
+        }
+      ]}
     >
       {category.label}
     </Text>
@@ -64,7 +69,8 @@ CategoryPill.displayName = 'CategoryPill';
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const typography = createTypographyStyles(colors);
+  // const { user } = useAuth(); // Not currently used
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +79,7 @@ export default function HomeScreen() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   // Default to 50 miles as requested
   const [searchRadius, setSearchRadius] = useState(50);
-  const [currentLocation, setCurrentLocation] = useState({
+  const [_currentLocation, _setCurrentLocation] = useState({
     city: "Washington",
     state: "DC",
     coords: { latitude: 38.9072, longitude: -77.0369 }
@@ -82,7 +88,7 @@ export default function HomeScreen() {
 
   // New location system state
   const [selectedLocationData, setSelectedLocationData] = useState<any>(null);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  // const [isLoadingReviews, setIsLoadingReviews] = useState(false); // Not currently used
 
   useEffect(() => {
     fetchReviews();
@@ -106,7 +112,7 @@ export default function HomeScreen() {
   };
 
   // Filter reviews based on selected category
-  let filteredReviews = useMemo(() => {
+  const filteredReviews = useMemo(() => {
     if (selectedCategory === "All") {
       return reviews;
     }
@@ -125,7 +131,7 @@ export default function HomeScreen() {
   const handleLocationSelect = useCallback(async (location: any) => {
     setSelectedLocationData(location);
     await fetchReviewsForLocation(location);
-  }, [fetchReviewsForLocation]);
+  }, []);
 
   // Normalize any location shape (string or object) to a display string
   const normalizeLocationToString = (loc: any): string => {
@@ -176,7 +182,7 @@ export default function HomeScreen() {
   };
 
   const fetchReviewsForLocation = useCallback(async (location: any) => {
-    setIsLoadingReviews(true);
+    // setIsLoadingReviews(true);
     try {
       // Fetch all reviews first
       const reviewsQuery = collection(db, 'reviews');
@@ -252,7 +258,7 @@ export default function HomeScreen() {
       }
       Alert.alert('Error', 'Failed to fetch reviews for this location.');
     } finally {
-      setIsLoadingReviews(false);
+      // setIsLoadingReviews(false);
     }
   }, [normalizeLocationToString, getSelectedCoords, getReviewCoords, distanceMiles, searchRadius, useRadiusFilter]);
 
@@ -272,7 +278,7 @@ export default function HomeScreen() {
       if (granted) {
         try {
           const loc = await LocationService.getCurrentLocation();
-          const place = await LocationService.reverseGeocode(loc.latitude, loc.longitude);
+          const place = await LocationService.reverseGeocode(loc.latitude, loc.longitude) as any;
           const currentData = {
             name: place?.name || place?.formatted || `${place?.city || ''}, ${place?.region || ''}`,
             city: place?.city || '',
@@ -318,7 +324,7 @@ export default function HomeScreen() {
       }
 
       // Get current location
-      const location = await Location.getCurrentPositionAsync({});
+      const location = await Location.getCurrentPositionAsync();
       const { latitude, longitude } = location.coords;
 
       // Reverse geocode to get city and state
@@ -330,7 +336,7 @@ export default function HomeScreen() {
         region = reverseGeocode[0].region || 'Unknown';
       }
 
-      setCurrentLocation({
+      _setCurrentLocation({
         city,
         state: region,
         coords: { latitude, longitude }
@@ -362,7 +368,7 @@ export default function HomeScreen() {
       // Simple parsing for "City, State" format
       const parts = locationInput.split(',').map(part => part.trim());
       if (parts.length >= 2) {
-        setCurrentLocation({
+        _setCurrentLocation({
           city: parts[0],
           state: parts[1],
           coords: { latitude: 0, longitude: 0 } // Would need geocoding API for real coords
@@ -388,7 +394,7 @@ export default function HomeScreen() {
     <View style={styles.header}>
       {/* App Header */}
       <View style={styles.locationHeader}>
-        <Text style={{ color: colors.text }}>
+        <Text style={typography.h1}>
           LockerRoom Talk App
         </Text>
         <View style={styles.headerActions}>
@@ -416,7 +422,7 @@ export default function HomeScreen() {
         />
 
         {selectedLocationData && (
-          <Text style={{ color: colors.textSecondary, marginTop: 8, textAlign: 'center' }}>
+          <Text style={[typography.caption, { marginTop: 8, textAlign: 'center' }]}>
             {selectedLocationData.type === 'global'
               ? 'Showing reviews from everywhere'
               : selectedLocationData.type === 'current'
@@ -429,7 +435,7 @@ export default function HomeScreen() {
 
       {/* Title with Location Button */}
       <View style={styles.titleContainer}>
-        <Text style={styles.title}>
+        <Text style={typography.h2}>
           Discover
         </Text>
         <Pressable
@@ -437,7 +443,7 @@ export default function HomeScreen() {
           style={[styles.locationButton, { backgroundColor: colors.surfaceElevated }]}
         >
           <MapPin size={16} color={colors.primary} strokeWidth={1.5} />
-          <Text style={{ color: colors.primary, marginLeft: 4 }}>
+          <Text style={[typography.body, { color: colors.primary, marginLeft: 4 }]}>
             Location
           </Text>
         </Pressable>
@@ -457,6 +463,7 @@ export default function HomeScreen() {
             isSelected={selectedCategory === category.id}
             onPress={() => onSelectCategory(category.id)}
             colors={colors}
+            typography={typography}
           />
         ))}
       </ScrollView>
@@ -477,11 +484,13 @@ export default function HomeScreen() {
             color={useRadiusFilter ? colors.surface : colors.text}
             strokeWidth={1.5}
           />
-          <Text style={{
+          <Text style={[
+            typography.body,  
+            {
               color: useRadiusFilter ? colors.surface : colors.text,
               marginLeft: 6
-            }}
-          >
+            }
+          ]}>
             Radius Filter
           </Text>
         </Pressable>
@@ -490,7 +499,7 @@ export default function HomeScreen() {
           onPress={() => setShowRadiusModal(true)}
           style={[styles.filterButton, { marginLeft: 8, backgroundColor: colors.surfaceElevated }]}
         >
-          <Text style={{ color: colors.text }}>{searchRadius} mi</Text>
+          <Text style={typography.body}>{searchRadius} mi</Text>
         </Pressable>
       </View>
     </View>
@@ -529,7 +538,7 @@ export default function HomeScreen() {
           onPress={() => setShowRadiusModal(false)}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}> 
-            <Text style={styles.modalTitle}>
+            <Text style={[typography.h2, { textAlign: 'center', marginBottom: 20 }]}>
               Search Radius
             </Text>
             {RADIUS_OPTIONS.map((radius) => (
@@ -570,7 +579,7 @@ export default function HomeScreen() {
           onPress={() => setShowLocationModal(false)}
         >
           <View style={[styles.modalContent, { backgroundColor: colors.card }]}> 
-            <Text style={styles.modalTitle}>
+            <Text style={[typography.h2, { textAlign: 'center', marginBottom: 20 }]}>
               Change Location
             </Text>
             
@@ -580,7 +589,7 @@ export default function HomeScreen() {
               style={[styles.locationOption, { backgroundColor: colors.surfaceElevated }]}
             >
               <Navigation size={20} color={colors.primary} strokeWidth={1.5} />
-              <Text style={{ color: colors.text, marginLeft: 12 }}>
+              <Text style={[typography.body, { color: colors.text, marginLeft: 12 }]}>
                 Use Current Location
               </Text>
             </Pressable>
@@ -607,7 +616,7 @@ export default function HomeScreen() {
                 onPress={handleManualLocation}
                 style={[styles.confirmButton, { backgroundColor: colors.primary }]}
               >
-                <Text style={{ color: colors.surface }}>
+                <Text style={[typography.body, { color: colors.surface, fontWeight: '500' }]}>
                   Set Location
                 </Text>
               </Pressable>

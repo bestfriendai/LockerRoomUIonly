@@ -14,13 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Send, MoreVertical, Users, Settings, UserPlus, UserMinus, Flag, Smile, Paperclip, Image as ImageIcon, Camera } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import { useChat } from "@/providers/ChatProvider";
-import type { ChatRoom, ChatMessage, User } from "@/types";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
+import { useChat } from "../../providers/ChatProvider";
+import type { ChatRoom, ChatMessage, User } from "../../types";
 
 const { width: screenWidth } = Dimensions.get('window');
 

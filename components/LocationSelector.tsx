@@ -17,8 +17,8 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/providers/ThemeProvider';
-import { LocationService } from '@/services/locationService';
+import { useTheme } from '../providers/ThemeProvider';
+import { LocationService } from '../services/locationService';
 
 interface LocationData {
   id: string;

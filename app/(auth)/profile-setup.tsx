@@ -13,10 +13,10 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, User, Cake, Book } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
 
 export default function ProfileSetupScreen() {
   const router = useRouter();

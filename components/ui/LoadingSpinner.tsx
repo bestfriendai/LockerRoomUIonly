@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { MotiView } from 'moti';
-import { useTheme } from '@/providers/ThemeProvider';
+import { useTheme } from '../../providers/ThemeProvider';
 import { Spinner } from './LoadingAnimations';
 
 interface LoadingSpinnerProps {

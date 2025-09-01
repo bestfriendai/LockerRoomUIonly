@@ -39,17 +39,17 @@ import {
   Award,
 } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
-import { ReviewCard } from "@/components/ReviewCard";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
+import { ReviewCard } from "../../components/ReviewCard";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/utils/firebase";
-import type { Review, User } from "@/types";
-import { generateAnonymousUsername, generateMultipleUsernames } from "@/services/usernameGenerator";
-import { toMillis, formatDate } from "@/utils/timestampHelpers";
+import { db } from "../../utils/firebase";
+import type { Review, User } from "../../types";
+import { generateAnonymousUsername, generateMultipleUsernames } from "../../services/usernameGenerator";
+import { toMillis, formatDate } from "../../utils/timestampHelpers";
 
 const { width: screenWidth } = Dimensions.get('window');
 

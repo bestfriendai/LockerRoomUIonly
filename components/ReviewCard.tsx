@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,12 @@ import {
 import { Image } from "expo-image";
 import { MessageCircle, ThumbsUp, MapPin, Clock, Share2 } from "lucide-react-native";
 import { MotiView } from "moti";
-import Card from "@/components/ui/Card";
-import AnimatedPressable from "@/components/ui/AnimatedPressable";
-import { useTheme } from "@/providers/ThemeProvider";
-import { SHADOWS } from "@/constants/shadows";
-import { tokens } from "@/constants/tokens";
-import type { Review } from "@/types";
+import Card from "./ui/Card";
+import AnimatedPressable from "./ui/AnimatedPressable";
+import { useTheme } from "../providers/ThemeProvider";
+import { SHADOWS } from "../constants/shadows";
+import { tokens } from "../constants/tokens";
+import type { Review } from "../types";
 
 type ReviewCardProps = {
   review: Review;
@@ -119,7 +119,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={{ color: colors.textSecondary }}>
+            <Text style={[styles.authorText, { color: colors.textSecondary }]}>
               {/* This should be replaced with actual author name */}
               Anonymous
             </Text>
@@ -290,6 +290,10 @@ const createStyles = () => StyleSheet.create({
   footerRight: {
     alignItems: "center",
     flexDirection: "row",
+  },
+  authorText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   header: {
     paddingBottom: tokens.spacing.md,

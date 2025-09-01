@@ -10,15 +10,17 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, PlusCircle, MessageCircle, Users } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
+import { useTheme } from "../../providers/ThemeProvider";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { Route } from "@react-navigation/native";
+import { createTypographyStyles } from "../../styles/typography";
 
 type MyTabBarProps = BottomTabBarProps;
 
 function MyTabBar({ state, descriptors, navigation }: MyTabBarProps) {
   const { colors, tokens, isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const typography = createTypographyStyles(colors);
 
   return (
     <View
@@ -104,7 +106,7 @@ function MyTabBar({ state, descriptors, navigation }: MyTabBarProps) {
             </View>
             <Text
               style={[
-                styles.tabLabel,
+                typography.caption,
                 { 
                   color: isFocused ? activeColor : inactiveColor,
                   fontWeight: isFocused ? "500" : "400",
@@ -123,6 +125,7 @@ function MyTabBar({ state, descriptors, navigation }: MyTabBarProps) {
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
   
   return (
     <Tabs
@@ -135,11 +138,7 @@ export default function TabLayout() {
           elevation: 0,
           shadowOpacity: 0,
         },
-        headerTitleStyle: {
-          fontSize: 24,
-          fontWeight: "600",
-          color: colors.text,
-        },
+        headerTitleStyle: typography.h2,
         headerTitleAlign: "left",
         headerShadowVisible: false,
       }}

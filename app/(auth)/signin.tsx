@@ -8,27 +8,28 @@ import {
   Platform,
   ActivityIndicator,
   Pressable,
-  Text
+  Text,
 } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Mail, Lock } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Input } from "@/components/ui/Input";
-import { validateInput, checkRateLimit } from "@/utils/inputSanitization";
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { ArrowLeft, Mail, Lock } from 'lucide-react-native';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
+import { Input } from '../../components/ui/Input';
+import { validateInput, checkRateLimit } from '../../utils/inputSanitization';
 import type {
   SignInFormData,
   ValidationResult,
   AuthError,
   AuthFormState,
-  AccessibilityProps,
-  FirebaseAuthErrorCode
-} from '@/types/auth';
+  FirebaseAuthErrorCode,
+} from '../../types/auth';
+import { createTypographyStyles } from '../../styles/typography';
 
 export default function SignInScreen() {
   const router = useRouter();
   const { signIn, isLoading } = useAuth();
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
 
   // Form state with proper typing
   const [formData, setFormData] = useState<SignInFormData>({
@@ -136,14 +137,14 @@ export default function SignInScreen() {
         <View style={styles.content}>
           <View style={styles.welcomeSection}>
             <Text
-              style={{ color: colors.text, marginBottom: 8 }}
+              style={typography.h2}
               accessibilityRole="header"
               accessibilityLabel="Welcome back to LockerRoom Talk App"
             >
-              Welcome back to LockerRoom Talk App
+              Welcome back
             </Text>
             <Text
-              style={{ color: colors.textSecondary }}
+              style={typography.body}
               accessibilityLabel="Sign in instructions"
             >
               Sign in to continue your anonymous dating reviews
@@ -221,7 +222,7 @@ export default function SignInScreen() {
                 />
               ) : (
                 <Text
-                  style={{ color: colors.onPrimary }}
+                  style={typography.button}
                   accessibilityLabel="Sign In"
                 >
                   Sign In
@@ -232,10 +233,10 @@ export default function SignInScreen() {
 
           <View style={styles.signUpContainer}>
             <Text
-              style={{ color: colors.textSecondary }}
+              style={typography.body}
               accessibilityLabel="Don't have an account?"
             >
-              Don&apos;t have an account?{" "}
+              Don&apos;t have an account?{' '}
             </Text>
             <Pressable
               onPress={() => router.push("/(auth)/signup")}

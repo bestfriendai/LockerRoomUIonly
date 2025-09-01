@@ -27,7 +27,7 @@ const fallbackColors = {
   text: '#000000',
   border: '#C6C6C8',
 };
-import { Text } from './Text';
+
 
 interface AnimatedPressableProps extends Omit<PressableProps, 'style'> {
   children: ReactNode;
@@ -117,7 +117,7 @@ export const AnimatedPressable: React.FC<AnimatedPressableProps> = ({
   // Wrap string or number children in Text component
   const renderChildren = () => {
     if (typeof children === 'string' || typeof children === 'number') {
-      return <Text>{children}</Text>;
+      return <RNText>{children}</RNText>;
     }
     return children;
   };

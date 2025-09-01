@@ -11,10 +11,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Eye, EyeOff, Lock, Users, Bell, MapPin, Heart, MessageCircle } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import { createTypographyStyles } from "../../styles/typography";
 
 interface PrivacySettings {
   profileVisibility: 'public' | 'friends' | 'private';
@@ -48,6 +49,7 @@ interface SettingItemProps {
 
 function SettingItem({ icon, title, description, value, onValueChange, disabled }: SettingItemProps) {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
 
   return (
     <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
@@ -56,11 +58,11 @@ function SettingItem({ icon, title, description, value, onValueChange, disabled 
           {icon}
         </View>
         <View style={styles.settingText}>
-          <Text >
+          <Text style={typography.body}>
             {title}
           </Text>
           {description && (
-            <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
+            <Text style={[typography.caption, { marginTop: 2 }]}>
               {description}
             </Text>
           )}
@@ -88,6 +90,7 @@ interface OptionItemProps {
 
 function OptionItem({ icon, title, description, options, selectedValue, onValueChange }: OptionItemProps) {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
 
   return (
     <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
@@ -96,11 +99,11 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
           {icon}
         </View>
         <View style={styles.settingText}>
-          <Text >
+          <Text style={typography.body}>
             {title}
           </Text>
           {description && (
-            <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
+            <Text style={[typography.caption, { marginTop: 2 }]}>
               {description}
             </Text>
           )}
@@ -113,14 +116,17 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
                 onPress={() => onValueChange(option.value)}
                 style={styles.optionButton}
               >
-                <Text style={{
-                    color: selectedValue === option.value ? colors.background : colors.text,
-                  }}
+                <Text style={[
+                    typography.button,
+                    {
+                      color: selectedValue === option.value ? colors.onPrimary : colors.text,
+                    }
+                  ]}
                 >
                   {option.label}
                 </Text>
               </Button>
-            ))}
+            ))};
           </View>
         </View>
       </View>
@@ -131,6 +137,7 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
 export default function PrivacyScreen() {
   const router = useRouter();
   const { colors, tokens, isDark } = useTheme();
+  const typography = createTypographyStyles(colors);
   const { user } = useAuth();
 
   // Initialize privacy settings with default values
@@ -257,7 +264,7 @@ export default function PrivacyScreen() {
           onPress={handleBack}
           leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
         />
-        <Text >
+        <Text style={typography.h2}>
           Privacy Settings
         </Text>
         <Button
@@ -429,7 +436,7 @@ export default function PrivacyScreen() {
             onPress={() => Alert.alert('Export Data', 'Your data export will be sent to your email within 24 hours.')}
             style={styles.actionButton}
           >
-            <Text >
+            <Text style={typography.button}>
               Export My Data
             </Text>
           </Button>
@@ -438,7 +445,7 @@ export default function PrivacyScreen() {
             onPress={handleDeleteAccount}
             style={styles.actionButton}
           >
-            <Text >
+            <Text style={typography.button}>
               Delete Account
             </Text>
           </Button>
@@ -446,7 +453,7 @@ export default function PrivacyScreen() {
 
         {/* Privacy Policy */}
         <View style={styles.footer}>
-          <Text style={{ color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }}>
+          <Text style={[typography.caption, { textAlign: 'center' }]}>
             By using this app, you agree to our Privacy Policy and Terms of Service.
             Your privacy is important to us and we are committed to protecting your personal information.
           </Text>

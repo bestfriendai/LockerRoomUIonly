@@ -5,9 +5,9 @@ import {
   Text
 } from 'react-native';
 import { useRouter, useSegments } from "expo-router";
-import { useAuth } from "@/providers/AuthProvider";
-import { useTheme } from "@/providers/ThemeProvider";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useAuth } from "../providers/AuthProvider";
+import { useTheme } from "../providers/ThemeProvider";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
 import * as Sentry from "sentry-expo";
 
 interface AuthGuardProps {

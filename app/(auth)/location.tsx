@@ -13,14 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useRouter } from 'expo-router';
 import { ArrowLeft, MapPin, Navigation } from 'lucide-react-native';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
 import * as Location from 'expo-location';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
 import type {
   LocationAddress,
   AuthError,
   AuthFormState
-} from '@/types/auth';
+} from '../../types/auth';
 
 export default function LocationSetupScreen() {
   const router = useRouter();

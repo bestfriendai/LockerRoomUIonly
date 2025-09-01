@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
 
+interface NetworkInformation extends EventTarget {
+  readonly downlink: number;
+  readonly effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
+  readonly rtt: number;
+  readonly saveData: boolean;
+  readonly type: 'bluetooth' | 'cellular' | 'ethernet' | 'none' | 'wifi' | 'wimax' | 'other' | 'unknown';
+  onChange: ((this: NetworkInformation, ev: Event) => any) | null;
+  onchange: ((this: NetworkInformation, ev: Event) => any) | null;
+}
+
 // Network status interface
 export interface NetworkStatus {
   isOnline: boolean;

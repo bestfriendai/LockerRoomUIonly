@@ -7,25 +7,24 @@ import {
   Alert,
   Platform,
   Pressable,
-  Dimensions,
   TextInput,
   KeyboardAvoidingView,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Camera, Image as ImageIcon, X, ChevronDown, Check, Flag } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import Card from "@/components/ui/Card";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import Card from "../../components/ui/Card";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/utils/firebase";
-import { LocationSelector } from "@/components/LocationSelector";
-import { LocationService } from "@/services/locationService";
+import { db } from "../../utils/firebase";
+import { LocationSelector } from "../../components/LocationSelector";
+import { LocationService } from "../../services/locationService";
+import { createTypographyStyles } from "../../styles/typography";
 
 
 
@@ -56,6 +55,7 @@ export default function CreateReviewScreen() {
   const { colors } = useTheme();
   const scrollViewRef = useRef<ScrollView>(null);
   const { user } = useAuth();
+  const typography = createTypographyStyles(colors);
 
   // Form state
   const [personName, setPersonName] = useState("");
@@ -67,8 +67,8 @@ export default function CreateReviewScreen() {
   const [showPlatformPicker, setShowPlatformPicker] = useState(false);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [location, setLocation] = useState<string>("");
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([]);
-  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [_locationSuggestions, _setLocationSuggestions] = useState<LocationSuggestion[]>([]);
+  const [_showLocationSuggestions, _setShowLocationSuggestions] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -148,10 +148,10 @@ export default function CreateReviewScreen() {
         suggestion.name.toLowerCase().includes(query.toLowerCase()) ||
         suggestion.address.toLowerCase().includes(query.toLowerCase())
       );
-      setLocationSuggestions(filtered);
-      setShowLocationSuggestions(true);
+      // _setLocationSuggestions(filtered);
+      // _setShowLocationSuggestions(true);
     } else {
-      setShowLocationSuggestions(false);
+      // _setShowLocationSuggestions(false);
     }
   }, []);
 
@@ -263,25 +263,23 @@ export default function CreateReviewScreen() {
 
     try {
       const reviewData = {
-        userId: user.id,
-        targetId: personName, // Assuming personName is the targetId for now
-        targetType: 'user',
-        rating: flag === 'green' ? 5 : 1, // Simple mapping from flag to rating
-        title,
-        content,
-        timestamp: serverTimestamp(),
-        likes: 0,
-        dislikes: 0,
-        comments: [],
-        media: media.map(m => m.uri), // Storing URIs for now, will need to implement upload
-        verified: false,
+        authorId: user.id,
+        targetName: personName,
         category: selectedCategories.join(', '),
-        platform,
+        content,
+        rating: flag === 'green' ? 5 : 1,
         isAnonymous,
-        // Enhanced location data
+        title,
+        platform: platform || '',
         location: selectedLocationData ? selectedLocationData.data.name : location,
         locationData: selectedLocationData || null,
         coordinates: selectedLocationData?.data?.coordinates || null,
+        media: media.map(m => m.uri),
+        verified: false,
+        likes: 0,
+        dislikes: 0,
+        comments: [],
+        timestamp: serverTimestamp(),
       };
 
       await addDoc(collection(db, "reviews"), reviewData);
@@ -311,7 +309,7 @@ export default function CreateReviewScreen() {
           }
         ]
       );
-    } catch (error) {
+    } catch (_error) {
       Alert.alert('Error', 'Failed to submit review. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -389,17 +387,17 @@ export default function CreateReviewScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <Text >
+            <Text style={typography.h2}>
               Create Review
             </Text>
-            <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+            <Text style={[typography.body, { marginTop: 4 }]}>
               Share your experience with others
             </Text>
           </View>
 
           {/* Person Name */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={typography.h2}>
               Who are you reviewing?
             </Text>
             <Input
@@ -413,7 +411,7 @@ export default function CreateReviewScreen() {
 
           {/* Categories */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={typography.h2}>
               Categories
             </Text>
             {errors.categories && (
@@ -450,10 +448,10 @@ export default function CreateReviewScreen() {
 
           {/* Flag Selection */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={typography.h2}>
               Flag Type *
             </Text>
-            <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
+            <Text style={[typography.body, { marginBottom: 12 }]}>
               Choose whether this is a positive (green flag) or negative (red flag) experience
             </Text>
             {renderFlagOptions()}
@@ -466,7 +464,7 @@ export default function CreateReviewScreen() {
 
           {/* Title */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={typography.h2}>
               Review Title
             </Text>
             <Input
@@ -481,7 +479,7 @@ export default function CreateReviewScreen() {
 
           {/* Content */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text style={typography.h2}>
               Your Review
             </Text>
             <TextInput
@@ -516,9 +514,9 @@ export default function CreateReviewScreen() {
 
           {/* Platform */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Platform (Optional)
-            </Text>
+             <Text style={[typography.h2, { marginBottom: 12 }]}>
+               Platform (Optional)
+             </Text>
             <Pressable
               onPress={() => setShowPlatformPicker(!showPlatformPicker)}
               style={[
@@ -563,12 +561,12 @@ export default function CreateReviewScreen() {
 
           {/* Location */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Location (Optional)
-            </Text>
-            <Text style={{ color: colors.textSecondary, marginBottom: 12 }}>
-              Where did this experience take place?
-            </Text>
+             <Text style={[typography.h2, { marginBottom: 8 }]}>
+               Location (Optional)
+             </Text>
+             <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 12 }]}>
+               Where did this experience take place?
+             </Text>
 
             <LocationSelector
               onLocationSelect={handleLocationSelect}
@@ -585,9 +583,9 @@ export default function CreateReviewScreen() {
 
           {/* Media */}
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              Photos (Optional)
-            </Text>
+             <Text style={[typography.h2, { marginBottom: 12 }]}>
+               Photos (Optional)
+             </Text>
             <View style={styles.mediaContainer}>
               {media.map((item) => (
                 <View key={item.id} style={styles.mediaItem}>
@@ -631,14 +629,14 @@ export default function CreateReviewScreen() {
               onPress={() => setIsAnonymous(!isAnonymous)}
               style={styles.anonymousOption}
             >
-              <View style={styles.anonymousInfo}>
-                <Text >
-                  Post Anonymously
-                </Text>
-                <Text style={{ color: colors.textSecondary, marginTop: 2 }}>
-                  Your name won't be visible to others
-                </Text>
-              </View>
+               <View style={styles.anonymousInfo}>
+                 <Text style={[typography.body, { fontWeight: '500' }]}>
+                   Post Anonymously
+                 </Text>
+                 <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                   Your name won't be visible to others
+                 </Text>
+               </View>
               <View
                 style={[
                   styles.checkbox,
@@ -763,15 +761,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  mediaItem: {
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    height: 80,
-    justifyContent: 'center',
-    position: 'relative',
-    width: 80,
-  },
+   mediaItem: {
+     alignItems: 'center',
+     backgroundColor: 'rgba(0,0,0,0.05)',
+     borderRadius: 8,
+     height: 80,
+     justifyContent: 'center',
+     position: 'relative',
+     width: 80,
+   },
   platformItem: {
     alignItems: 'center',
     borderBottomColor: 'rgba(0,0,0,0.1)',

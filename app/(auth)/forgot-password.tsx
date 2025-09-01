@@ -13,21 +13,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail } from 'lucide-react-native';
-import { Input } from '@/components/ui/Input';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
-import { validateInput, checkRateLimit } from '@/utils/inputSanitization';
+import { Input } from '../../components/ui/Input';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
+import { validateInput, checkRateLimit } from '../../utils/inputSanitization';
 import type {
   ForgotPasswordFormData,
   ValidationResult,
   AuthError,
-  AuthFormState
-} from '@/types/auth';
+  AuthFormState,
+} from '../../types/auth';
+import { createTypographyStyles } from '../../styles/typography';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { resetPassword } = useAuth();
+  const typography = createTypographyStyles(colors);
 
   // Form state with proper typing
   const [formData, setFormData] = useState<ForgotPasswordFormData>({
@@ -117,14 +119,14 @@ export default function ForgotPasswordScreen() {
         <View style={styles.content}>
           <View style={styles.welcomeSection}>
             <Text
-              style={{ color: colors.text, marginBottom: 8 }}
+              style={typography.h2}
               accessibilityRole="header"
               accessibilityLabel="Reset Password screen title"
             >
               Reset Password
             </Text>
             <Text
-              style={{ color: colors.textSecondary }}
+              style={typography.body}
               accessibilityLabel="Instructions for password reset"
             >
               Enter your email address and we will send you a reset link
@@ -180,7 +182,7 @@ export default function ForgotPasswordScreen() {
                 />
               ) : (
                 <Text
-                  style={{ color: colors.onPrimary }}
+                  style={typography.button}
                   accessibilityLabel="Send Reset Link"
                 >
                   Send Reset Link
@@ -191,7 +193,7 @@ export default function ForgotPasswordScreen() {
 
           <View style={styles.signInContainer}>
             <Text
-              style={{ color: colors.textSecondary }}
+              style={typography.body}
               accessibilityLabel="Remember your password?"
             >
               Remember your password?{' '}

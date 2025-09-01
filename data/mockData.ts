@@ -82,7 +82,7 @@ export interface Review {
   viewCount?: number;
 }
 
-import { ChatMessage } from '@/types';
+import { ChatMessage } from '../types';
 
 export interface Chat {
   id: string;

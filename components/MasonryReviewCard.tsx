@@ -10,7 +10,7 @@ import {
 
 import { Image } from "expo-image";
 import { Star, ThumbsUp, MessageCircle, Share2 } from "lucide-react-native";
-import { useTheme } from "@/providers/ThemeProvider";
+import { useTheme } from "../providers/ThemeProvider";
 
 const CARD_PADDING = 6;
 

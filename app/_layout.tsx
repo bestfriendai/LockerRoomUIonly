@@ -8,12 +8,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as Sentry from "sentry-expo";
 
 
-import { ThemeProvider } from "@/providers/ThemeProvider";
-import { AuthProvider } from "@/providers/AuthProvider";
-import { ChatProvider } from "@/providers/ChatProvider";
-import { NotificationProvider } from "@/providers/NotificationProvider";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import AuthGuard from "@/components/AuthGuard";
+import { ThemeProvider } from "../providers/ThemeProvider";
+import { AuthProvider } from "../providers/AuthProvider";
+import { ChatProvider } from "../providers/ChatProvider";
+import { NotificationProvider } from "../providers/NotificationProvider";
+import ErrorBoundary from "../components/ErrorBoundary";
+import AuthGuard from "../components/AuthGuard";
 
 // Initialize Sentry for error and performance monitoring only if DSN is provided
 if (process.env.EXPO_PUBLIC_SENTRY_DSN) {

@@ -13,13 +13,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Plus, MessageCircle, Users, Lock, Globe, Crown, Clock, MoreVertical } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where } from "firebase/firestore";
-import { db } from "@/utils/firebase";
-import type { ChatRoom } from "@/types/index";
-import { toMillis } from "@/utils/timestampHelpers";
+import { db } from "../../utils/firebase";
+import type { ChatRoom } from "../../types/index";
+import { toMillis } from "../../utils/timestampHelpers";
+import { createTypographyStyles } from "../../styles/typography";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
 
@@ -35,6 +36,7 @@ interface ChatRoomItemProps {
 const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isMember }: ChatRoomItemProps) => {
   const { colors } = useTheme();
   const { user } = useAuth();
+  const typography = createTypographyStyles(colors);
 
   let isOwner = room.createdBy === user?.id;
   const memberCount = room.participants?.length || room.memberIds?.length || 0;
@@ -91,7 +93,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
             <View style={[styles.roomIcon, { backgroundColor: colors.primary }]}>
               <MessageCircle size={16} color={colors.surface} strokeWidth={1.5} />
             </View>
-            <Text style={styles.roomName}>
+            <Text style={typography.h2}>
               {room.name}
             </Text>
             {isPrivate && (
@@ -103,7 +105,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           </View>
           
           {room.description && (
-            <Text style={{ color: colors.textSecondary, marginTop: 2 }}
+            <Text style={[typography.body, { marginTop: 2 }]}
               numberOfLines={2}
             >
               {room.description}
@@ -113,7 +115,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
           <View style={styles.roomMeta}>
             <View style={styles.memberCount}>
               <Users size={12} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
+              <Text style={[typography.caption, { marginLeft: 4 }]}>
                 {memberCount} {memberCount === 1 ? 'member' : 'members'}
               </Text>
             </View>
@@ -121,7 +123,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
             {lastMessage && (
               <View style={styles.lastMessage}>
                 <Clock size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                <Text style={[typography.caption, { marginLeft: 4 }]}>
                   {typeof lastMessage === 'string'
                     ? formatTime(room.lastMessageTime)
                     : formatTime(lastMessage.timestamp)
@@ -133,12 +135,12 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
 
           {lastMessage && (
             <View style={styles.lastMessageContent}>
-              <Text style={{ color: colors.textSecondary }} numberOfLines={1}>
+              <Text style={typography.body} numberOfLines={1}>
                 {typeof lastMessage === 'string' ? (
                   lastMessage
                 ) : (
                   <>
-                    <Text >{lastMessage.senderName || 'Unknown'}: </Text>
+                    <Text style={typography.body}>{lastMessage.senderName || 'Unknown'}: </Text>
                     {lastMessage.content}
                   </>
                 )}
@@ -179,6 +181,7 @@ export default function ChatScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const { user } = useAuth();
+  const typography = createTypographyStyles(colors);
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -432,10 +435,10 @@ export default function ChatScreen() {
     return (
       <View style={styles.emptyState}>
         <MessageCircle size={48} color={colors.textSecondary} strokeWidth={1} />
-        <Text style={{ marginTop: 16, textAlign: 'center' }}>
+        <Text style={[typography.h2, { marginTop: 16, textAlign: 'center' }]}>
           {title}
         </Text>
-        <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>
           {description}
         </Text>
         {(activeTab === 'all' || activeTab === 'my_rooms') && (
@@ -456,7 +459,7 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
-          <Text >
+          <Text style={typography.h1}>
             Chat Rooms
           </Text>
           <Button

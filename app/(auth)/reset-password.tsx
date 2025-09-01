@@ -14,16 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Mail, Lock, Key } from 'lucide-react-native';
-import { Input } from '@/components/ui/Input';
-import { useTheme } from '@/providers/ThemeProvider';
-import { useAuth } from '@/providers/AuthProvider';
-import { validateInput, checkRateLimit } from '@/utils/inputSanitization';
+import { Input } from '../../components/ui/Input';
+import { useTheme } from '../../providers/ThemeProvider';
+import { useAuth } from '../../providers/AuthProvider';
+import { validateInput, checkRateLimit } from '../../utils/inputSanitization';
 import type {
   ResetPasswordFormData,
   ValidationResult,
   AuthError,
   AuthFormState
-} from '@/types/auth';
+} from '../../types/auth';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();

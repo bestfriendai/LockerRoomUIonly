@@ -13,12 +13,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, MapPin, Calendar, User, Mail, Phone, Edit3 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useAuth } from "@/providers/AuthProvider";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import Avatar from "@/components/ui/Avatar";
-import Card from "@/components/ui/Card";
+import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import Avatar from "../../components/ui/Avatar";
+import Card from "../../components/ui/Card";
 import { Picker } from "@react-native-picker/picker";
 
 type Gender = 'male' | 'female' | 'non-binary' | 'prefer-not-to-say';
