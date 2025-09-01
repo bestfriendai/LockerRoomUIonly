@@ -249,35 +249,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       if (__DEV__) {
-        console.log('Starting sign in process...');
+        console.log('Starting sign in process for email:', email);
       }
       if (mountedRef.current) {
         setIsLoading(true);
       }
 
-      const userCredential = await signInWithEmailAndPassword(getAuth(), email, password);
+      const auth = getAuth();
+      if (__DEV__) {
+        console.log('Auth instance obtained, attempting signInWithEmailAndPassword...');
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (__DEV__) {
         console.log('Sign in successful for user:', userCredential.user.uid);
+        console.log('User email verified:', userCredential.user.emailVerified);
       }
 
       // Don't set loading to false here - let the auth state change handler do it
       // This prevents race conditions with navigation
-    } catch (error) {
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('Sign in error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+      }
+
       logError(error, 'Sign In');
-      
+
       try {
         Sentry.Native.captureException(error);
       } catch (sentryError) {
         console.warn('Sentry exception capture failed:', sentryError);
       }
-      
+
       if (mountedRef.current) {
         setIsLoading(false); // Only set loading false on error
       }
-      
+
       // Show user-friendly error dialog instead of throwing
       showErrorAlert(error, 'Sign In Failed');
-      
+
       // Don't throw the error - handle it gracefully
       // This prevents the app from crashing
     }
