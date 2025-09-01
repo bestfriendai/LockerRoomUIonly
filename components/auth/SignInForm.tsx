@@ -10,7 +10,7 @@ import {
 
 import { useRouter } from 'expo-router';
 import { Mail, Lock } from 'lucide-react-native';
-import { Text } from '../ui/Text';
+
 import { Input } from '../ui/Input';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
@@ -34,60 +34,53 @@ export default function SignInForm() {
     setIsLoading(true);
     setError('');
 
-    try {
-      if (step === 'signIn') {
-        await signIn(email, password);
-        // signIn doesn't return a value, so we assume success if no error is thrown
-        router.replace('/(tabs)');
-      } else {
-        // For sign up, redirect to the full signup screen
-        router.push('/(auth)/signup');
-      }
-    } catch (err: any) {
-      setError((err as any)?.message || `Failed to ${step === 'signIn' ? 'sign in' : 'sign up'}`);
-    } finally {
-      setIsLoading(false);
+    if (step === 'signIn') {
+      await signIn(email, password);
+      // The signIn function now handles errors internally with alerts
+      // Navigation will happen automatically via auth state change
+    } else {
+      // For sign up, redirect to the full signup screen
+      router.push('/(auth)/signup');
     }
+    
+    setIsLoading(false);
   };
 
   const handleDemoLogin = async () => {
     setIsLoading(true);
     setError('');
 
-    try {
-      if (demoLogin) {
-        await demoLogin();
-        router.replace('/(tabs)');
-      } else {
-        setError('Demo login not available');
-      }
-    } catch (err: any) {
-      setError('Demo login failed');
-    } finally {
-      setIsLoading(false);
+    if (demoLogin) {
+      await demoLogin();
+      // The demoLogin function now handles errors internally with alerts
+      // Navigation will happen automatically via auth state change
+    } else {
+      setError('Demo login not available');
     }
+    
+    setIsLoading(false);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.welcomeSection}>
-        <Text
+        <RNText
           style={{ color: colors.text, marginBottom: 8 }}
         >
           Welcome {step === 'signIn' ? 'back' : 'to MockTrae'}
-        </Text>
-        <Text style={{ color: colors.textSecondary }}>
+        </RNText>
+        <RNText style={{ color: colors.textSecondary }}>
           {step === 'signIn'
             ? 'Sign in to continue your journey'
             : 'Create an account to get started'}
-        </Text>
+        </RNText>
       </View>
 
       {error ? (
         <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
-          <Text style={{ color: colors.error }}>
+          <RNText style={{ color: colors.error }}>
             {error}
-          </Text>
+          </RNText>
         </View>
       ) : null}
 
@@ -121,9 +114,9 @@ export default function SignInForm() {
               { opacity: pressed ? 0.5 : 1 },
             ]}
           >
-            <Text style={{ color: colors.primary }}>
+            <RNText style={{ color: colors.primary }}>
               Forgot password?
-            </Text>
+            </RNText>
           </Pressable>
         )}
       </View>
@@ -142,11 +135,11 @@ export default function SignInForm() {
           {isLoading ? (
             <ActivityIndicator color={colors.onPrimary} size="small" />
           ) : (
-            <Text
+            <RNText
               style={{ color: colors.onPrimary }}
             >
               {step === 'signIn' ? 'Sign In' : 'Sign Up'}
-            </Text>
+            </RNText>
           )}
         </TouchableOpacity>
 
@@ -165,20 +158,20 @@ export default function SignInForm() {
             {isLoading ? (
               <ActivityIndicator color={colors.primary} size="small" />
             ) : (
-              <Text
+              <RNText
                 style={{ color: colors.primary }}
               >
                 Demo Login
-              </Text>
+              </RNText>
             )}
           </TouchableOpacity>
         )}
       </View>
 
       <View style={styles.switchContainer}>
-        <Text style={{ color: colors.textSecondary }}>
+        <RNText style={{ color: colors.textSecondary }}>
           {step === 'signIn' ? "Don't have an account?" : 'Already have an account?'}{' '}
-        </Text>
+        </RNText>
         <Pressable
           onPress={() => {
             if (step === 'signIn') {
@@ -189,9 +182,9 @@ export default function SignInForm() {
           }}
           style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
         >
-          <Text style={{ color: colors.primary }}>
+          <RNText style={{ color: colors.primary }}>
             {step === 'signIn' ? 'Sign up' : 'Sign in'}
-          </Text>
+          </RNText>
         </Pressable>
       </View>
     </View>

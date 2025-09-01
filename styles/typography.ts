@@ -1,8 +1,40 @@
 import { StyleSheet } from 'react-native';
 import { tokens } from '../constants/tokens';
-import { ThemeColors } from '../providers/ThemeProvider'; // Assuming you export your colors type
 
-export const createTypographyStyles = (colors: ThemeColors) =>
+type ColorRole =
+  | 'background'
+  | 'surface'
+  | 'surfaceHover'
+  | 'surfaceDisabled'
+  | 'surfaceElevated'
+  | 'border'
+  | 'borderSubtle'
+  | 'overlay'
+  | 'text'
+  | 'textSecondary'
+  | 'textTertiary'
+  | 'textDisabled'
+  | 'primary'
+  | 'primaryHover'
+  | 'primaryDisabled'
+  | 'onPrimary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'white'
+  | 'black'
+  | 'info'
+  | 'chipBg'
+  | 'chipBorder'
+  | 'chipText'
+  | 'divider'
+  | 'errorContainer'
+  | 'card'
+  | 'warningBg'
+  | 'cardBg'
+  | 'errorBg';
+
+export const createTypographyStyles = (colors: Record<ColorRole, string>) =>
   StyleSheet.create({
     h1: {
       fontSize: tokens.fontSize['3xl'],

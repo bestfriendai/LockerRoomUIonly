@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence, connectAuthEmulator, getAuth } from 'firebase/auth';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/auth';
+import 'firebase/compat/firestore';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
@@ -36,23 +36,31 @@ if (__DEV__) {
   projectId: firebaseConfig.projectId,
   authDomain: firebaseConfig.authDomain,
   hasApiKey: !!firebaseConfig.apiKey,
-});
+  });
 }
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-// Initialize auth with platform-specific persistence
-const auth = Platform.OS === 'web' 
-  ? getAuth(app)
-  : initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-    });
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+// Configure auth persistence for React Native
+if (Platform.OS !== 'web') {
+  firebase.auth().setPersistence(firebase.auth.ReactNativeAsyncStorage);
+}
+
+const app = firebase.app();
+const db = firebase.firestore();
+const auth = firebase.auth();
 
 // Optional: connect to Firebase emulators when enabled
 if (process.env.USE_FIREBASE_EMULATOR === '1') {
   try {
-    connectAuthEmulator(auth, 'http://localhost:9099');
-    connectFirestoreEmulator(db, 'localhost', 8080);
+    auth.useEmulator('http://localhost:9099');
+    db.settings({
+      host: 'localhost:8080',
+      ssl: false,
+    });
     if (__DEV__) {
       console.log('[Firebase] Connected to local emulators');
     }
@@ -62,7 +70,6 @@ if (process.env.USE_FIREBASE_EMULATOR === '1') {
     }
   }
 }
-
 
 export { app, db, auth, firebaseConfig };
 // For more information on how to access Firebase in your project,

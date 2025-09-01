@@ -4,6 +4,7 @@ import { auth } from '../utils/firebase';
 import { User } from '../types';
 import { createUser, getUserById, subscribeToUserChanges } from '../services/userService';
 import * as Sentry from 'sentry-expo';
+import { showErrorAlert, showSuccessAlert, logError } from '../utils/errorHandler';
 
 
 interface AuthContextType {
@@ -242,16 +243,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Don't set loading to false here - let the auth state change handler do it
       // This prevents race conditions with navigation
     } catch (error) {
-      if (__DEV__) {
-        console.error('Sign in error:', error);
-      }
+      logError(error, 'Sign In');
+      
       try {
         Sentry.Native.captureException(error);
       } catch (sentryError) {
         console.warn('Sentry exception capture failed:', sentryError);
       }
+      
       setIsLoading(false); // Only set loading false on error
-      throw error;
+      
+      // Show user-friendly error dialog instead of throwing
+      showErrorAlert(error, 'Sign In Failed');
+      
+      // Don't throw the error - handle it gracefully
+      // This prevents the app from crashing
     }
   };
 
@@ -328,17 +334,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Don't set loading to false here - let the auth state change handler do it
       // Auth state change will trigger navigation
     } catch (error) {
-      if (__DEV__) {
-        console.error('Sign up error:', error);
-      }
+      logError(error, 'Sign Up');
+      
       try {
         Sentry.Native.captureException(error);
       } catch (sentryError) {
         console.warn('Sentry exception capture failed:', sentryError);
       }
+      
       setIsLoading(false);
       setAuthTransitioning(false);
-      throw error;
+      
+      // Show user-friendly error dialog instead of throwing
+      showErrorAlert(error, 'Sign Up Failed');
+      
+      // Don't throw the error - handle it gracefully
+      // This prevents the app from crashing
     }
   };
 

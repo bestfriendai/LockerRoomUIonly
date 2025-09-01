@@ -21,6 +21,7 @@ import { db } from "../../utils/firebase";
 import type { ChatRoom } from "../../types/index";
 import { toMillis } from "../../utils/timestampHelpers";
 import { createTypographyStyles } from "../../styles/typography";
+import { EmptyState } from "../../components/EmptyState";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
 
@@ -418,39 +419,31 @@ export default function ChatScreen() {
   };
 
   const renderEmptyState = () => {
-    let title = "No rooms found";
-    let description = "Try adjusting your search or create a new room.";
-
-    if (activeTab === 'joined') {
-      title = "No joined rooms";
-      description = "Join some rooms to start chatting with others.";
-    } else if (activeTab === 'my_rooms') {
-      title = "No rooms created";
-      description = "Create your first room to start discussions.";
-    } else if (searchQuery.trim()) {
-      title = "No results found";
-      description = `No rooms match "${searchQuery}".`;
+    // Determine the type of empty state based on context
+    if (searchQuery.trim()) {
+      return (
+        <EmptyState 
+          type="no-search-results"
+          onClearFilters={() => setSearchQuery('')}
+        />
+      );
     }
-
+    
+    // For joined and my_rooms tabs, show no-matches type
+    if (activeTab === 'joined' || activeTab === 'my_rooms') {
+      return (
+        <EmptyState
+          type="no-matches"
+        />
+      );
+    }
+    
+    // Default to no-reviews type for all rooms
     return (
-      <View style={styles.emptyState}>
-        <MessageCircle size={48} color={colors.textSecondary} strokeWidth={1} />
-        <Text style={[typography.h2, { marginTop: 16, textAlign: 'center' }]}>
-          {title}
-        </Text>
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>
-          {description}
-        </Text>
-        {(activeTab === 'all' || activeTab === 'my_rooms') && (
-          <Button
-            onPress={handleCreateRoom}
-            style={{ marginTop: 24 }}
-            leftIcon={<Plus size={16} color={colors.surface} strokeWidth={1.5} />}
-          >
-            Create Room
-          </Button>
-        )}
-      </View>
+      <EmptyState
+        type="no-reviews"
+        onCreateReview={handleCreateRoom}
+      />
     );
   };
 
@@ -546,12 +539,6 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  emptyState: {
-    alignItems: 'center',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 32,
   },
   header: {
     borderBottomWidth: StyleSheet.hairlineWidth,

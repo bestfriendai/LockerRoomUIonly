@@ -3,7 +3,6 @@
     "name": "LockerRoom Talk App",
     "slug": "lockerroom-talk-app",
     "version": "1.0.0",
-    "sdkVersion": "53.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,28 +14,22 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "jsEngine": "jsc"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "jsEngine": "jsc"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      [
-        "sentry-expo",
-        {
-          "project": "locker-room-talk-app"
-        }
-      ],
-      "expo-font",
-      "expo-router",
-      "expo-web-browser"
+      "expo-router"
     ],
     "extra": {
       "eas": {

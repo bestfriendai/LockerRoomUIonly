@@ -10,7 +10,7 @@ import {
 
 import { useRouter } from 'expo-router';
 import { LogOut, Settings, User, MapPin } from 'lucide-react-native';
-import { Text } from '../ui/Text';
+
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 
@@ -69,30 +69,30 @@ export default function UserProfile() {
         </View>
 
         <View style={styles.userInfo}>
-          <Text
+          <RNText
             style={{ color: colors.text, marginBottom: 4 }}
           >
             {user.displayName || user.email?.split('@')[0] || 'User'}
-          </Text>
-          
-          <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
+          </RNText>
+
+          <RNText style={{ color: colors.textSecondary, marginBottom: 8 }}>
             {user.email}
-          </Text>
+          </RNText>
 
           {user.age && (
-            <Text style={{ color: colors.textSecondary, marginBottom: 4 }}>
+            <RNText style={{ color: colors.textSecondary, marginBottom: 4 }}>
               Age: {user.age}
-            </Text>
+            </RNText>
           )}
 
           {user.location && (
             <View style={styles.locationContainer}>
               <MapPin color={colors.textSecondary} size={14} strokeWidth={1.5} />
-              <Text
+              <RNText
                 style={{ color: colors.textSecondary, marginLeft: 4 }}
               >
                 {user.location}
-              </Text>
+              </RNText>
             </View>
           )}
         </View>
@@ -100,30 +100,30 @@ export default function UserProfile() {
 
       <View style={styles.statsSection}>
         <View style={styles.statItem}>
-          <Text style={{ color: colors.text }}>
+          <RNText style={{ color: colors.text }}>
             {user.reviewsCount || 0}
-          </Text>
-          <Text style={{ color: colors.textSecondary }}>
+          </RNText>
+          <RNText style={{ color: colors.textSecondary }}>
             Reviews
-          </Text>
+          </RNText>
         </View>
-        
+
         <View style={styles.statItem}>
-          <Text style={{ color: colors.text }}>
+          <RNText style={{ color: colors.text }}>
             {user.matchesCount || 0}
-          </Text>
-          <Text style={{ color: colors.textSecondary }}>
+          </RNText>
+          <RNText style={{ color: colors.textSecondary }}>
             Matches
-          </Text>
+          </RNText>
         </View>
-        
+
         <View style={styles.statItem}>
-          <Text style={{ color: colors.text }}>
+          <RNText style={{ color: colors.text }}>
             {user.rating || '0.0'}
-          </Text>
-          <Text style={{ color: colors.textSecondary }}>
+          </RNText>
+          <RNText style={{ color: colors.textSecondary }}>
             Rating
-          </Text>
+          </RNText>
         </View>
       </View>
 
@@ -135,11 +135,11 @@ export default function UserProfile() {
           ]}
           onPress={handleGoToApp}
         >
-          <Text
+          <RNText
             style={{ color: colors.onPrimary }}
           >
             Go to App
-          </Text>
+          </RNText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -151,11 +151,11 @@ export default function UserProfile() {
           onPress={handleEditProfile}
         >
           <Settings color={colors.text} size={18} strokeWidth={1.5} />
-          <Text
+          <RNText
             style={{ color: colors.text, marginLeft: 8 }}
           >
             Edit Profile
-          </Text>
+          </RNText>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -167,19 +167,19 @@ export default function UserProfile() {
           onPress={handleSignOut}
         >
           <LogOut color={colors.error} size={18} strokeWidth={1.5} />
-          <Text
+          <RNText
             style={{ color: colors.error, marginLeft: 8 }}
           >
             Sign Out
-          </Text>
+          </RNText>
         </TouchableOpacity>
       </View>
 
       {!user.profileComplete && (
         <View style={[styles.incompleteProfileBanner, { backgroundColor: colors.warningBg }]}>
-          <Text style={{ color: colors.warning, textAlign: 'center' }}>
+          <RNText style={{ color: colors.warning, textAlign: 'center' }}>
             Complete your profile to get better matches
-          </Text>
+          </RNText>
           <Pressable
             onPress={() => router.push('/(auth)/profile-setup')}
             style={({ pressed }) => [
@@ -187,11 +187,11 @@ export default function UserProfile() {
               { opacity: pressed ? 0.5 : 1 },
             ]}
           >
-            <Text
+            <RNText
               style={{ color: colors.warning }}
             >
               Complete Now
-            </Text>
+            </RNText>
           </Pressable>
         </View>
       )}

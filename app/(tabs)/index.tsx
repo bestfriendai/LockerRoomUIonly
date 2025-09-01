@@ -27,6 +27,7 @@ import { FILTER_CATEGORIES } from "../../constants/categories";
 import { LocationSelector } from "../../components/LocationSelector";
 import { LocationService } from "../../services/locationService";
 import { createTypographyStyles } from "../../styles/typography";
+import { EmptyState } from "../../components/EmptyState";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
@@ -519,6 +520,19 @@ export default function HomeScreen() {
         renderItem={renderReviewItem}
         numColumns={2}
         ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          <EmptyState
+            type={location ? 'no-location-reviews' : 'no-reviews'}
+            location={typeof location === 'string' ? location : location?.data?.city || 'your location'}
+            searchRadius={searchRadius}
+            onChangeLocation={() => setShowLocationModal(true)}
+            onCreateReview={() => router.push('/(tabs)/create')}
+            onClearFilters={() => {
+              setSelectedCategory('all');
+              setSearchQuery('');
+            }}
+          />
+        }
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

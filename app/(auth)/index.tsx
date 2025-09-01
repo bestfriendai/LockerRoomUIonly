@@ -19,7 +19,7 @@ import {
   Users,
   MessageCircle,
 } from "lucide-react-native";
-import { useAuth as _useAuth } from "../providers/AuthProvider";
+import { useAuth } from "../../providers/AuthProvider";
 
 const { width } = Dimensions.get("window");
 
@@ -30,7 +30,7 @@ const onboardingData = [
     title: "Welcome to\nLockerRoom Talk App",
     subtitle: "Anonymous dating reviews from real people",
     description: "Share your experiences, read others' stories, and make better dating decisions",
-    gradient: ["#6366F1", "#8B5CF6"] as const,
+    gradient: ["#6366F1", "#8B5CF6"],
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const onboardingData = [
     title: "Safe &\nAnonymous",
     subtitle: "Your privacy is our priority",
     description: "Share honest reviews without revealing your identity. AI moderation keeps the community safe.",
-    gradient: ["#8B5CF6", "#EC4899"] as const,
+    gradient: ["#8B5CF6", "#EC4899"],
   },
   {
     id: 3,
@@ -46,7 +46,7 @@ const onboardingData = [
     title: "Real Reviews\nReal People",
     subtitle: "Authentic experiences from your community",
     description: "Read verified reviews from people in your area who've actually dated these individuals.",
-    gradient: ["#EC4899", "#F97316"] as const,
+    gradient: ["#EC4899", "#F97316"],
   },
   {
     id: 4,
@@ -54,7 +54,7 @@ const onboardingData = [
     title: "Connect &\nChat",
     subtitle: "Join the conversation",
     description: "Participate in local chat rooms, ask questions, and get advice from the community.",
-    gradient: ["#F97316", "#EAB308"] as const,
+    gradient: ["#F97316", "#EAB308"],
   },
 ];
 
@@ -110,7 +110,7 @@ export default function WelcomeScreen() {
   const currentData = onboardingData[currentIndex];
 
   return (
-    <LinearGradient colors={currentData?.gradient || ["#6366F1", "#8B5CF6"]} style={styles.container}>
+    <LinearGradient colors={currentData?.gradient as [string, string] || ["#6366F1", "#8B5CF6"]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* Skip Button */}
         <View style={styles.topBar}>

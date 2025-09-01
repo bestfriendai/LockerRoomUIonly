@@ -20,6 +20,7 @@ import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
 import type { Review, User as UserType, ChatRoom } from "../../types";
 import { createTypographyStyles } from "../../styles/typography";
+import { EmptyState } from "../../components/EmptyState";
 
 type SearchTab = 'reviews' | 'users' | 'rooms';
 type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
@@ -341,11 +342,14 @@ export default function SearchScreen() {
     }
 
     return (
-      <View style={styles.emptyContainer}>
-        <Text style={[typography.body, { textAlign: "center" }]}>
-          No results found for "{debouncedQuery}"
-        </Text>
-      </View>
+      <EmptyState
+        type="no-search-results"
+        onClearFilters={() => {
+          setSearchQuery('');
+          setActiveTab('reviews');
+          setSortBy('relevance');
+        }}
+      />
     );
   };
 

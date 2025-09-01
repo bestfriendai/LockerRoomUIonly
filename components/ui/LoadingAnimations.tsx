@@ -8,7 +8,7 @@ import {
 
 import { MotiView } from 'moti';
 import { useTheme } from '../../providers/ThemeProvider';
-import { Text } from './Text';
+
 import { Ionicons } from '@expo/vector-icons';
 
 // Spinning loader with customizable size and color

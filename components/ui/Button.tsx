@@ -63,7 +63,40 @@ export const Button: React.FC<ButtonProps> = ({
   rightIcon,
   fullWidth = false,
 }) => {
-  const { colors, isDark } = useTheme();
+  // Handle cases where ThemeProvider might not be available (e.g., in ErrorBoundary)
+  let colors, isDark;
+  try {
+    const theme = useTheme();
+    colors = theme.colors;
+    isDark = theme.isDark;
+  } catch {
+    // Fallback colors when ThemeProvider is not available
+    colors = {
+      primary: '#007AFF',
+      onPrimary: '#FFFFFF',
+      secondary: '#5856D6',
+      onSecondary: '#FFFFFF',
+      tertiary: '#FF9500',
+      onTertiary: '#FFFFFF',
+      error: '#FF3B30',
+      onError: '#FFFFFF',
+      success: '#34C759',
+      onSuccess: '#FFFFFF',
+      warning: '#FF9500',
+      onWarning: '#FFFFFF',
+      surface: '#FFFFFF',
+      onSurface: '#000000',
+      surfaceElevated: '#F2F2F7',
+      text: '#000000',
+      textSecondary: '#3C3C43',
+      textTertiary: '#C7C7CC',
+      border: '#C6C6C8',
+      divider: '#C6C6C8',
+      overlay: 'rgba(0, 0, 0, 0.4)',
+      scrim: 'rgba(0, 0, 0, 0.6)',
+    };
+    isDark = false;
+  }
 
   // Calculate padding based on size
   const getPadding = () => {
