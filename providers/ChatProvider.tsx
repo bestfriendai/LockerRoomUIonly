@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { query, where, orderBy, collection, FirestoreError, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { useAuth } from './AuthProvider';
@@ -55,6 +55,15 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     lastPing: Date.now(),
     error: null
   });
+  const mountedRef = useRef(true);
+
+  // Clean up on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Subscribe to connection state changes
   useEffect(() => {
@@ -92,6 +101,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       `chatRooms-${user.id}`,
       chatRoomsQuery,
       (snapshot: any) => {
+        if (!mountedRef.current) return;
         const rooms = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
@@ -105,8 +115,10 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           console.error('Error listening to chat rooms:', error);
         }
         // Don't clear chat rooms on error, keep existing data
-        setIsConnected(false);
-        setLoading(false);
+        if (mountedRef.current) {
+          setIsConnected(false);
+          setLoading(false);
+        }
       },
       { maxRetries: 5, retryDelay: 2000 }
     );
@@ -134,6 +146,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       `messages-${activeChatRoom.id}`,
       messagesQuery,
       (snapshot: any) => {
+        if (!mountedRef.current) return;
         const roomMessages = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
@@ -146,8 +159,8 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
           msg => msg.senderId !== user.id && !msg.readBy?.includes(user.id)
         );
         
-        if (unreadMessages.length > 0) {
-          unreadMessages.forEach(msg => {
+        if (unreadMessages.length > 0 && mountedRef.current) {
+          unreadMessages.forEach(() => {
             chatService.markMessagesAsRead(activeChatRoom.id, user.id).catch(console.error);
           });
         }

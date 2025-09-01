@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { collection, query, where, orderBy, FirestoreError, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { useAuth } from './AuthProvider';
@@ -77,6 +77,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     lastPing: Date.now(),
     error: null
   });
+  const mountedRef = useRef(true);
+
+  // Clean up on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Subscribe to connection state changes
   useEffect(() => {
@@ -107,6 +116,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       `notifications-${user.id}`,
       notificationsQuery,
       (snapshot: any) => {
+        if (!mountedRef.current) return;
         const userNotifications = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           ...doc.data()
@@ -119,7 +129,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           console.error('Error listening to notifications:', error);
         }
         // Don't clear notifications on error, keep existing data
-        setIsConnected(false);
+        if (mountedRef.current) {
+          setIsConnected(false);
+        }
       },
       { maxRetries: 5, retryDelay: 2000 }
     );
@@ -128,7 +140,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const loadSettings = async () => {
       try {
         const userSettings = await notificationService.getUserSettings(user.id);
-        if (userSettings) {
+        if (userSettings && mountedRef.current) {
           setSettings({ ...defaultSettings, ...userSettings });
         }
       } catch (error) {
@@ -191,7 +203,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     try {
       const updatedSettings = { ...settings, ...newSettings };
       await notificationService.updateUserSettings(user.id, updatedSettings);
-      setSettings(updatedSettings);
+      if (mountedRef.current) {
+        setSettings(updatedSettings);
+      }
     } catch (error) {
       if (__DEV__) {
         console.error('Error updating notification settings:', error);

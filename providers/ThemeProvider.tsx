@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
@@ -59,6 +59,15 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const systemColorScheme = useColorScheme();
   const [theme, setThemeState] = useState<Theme>('system');
   const [isLoaded, setIsLoaded] = useState(false);
+  const mountedRef = useRef(true);
+
+  // Clean up on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Determine if dark mode should be active
   const isDark = theme === 'dark' || (theme === 'system' && systemColorScheme === 'dark');
@@ -68,13 +77,18 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const loadTheme = async () => {
       try {
         const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+        if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme) && mountedRef.current) {
           setThemeState(savedTheme as Theme);
         }
       } catch (error) {
         // Failed to load theme from storage
+        if (__DEV__) {
+          console.warn('Failed to load theme from storage:', error);
+        }
       } finally {
-        setIsLoaded(true);
+        if (mountedRef.current) {
+          setIsLoaded(true);
+        }
       }
     };
 
@@ -85,10 +99,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const setTheme = async (newTheme: Theme) => {
     try {
       await AsyncStorage.setItem(THEME_STORAGE_KEY, newTheme);
-      setThemeState(newTheme);
+      if (mountedRef.current) {
+        setThemeState(newTheme);
+      }
     } catch (error) {
       // Failed to save theme to storage
-      setThemeState(newTheme); // Still update state even if storage fails
+      if (__DEV__) {
+        console.warn('Failed to save theme to storage:', error);
+      }
+      if (mountedRef.current) {
+        setThemeState(newTheme); // Still update state even if storage fails
+      }
     }
   };
 

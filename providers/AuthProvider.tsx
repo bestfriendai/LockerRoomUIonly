@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut as firebaseSignOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 import { User } from '../types';
@@ -28,10 +28,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authTransitioning, setAuthTransitioning] = useState(false);
+  const mountedRef = useRef(true);
+
+  // Clean up on unmount
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let userUnsubscribe: (() => void) | null = null;
     let mounted = true;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!mounted) return;
@@ -64,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           let userData = null;
           let retries = 3;
 
-          while (retries > 0 && !userData) {
+          while (retries > 0 && !userData && mounted) {
             try {
               userData = await getUserById(firebaseUser.uid);
               if (userData) {
@@ -78,8 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.log(`Attempt ${4 - retries} failed, retrying...`, error);
               }
               retries--;
-              if (retries > 0) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+              if (retries > 0 && mounted) {
+                await new Promise(resolve => {
+                  timeoutId = setTimeout(resolve, 1000);
+                });
               }
             }
           }
@@ -221,6 +233,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       if (userUnsubscribe) {
         userUnsubscribe();
       }
@@ -233,7 +248,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (__DEV__) {
         console.log('Starting sign in process...');
       }
-      setIsLoading(true);
+      if (mountedRef.current) {
+        setIsLoading(true);
+      }
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (__DEV__) {
@@ -251,7 +268,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Sentry exception capture failed:', sentryError);
       }
       
-      setIsLoading(false); // Only set loading false on error
+      if (mountedRef.current) {
+        setIsLoading(false); // Only set loading false on error
+      }
       
       // Show user-friendly error dialog instead of throwing
       showErrorAlert(error, 'Sign In Failed');
@@ -266,8 +285,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (__DEV__) {
         console.log('Starting sign up process...');
       }
-      setIsLoading(true);
-      setAuthTransitioning(true);
+      if (mountedRef.current) {
+        setIsLoading(true);
+        setAuthTransitioning(true);
+      }
 
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
       if (__DEV__) {
@@ -342,8 +363,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Sentry exception capture failed:', sentryError);
       }
       
-      setIsLoading(false);
-      setAuthTransitioning(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+        setAuthTransitioning(false);
+      }
       
       // Show user-friendly error dialog instead of throwing
       showErrorAlert(error, 'Sign Up Failed');
