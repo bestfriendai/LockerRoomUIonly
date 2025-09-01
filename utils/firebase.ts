@@ -1,5 +1,7 @@
-// Mock Firebase setup to bypass React Native Firebase Auth registration issues
-// This provides a working development environment while we resolve the Firebase issues
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, initializeAuth, getReactNativePersistence, type Auth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -10,63 +12,60 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Mock Firebase Auth
-const mockAuth = {
-  currentUser: null,
-  onAuthStateChanged: (callback: (user: any) => void) => {
-    // Simulate no user initially
-    setTimeout(() => callback(null), 100);
-    return () => {}; // unsubscribe function
-  },
-  signInWithEmailAndPassword: async (email: string, password: string) => {
-    console.log('Mock sign in:', email);
-    return { user: { uid: 'mock-user-id', email } };
-  },
-  createUserWithEmailAndPassword: async (email: string, password: string) => {
-    console.log('Mock sign up:', email);
-    return { user: { uid: 'mock-user-id', email } };
-  },
-  signOut: async () => {
-    console.log('Mock sign out');
-  },
-  sendPasswordResetEmail: async (email: string) => {
-    console.log('Mock password reset:', email);
+// Lazy initialization variables
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+
+// Lazy initialization function
+function initializeFirebase() {
+  if (app && auth && db) return { app, auth, db };
+
+  try {
+    // Initialize Firebase app
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+
+    // Initialize Auth with proper RN persistence on native
+    if (typeof document === 'undefined') {
+      try {
+        auth = initializeAuth(app, {
+          persistence: getReactNativePersistence(AsyncStorage),
+        });
+      } catch (e) {
+        // If Auth was already initialized (e.g., Fast Refresh), fall back
+        auth = getAuth(app);
+      }
+    } else {
+      auth = getAuth(app);
+    }
+
+    // Initialize Firestore
+    db = getFirestore(app);
+
+    if (__DEV__) {
+      console.log('Firebase initialized with project:', firebaseConfig.projectId);
+    }
+
+    return { app, auth, db };
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+    throw error;
   }
-};
-
-// Mock Firestore
-const mockDb = {
-  collection: (path: string) => ({
-    doc: (id: string) => ({
-      get: async () => ({ exists: () => false, data: () => null }),
-      set: async (data: any) => console.log('Mock set:', path, id, data),
-      update: async (data: any) => console.log('Mock update:', path, id, data),
-      delete: async () => console.log('Mock delete:', path, id)
-    }),
-    where: () => ({ get: async () => ({ docs: [] }) }),
-    orderBy: () => ({ get: async () => ({ docs: [] }) }),
-    limit: () => ({ get: async () => ({ docs: [] }) })
-  })
-};
-
-// Mock Firebase App
-const mockApp = {
-  name: 'mock-app',
-  options: firebaseConfig
-};
-
-if (__DEV__) {
-  console.log('Using Mock Firebase for development');
-  console.log('Project ID:', firebaseConfig.projectId);
 }
 
-// Export mock services
-export const getFirebaseApp = () => mockApp;
-export const getFirebaseAuth = () => mockAuth;
-export const getFirebaseDb = () => mockDb;
+// Export lazy getters
+export const getFirebaseApp = () => initializeFirebase().app;
+export const getFirebaseAuth = () => initializeFirebase().auth;
+export const getFirebaseDb = () => initializeFirebase().db;
 export { firebaseConfig };
 
-// For backward compatibility
-export const app = mockApp;
-export const auth = mockAuth;
-export const db = mockDb;
+// For backward compatibility, export the lazy-initialized instances
+export const { app: firebaseApp, auth: firebaseAuth, db: firebaseDb } = new Proxy({} as any, {
+  get(target, prop) {
+    const firebase = initializeFirebase();
+    return firebase[prop as keyof typeof firebase];
+  }
+});
+
+// Default exports for convenience
+export { firebaseApp as app, firebaseAuth as auth, firebaseDb as db };

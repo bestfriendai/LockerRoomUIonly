@@ -41,8 +41,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       segments.includes('review') ||
       segments.includes('notifications');
 
-    if (!user && inProtectedRoute) {
-      // User is not signed in but trying to access protected route
+
+
+    if (!user && (inProtectedRoute || segments.length === 0)) {
+      // User is not signed in and either trying to access protected route or at root
       if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
         try {
           Sentry.Native.addBreadcrumb({
@@ -55,8 +57,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         }
       }
 
+
       router.replace('/(auth)/signin');
-    } else if (user && inAuthGroup) {
+    } else if (user && (inAuthGroup || segments.length === 0)) {
       if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
         try {
           Sentry.Native.addBreadcrumb({
@@ -69,7 +72,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         }
       }
 
-      // User is signed in but on auth screen
+      // User is signed in and either on auth screen or at root
+
       router.replace('/(tabs)');
     }
   }, [user, segments, isLoading, isMounted, router]);
@@ -83,7 +87,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
           <View style={[styles.logoContainer, { backgroundColor: colors.primary }]}>
             <Text style={[styles.logoText, { color: colors.background }]}
             >
-              MT
+              LR
             </Text>
           </View>
 

@@ -11,13 +11,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Bell, Heart, MessageCircle, Users, Star, Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
-import { useTheme } from "providers/ThemeProvider";
-import { useAuth } from "providers/AuthProvider";
-import { useNotifications } from "providers/NotificationProvider";
-import { Button } from "components/ui/Button";
-import Avatar from "components/ui/Avatar";
-import Card from "components/ui/Card";
-import { getUserById } from "services/userService";
+import { useTheme } from "../providers/ThemeProvider";
+import { useAuth } from "../providers/AuthProvider";
+import { useNotifications } from "../providers/NotificationProvider";
+import { Button } from "../components/ui/Button";
+import Avatar from "../components/ui/Avatar";
+import Card from "../components/ui/Card";
+import { getUserById } from "../services/userService";
 
 type NotificationType = 'message' | 'review' | 'match' | 'like' | 'comment' | 'system';
 

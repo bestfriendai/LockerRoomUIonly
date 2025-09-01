@@ -1,42 +1,50 @@
-import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
-import { router } from 'expo-router';
-import { useAuth } from '../providers/AuthProvider';
-import { useTheme } from '../providers/ThemeProvider';
 
 export default function IndexScreen() {
-  const { user, isLoading } = useAuth();
-  const { colors } = useTheme();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    // Wait for component to mount before attempting navigation
-    const timer = setTimeout(() => {
-      setIsMounted(true);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && isMounted) {
-      if (user) {
-        router.replace('/(tabs)');
-      } else {
-        router.replace('/(auth)');
-      }
-    }
-  }, [user, isLoading, isMounted]);
-
+  // Simple loading screen with hardcoded colors - AuthGuard handles all navigation logic
   return (
     <View style={{
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: colors.surface
+      backgroundColor: '#FFFFFF'
     }}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={{ marginTop: 16, color: colors.textSecondary }}>
+      <View style={{
+        backgroundColor: '#FF6B6B',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 32,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+      }}>
+        <Text style={{
+          color: '#FFFFFF',
+          fontSize: 32,
+          fontWeight: 'bold'
+        }}>
+          LR
+        </Text>
+      </View>
+      <ActivityIndicator size="large" color="#FF6B6B" />
+      <Text style={{
+        marginTop: 16,
+        color: '#666666',
+        fontSize: 16,
+        fontWeight: '500'
+      }}>
+        LockerRoom Talk
+      </Text>
+      <Text style={{
+        marginTop: 8,
+        color: '#999999',
+        fontSize: 14
+      }}>
         Loading...
       </Text>
     </View>

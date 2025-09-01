@@ -13,11 +13,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { X, Share, Flag, Heart, MessageCircle, Star, Users, Settings, Info } from "lucide-react-native";
-import { useTheme } from "providers/ThemeProvider";
-import { useAuth } from "providers/AuthProvider";
-import { Button } from "components/ui/Button";
-import Avatar from "components/ui/Avatar";
-import Card from "components/ui/Card";
+import { useTheme } from "../providers/ThemeProvider";
+import { useAuth } from "../providers/AuthProvider";
+import { Button } from "../components/ui/Button";
+import Avatar from "../components/ui/Avatar";
+import Card from "../components/ui/Card";
 // Removed mock data imports - using real data from props
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');

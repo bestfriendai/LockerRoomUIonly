@@ -105,11 +105,8 @@ export class FirestoreConnectionManager {
     this.circuitBreakerState = 'OPEN';
     this.networkQuality = 'poor';
     
-    if (typeof window !== 'undefined') {
-      window.addEventListener('online', this.handleNetworkOnline.bind(this));
-      window.addEventListener('offline', this.handleNetworkOffline.bind(this));
-      this.setupNetworkErrorDetection();
-    }
+    // Use NetInfo for network status instead of window events
+    this.setupNetworkStatusListener();
     
     Promise.resolve().then(() => {
       if (typeof this.startHealthCheck === 'function') {
@@ -211,57 +208,38 @@ export class FirestoreConnectionManager {
   /**
    * Setup network error detection for ERR_ABORTED and other network issues
    */
+  private setupNetworkStatusListener(): void {
+    if (__DEV__) {
+      console.log('[FirestoreConnectionManager] Setting up network status listener');
+    }
+
+    // Use networkManager instead of window events for React Native compatibility
+    const listener = (state: NetInfoState) => {
+      if (state.isConnected) {
+        this.handleNetworkOnline();
+      } else {
+        this.handleNetworkOffline();
+      }
+    };
+
+    networkManager.addListener(listener);
+
+    // Store cleanup function
+    this.networkStatusUnsubscribe = () => {
+      networkManager.removeListener(listener);
+    };
+  }
+
   private setupNetworkErrorDetection(): void {
     if (__DEV__) {
       console.log('[FirestoreConnectionManager] Setting up network error detection');
     }
-    
-    // Monitor global error events for ERR_ABORTED
-    window.addEventListener('error', (event) => {
-      const message = event.message || event.error?.message || '';
-      if (message.includes('net::ERR_ABORTED') && message.includes('firestore.googleapis.com')) {
-        this.consecutiveAbortedRequests++;
-        this.updateNetworkQuality('poor');
-        console.warn(`[FirestoreConnectionManager] Window error event detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), immediately switching to polling`);
-        // Immediately switch to polling on first ERR_ABORTED error
-        this.switchAllListenersToPolling();
-      }
-    });
-    
-    // Monitor unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      const reason = event.reason?.message || event.reason || '';
-      if (reason.toString().includes('net::ERR_ABORTED') && reason.toString().includes('firestore.googleapis.com')) {
-        this.consecutiveAbortedRequests++;
-        this.updateNetworkQuality('poor');
-        console.warn(`[FirestoreConnectionManager] Unhandled rejection detected ERR_ABORTED (${this.consecutiveAbortedRequests} consecutive), immediately switching to polling`);
-        // Immediately switch to polling on first ERR_ABORTED error
-        this.switchAllListenersToPolling();
-      }
-    });
-    
-    // Monitor fetch errors that might indicate network issues
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args);
-        if (!response.ok && args[0]?.toString().includes('firestore.googleapis.com')) {
-          console.warn('[FirestoreConnectionManager] Firestore fetch failed, considering polling fallback');
-          this.consecutiveAbortedRequests++;
-          if (this.consecutiveAbortedRequests >= 2) {
-            this.switchAllListenersToPolling();
-          }
-        }
-        return response;
-      } catch (error) {
-        if (args[0]?.toString().includes('firestore.googleapis.com')) {
-          console.warn('[FirestoreConnectionManager] Firestore fetch error:', error);
-          this.consecutiveAbortedRequests++;
-          this.switchAllListenersToPolling();
-        }
-        throw error;
-      }
-    };
+
+    // React Native doesn't have window.addEventListener, so we'll handle errors differently
+    // Network errors will be caught in the Firestore operations themselves
+
+    // React Native doesn't have window.fetch to override
+    // Network errors will be handled in individual Firestore operations
     
     // Reset counter and improve network quality on successful operations
     setInterval(() => {

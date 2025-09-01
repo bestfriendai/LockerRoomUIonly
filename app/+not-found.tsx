@@ -8,9 +8,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Home, ArrowLeft, Search, RefreshCw } from "lucide-react-native";
-import { useTheme } from "providers/ThemeProvider";
-import { Button } from "components/ui/Button";
-import Card from "components/ui/Card";
+import { useTheme } from "../providers/ThemeProvider";
+import { Button } from "../components/ui/Button";
+import Card from "../components/ui/Card";
 
 const { width: screenWidth } = Dimensions.get('window');
 
