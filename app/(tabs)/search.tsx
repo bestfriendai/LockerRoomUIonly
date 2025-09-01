@@ -21,6 +21,7 @@ import Card from "../../components/ui/Card";
 import type { Review, User as UserType, ChatRoom } from "../../types";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
+import { SearchResultsSkeleton } from "../../components/ui/LoadingSkeletons";
 
 type SearchTab = 'reviews' | 'users' | 'rooms';
 type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
@@ -421,7 +422,9 @@ export default function SearchScreen() {
       </View>
 
       {/* Results */}
-      {searchResults.length > 0 ? (
+      {isLoadingData && debouncedQuery.length >= 2 ? (
+        <SearchResultsSkeleton type={activeTab} />
+      ) : searchResults.length > 0 ? (
         <FlashList
           data={searchResults}
           renderItem={renderSearchResult}

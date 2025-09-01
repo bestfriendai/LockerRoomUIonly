@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   Pressable,
 } from 'react-native';
 import { Heart, MapPin, PlusCircle, Search, Users } from 'lucide-react-native';
@@ -11,8 +10,6 @@ import { useTheme } from '../providers/ThemeProvider';
 import { createTypographyStyles } from '../styles/typography';
 import { Button } from './ui/Button';
 import { useRouter } from 'expo-router';
-
-const { width, height } = Dimensions.get('window');
 
 interface EmptyStateProps {
   type?: 'no-reviews' | 'no-location-reviews' | 'no-search-results' | 'no-matches';
@@ -150,13 +147,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <View style={styles.actionsContainer}>
           {content.primaryAction && (
             <Button
-              title={content.primaryAction.label}
               onPress={content.primaryAction.onPress}
               variant="primary"
               size="lg"
               fullWidth
               leftIcon={<PlusCircle size={20} color={colors.onPrimary} />}
-            />
+            >
+              {content.primaryAction.label}
+            </Button>
           )}
           
           {content.secondaryAction && (
@@ -177,7 +175,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
       {/* Decorative Elements */}
       <View style={[styles.decorativeCircle1, { backgroundColor: colors.primary + '10' }]} />
-      <View style={[styles.decorativeCircle2, { backgroundColor: colors.secondary + '10' }]} />
+      <View style={[styles.decorativeCircle2, { backgroundColor: colors.primary + '08' }]} />
     </View>
   );
 };

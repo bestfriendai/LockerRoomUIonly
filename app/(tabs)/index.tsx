@@ -16,11 +16,9 @@ import { useRouter } from "expo-router";
 import { MapPin, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
 import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
-import { useAuth } from "../../providers/AuthProvider";
 import MasonryReviewCard from "../../components/MasonryReviewCard";
 import { useTheme } from "../../providers/ThemeProvider";
 import { Review } from "../../types";
-import { Button } from "../../components/ui/Button";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import { FILTER_CATEGORIES } from "../../constants/categories";
@@ -28,6 +26,7 @@ import { LocationSelector } from "../../components/LocationSelector";
 import { LocationService } from "../../services/locationService";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
+import { DiscoverFeedSkeleton } from "../../components/ui/LoadingSkeletons";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
@@ -75,6 +74,7 @@ export default function HomeScreen() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [useRadiusFilter, setUseRadiusFilter] = useState(true);
   const [showRadiusModal, setShowRadiusModal] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -89,13 +89,16 @@ export default function HomeScreen() {
 
   // New location system state
   const [selectedLocationData, setSelectedLocationData] = useState<any>(null);
-  // const [isLoadingReviews, setIsLoadingReviews] = useState(false); // Not currently used
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 
   useEffect(() => {
     fetchReviews();
   }, []);
 
   const fetchReviews = async () => {
+    if (!refreshing && reviews.length === 0) {
+      setIsInitialLoading(true);
+    }
     setRefreshing(true);
     try {
       const reviewsCollection = collection(db, "reviews");
@@ -109,6 +112,7 @@ export default function HomeScreen() {
       Alert.alert("Error", "Could not fetch reviews.");
     } finally {
       setRefreshing(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -190,7 +194,7 @@ export default function HomeScreen() {
   };
 
   const fetchReviewsForLocation = useCallback(async (location: any) => {
-    // setIsLoadingReviews(true);
+    setIsLoadingReviews(true);
     try {
       // Fetch all reviews first
       const reviewsQuery = collection(db, 'reviews');
@@ -266,7 +270,8 @@ export default function HomeScreen() {
       }
       Alert.alert('Error', 'Failed to fetch reviews for this location.');
     } finally {
-      // setIsLoadingReviews(false);
+      setIsLoadingReviews(false);
+      setIsInitialLoading(false);
     }
   }, [normalizeLocationToString, getSelectedCoords, getReviewCoords, distanceMiles, searchRadius, useRadiusFilter]);
 
@@ -515,23 +520,32 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <MasonryFlashList
-        data={filteredReviews}
-        renderItem={renderReviewItem}
-        numColumns={2}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={
-          <EmptyState
-            type={location ? 'no-location-reviews' : 'no-reviews'}
-            location={typeof location === 'string' ? location : location?.data?.city || 'your location'}
-            searchRadius={searchRadius}
-            onChangeLocation={() => setShowLocationModal(true)}
-            onCreateReview={() => router.push('/(tabs)/create')}
-            onClearFilters={() => {
-              setSelectedCategory('all');
-              setSearchQuery('');
-            }}
-          />
+      {isInitialLoading && filteredReviews.length === 0 ? (
+        <>
+          {renderHeader()}
+          <DiscoverFeedSkeleton />
+        </>
+      ) : (
+        <MasonryFlashList
+          data={filteredReviews}
+          renderItem={renderReviewItem}
+          numColumns={2}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={
+          isInitialLoading ? (
+            <DiscoverFeedSkeleton />
+          ) : (
+            <EmptyState
+              type={selectedLocationData ? 'no-location-reviews' : 'no-reviews'}
+              location={typeof selectedLocationData?.data === 'string' ? selectedLocationData.data : selectedLocationData?.data?.city || 'your location'}
+              searchRadius={searchRadius}
+              onChangeLocation={() => setShowLocationModal(true)}
+              onCreateReview={() => router.push('/(tabs)/create')}
+              onClearFilters={() => {
+                setSelectedCategory('All');
+              }}
+            />
+          )
         }
         refreshControl={
           <RefreshControl
@@ -546,6 +560,7 @@ export default function HomeScreen() {
         estimatedItemSize={350}
         keyExtractor={(item) => item._id || item.id}
       />
+      )}
 
       {/* Radius Selection Modal */}
       <Modal

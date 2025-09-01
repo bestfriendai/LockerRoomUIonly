@@ -22,6 +22,7 @@ import type { ChatRoom } from "../../types/index";
 import { toMillis } from "../../utils/timestampHelpers";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
+import { ChatRoomSkeleton } from "../../components/ui/LoadingSkeletons";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
 
@@ -188,6 +189,7 @@ export default function ChatScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<ChatTab>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
 
   const tabs = [
@@ -297,6 +299,7 @@ export default function ChatScreen() {
       Alert.alert("Error", "Could not fetch chat rooms. Please check your connection and try again.");
     } finally {
       setRefreshing(false);
+      setIsInitialLoading(false);
     }
   };
 
@@ -512,7 +515,13 @@ export default function ChatScreen() {
       </View>
 
       {/* Room List */}
-      {filteredRooms.length > 0 ? (
+      {isInitialLoading ? (
+        <View style={styles.listContainer}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <ChatRoomSkeleton key={i} />
+          ))}
+        </View>
+      ) : filteredRooms.length > 0 ? (
         <FlashList
           data={filteredRooms}
           renderItem={renderRoomItem}
