@@ -4,7 +4,7 @@ import { auth } from '../utils/firebase';
 import { User } from '../types';
 import { createUser, getUserById, subscribeToUserChanges } from '../services/userService';
 import * as Sentry from 'sentry-expo';
-import { showErrorAlert, showSuccessAlert, logError } from '../utils/errorHandler';
+import { showErrorAlert, logError } from '../utils/errorHandler';
 
 
 interface AuthContextType {
@@ -411,8 +411,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const demoLogin = async () => {
-    // Demo login implementation
-    await signIn('demo@example.com', 'demo123');
+    // Removed hardcoded demo credentials - should be handled properly
+    throw new Error('Demo login is not available. Please create an account.');
   };
 
   const value: AuthContextType = {

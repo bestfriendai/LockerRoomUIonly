@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -42,6 +42,29 @@ export default function SignInScreen() {
     error: ""
   });
 
+  const [fieldErrors, setFieldErrors] = useState({
+    email: "",
+    password: ""
+  });
+
+  // Real-time email validation
+  useEffect(() => {
+    if (formData.email && !formData.email.includes('@')) {
+      setFieldErrors(prev => ({ ...prev, email: "Please enter a valid email" }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, email: "" }));
+    }
+  }, [formData.email]);
+
+  // Real-time password validation
+  useEffect(() => {
+    if (formData.password && formData.password.length < 6) {
+      setFieldErrors(prev => ({ ...prev, password: "Password must be at least 6 characters" }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, password: "" }));
+    }
+  }, [formData.password]);
+
   const handleSignIn = async (): Promise<void> => {
     setFormState(prev => ({ ...prev, error: "" }));
 
@@ -83,6 +106,7 @@ export default function SignInScreen() {
       if (__DEV__) {
         console.log('Sign in successful, waiting for auth state change...');
       }
+      // Navigation will happen automatically via auth state change
     } catch (err: unknown) {
       const authError = err as AuthError & { code?: FirebaseAuthErrorCode };
       const errorCode = authError.code;
@@ -173,6 +197,7 @@ export default function SignInScreen() {
               autoCapitalize="none"
               leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
               containerStyle={{ marginBottom: 16 }}
+              error={fieldErrors.email}
               accessibilityLabel="Email address input field"
               accessibilityHint="Enter your email address to sign in"
             />
@@ -185,6 +210,7 @@ export default function SignInScreen() {
               secureTextEntry
               leftIcon={<Lock size={18} color={colors.textSecondary} strokeWidth={1.5} />}
               containerStyle={{ marginBottom: 8 }}
+              error={fieldErrors.password}
               accessibilityLabel="Password input field"
               accessibilityHint="Enter your password to sign in"
             />

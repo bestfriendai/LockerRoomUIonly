@@ -28,6 +28,7 @@ export interface SignUpFormData {
   password: string;
   confirmPassword?: string;
   agreeTerms?: boolean;
+  ageVerified?: boolean;
 }
 
 export interface ForgotPasswordFormData {

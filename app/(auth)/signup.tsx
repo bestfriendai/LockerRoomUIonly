@@ -42,7 +42,8 @@ export default function SignUpScreen() {
     email: "",
     password: "",
     confirmPassword: "",
-    agreeTerms: false
+    agreeTerms: false,
+    ageVerified: false
   });
 
   const [formState, setFormState] = useState<AuthFormState>({
@@ -100,6 +101,11 @@ export default function SignUpScreen() {
 
     if (formData.password.length < 6) {
       setFormState(prev => ({ ...prev, error: "Password must be at least 6 characters long" }));
+      return;
+    }
+
+    if (!formData.ageVerified) {
+      setFormState(prev => ({ ...prev, error: "You must be 18 or older to use this app" }));
       return;
     }
 
@@ -207,6 +213,7 @@ export default function SignUpScreen() {
   const isFormValid = formData.email.trim() && formData.password.trim() &&
                       formData.confirmPassword?.trim() &&
                       formData.password === formData.confirmPassword &&
+                      formData.ageVerified &&
                       formData.agreeTerms;
 
   return (
@@ -326,6 +333,29 @@ export default function SignUpScreen() {
                   🎭 Your anonymous identity will be created automatically
                 </Text>
               </View>
+
+              {/* Age verification checkbox */}
+              <AnimatedPressable
+                onPress={() => setFormData(prev => ({ ...prev, ageVerified: !prev.ageVerified }))}
+                style={styles.termsContainer}
+                accessibilityLabel="Age verification"
+                accessibilityHint="Confirm that you are 18 years or older"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: formData.ageVerified }}
+              >
+                <View style={[
+                  styles.checkbox,
+                  {
+                    backgroundColor: formData.ageVerified ? colors.primary : colors.surface,
+                    borderColor: formData.ageVerified ? colors.primary : colors.border,
+                  }
+                ]}>
+                  {formData.ageVerified && <Check size={16} color={colors.onPrimary} strokeWidth={2} />}
+                </View>
+                <Text style={typography.body}>
+                  I confirm that I am 18 years or older
+                </Text>
+              </AnimatedPressable>
 
               <AnimatedPressable
                 onPress={() => setFormData(prev => ({ ...prev, agreeTerms: !prev.agreeTerms }))}

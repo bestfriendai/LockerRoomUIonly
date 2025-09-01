@@ -38,8 +38,11 @@ export default function ForgotPasswordScreen() {
 
   const [formState, setFormState] = useState<AuthFormState>({
     isLoading: false,
-    error: ''
+    error: '',
+    success: ''
   });
+
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleResetPassword = async (): Promise<void> => {
     if (!formData.email.trim()) {
@@ -75,16 +78,17 @@ export default function ForgotPasswordScreen() {
       // Use the useAuth hook's resetPassword method
       await resetPassword(validationResult.data.email);
 
-      Alert.alert(
-        'Reset Email Sent',
-        'We have sent a password reset link to your email address. Please check your inbox and follow the instructions.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.push('/(auth)/signin'),
-          },
-        ]
-      );
+      setEmailSent(true);
+      setFormState(prev => ({
+        ...prev,
+        isLoading: false,
+        success: 'Password reset email sent successfully!'
+      }));
+
+      // Auto-redirect after 3 seconds
+      setTimeout(() => {
+        router.push('/(auth)/signin');
+      }, 3000);
     } catch (err: unknown) {
       const authError = err as AuthError;
       setFormState(prev => ({
@@ -123,15 +127,29 @@ export default function ForgotPasswordScreen() {
               accessibilityRole="header"
               accessibilityLabel="Reset Password screen title"
             >
-              Reset Password
+              {emailSent ? '✅ Email Sent!' : 'Reset Password'}
             </Text>
             <Text
               style={typography.body}
               accessibilityLabel="Instructions for password reset"
             >
-              Enter your email address and we will send you a reset link
+              {emailSent 
+                ? 'Check your inbox for the password reset link. Redirecting to sign in...'
+                : 'Enter your email address and we will send you a reset link'}
             </Text>
           </View>
+
+          {formState.success ? (
+            <View style={[styles.successContainer, { backgroundColor: colors.surface }]}>
+              <Text
+                style={{ color: colors.primary }}
+                accessibilityLabel={`Success: ${formState.success}`}
+                accessibilityRole="text"
+              >
+                {formState.success}
+              </Text>
+            </View>
+          ) : null}
 
           {formState.error ? (
             <View style={[styles.errorContainer, { backgroundColor: colors.errorBg }]}>
@@ -145,51 +163,55 @@ export default function ForgotPasswordScreen() {
             </View>
           ) : null}
 
-          <View style={styles.formContainer}>
-            <Input
-              label="Email"
-              value={formData.email}
-              onChangeText={(text: string) => setFormData(prev => ({ ...prev, email: text }))}
-              placeholder="Email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
-              containerStyle={{ marginBottom: 16 }}
-              accessibilityLabel="Email address input field"
-              accessibilityHint="Enter your email address to receive a password reset link"
-            />
-          </View>
-
-          <View style={styles.buttonSection}>
-            <TouchableOpacity
-              style={[
-                styles.resetButton,
-                {
-                  backgroundColor: !formData.email.trim() ? colors.chipBg : colors.primary,
-                },
-              ]}
-              onPress={handleResetPassword}
-              disabled={formState.isLoading || !formData.email.trim()}
-              accessibilityLabel="Send reset link button"
-              accessibilityHint="Sends a password reset link to your email address"
-              accessibilityRole="button"
-            >
-              {formState.isLoading ? (
-                <ActivityIndicator
-                  color={colors.onPrimary}
-                  size="small"
-                  accessibilityLabel="Loading, please wait"
+          {!emailSent && (
+            <>
+              <View style={styles.formContainer}>
+                <Input
+                  label="Email"
+                  value={formData.email}
+                  onChangeText={(text: string) => setFormData(prev => ({ ...prev, email: text }))}
+                  placeholder="Email address"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  leftIcon={<Mail size={18} color={colors.textSecondary} strokeWidth={1.5} />}
+                  containerStyle={{ marginBottom: 16 }}
+                  accessibilityLabel="Email address input field"
+                  accessibilityHint="Enter your email address to receive a password reset link"
                 />
-              ) : (
-                <Text
-                  style={typography.button}
-                  accessibilityLabel="Send Reset Link"
+              </View>
+
+              <View style={styles.buttonSection}>
+                <TouchableOpacity
+                  style={[
+                    styles.resetButton,
+                    {
+                      backgroundColor: !formData.email.trim() ? colors.chipBg : colors.primary,
+                    },
+                  ]}
+                  onPress={handleResetPassword}
+                  disabled={formState.isLoading || !formData.email.trim()}
+                  accessibilityLabel="Send reset link button"
+                  accessibilityHint="Sends a password reset link to your email address"
+                  accessibilityRole="button"
                 >
-                  Send Reset Link
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
+                  {formState.isLoading ? (
+                    <ActivityIndicator
+                      color={colors.onPrimary}
+                      size="small"
+                      accessibilityLabel="Loading, please wait"
+                    />
+                  ) : (
+                    <Text
+                      style={typography.button}
+                      accessibilityLabel="Send Reset Link"
+                    >
+                      Send Reset Link
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
 
           <View style={styles.signInContainer}>
             <Text
@@ -235,6 +257,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   errorContainer: {
+    borderRadius: 8,
+    marginBottom: 20,
+    padding: 12,
+  },
+  successContainer: {
     borderRadius: 8,
     marginBottom: 20,
     padding: 12,
