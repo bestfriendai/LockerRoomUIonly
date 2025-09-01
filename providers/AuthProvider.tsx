@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut as firebaseSignOut, sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../utils/firebase';
+import { getFirebaseAuth } from '../utils/firebase';
+
+// Get auth instance lazily
+const getAuth = () => getFirebaseAuth();
 import { User } from '../types';
 import { createUser, getUserById, subscribeToUserChanges } from '../services/userService';
 import * as Sentry from 'sentry-expo';
@@ -43,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let timeoutId: NodeJS.Timeout | null = null;
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(getAuth(), async (firebaseUser) => {
       if (!mounted) return;
 
       try {
@@ -252,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
       }
 
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(getAuth(), email, password);
       if (__DEV__) {
         console.log('Sign in successful for user:', userCredential.user.uid);
       }
@@ -290,7 +293,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthTransitioning(true);
       }
 
-      const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
+      const { user: firebaseUser } = await createUserWithEmailAndPassword(getAuth(), userData.email, userData.password);
       if (__DEV__) {
         console.log('Firebase user created:', firebaseUser.uid);
       }
@@ -378,7 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async (): Promise<void> => {
     try {
-      await firebaseSignOut(auth);
+      await firebaseSignOut(getAuth());
     } catch (error) {
       if (__DEV__) {
         console.error('Sign out error:', error);
@@ -402,7 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string): Promise<void> => {
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(getAuth(), email);
     } catch (error) {
       if (__DEV__) {
         console.error('Reset password error:', error);
@@ -413,11 +416,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const deleteAccount = async (): Promise<void> => {
     try {
-      if (user && auth.currentUser) {
+      if (user && getAuth().currentUser) {
         // Delete user data from Firestore first
         // Note: We would need to implement deleteUser in userService
         // For now, we'll just delete the auth account
-        await auth.currentUser.delete();
+        await getAuth().currentUser!.delete();
         setUser(null);
       }
     } catch (error) {

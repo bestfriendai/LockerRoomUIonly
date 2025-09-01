@@ -15,10 +15,14 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth } from '../utils/firebase';
+import { getFirebaseDb, getFirebaseAuth } from '../utils/firebase';
 import { User } from '../types';
 
 const USERS_COLLECTION = 'users';
+
+// Lazy getters for Firebase services
+const getDb = () => getFirebaseDb();
+const getAuth = () => getFirebaseAuth();
 
 // Helper function for retry logic
 const retryOperation = async <T>(
@@ -59,7 +63,7 @@ export const createUser = async (userId: string, userData: any) => {
     }
 
     // Verify we have an authenticated user
-    const currentUser = auth.currentUser;
+    const currentUser = getAuth().currentUser;
     if (!currentUser || currentUser.uid !== userId) {
       throw new Error(`Authentication mismatch. Expected: ${userId}, Got: ${currentUser?.uid || 'null'}`);
     }
@@ -67,7 +71,7 @@ export const createUser = async (userId: string, userData: any) => {
     // Get fresh ID token to ensure authentication is valid
     await currentUser.getIdToken(true);
 
-    const userRef = doc(db, USERS_COLLECTION, userId);
+    const userRef = doc(getDb(), USERS_COLLECTION, userId);
 
     // Check if user already exists with retry
     const existingUser = await retryOperation(async () => {
@@ -143,7 +147,7 @@ export const createUser = async (userId: string, userData: any) => {
 // Get user by ID
 export async function getUserById(userId: string): Promise<User | null> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
+    const userRef = doc(getDb(), USERS_COLLECTION, userId);
     const userSnap = await getDoc(userRef);
     
     if (userSnap.exists()) {
@@ -161,7 +165,7 @@ export async function getUserById(userId: string): Promise<User | null> {
 // Update user profile with retry logic
 export async function updateUser(userId: string, updates: Partial<User>): Promise<User> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
+    const userRef = doc(getDb(), USERS_COLLECTION, userId);
     
     // Update with retry logic
     await retryOperation(async () => {
@@ -202,7 +206,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
 export async function getUsersByLocation(location: string, excludeUserId?: string): Promise<User[]> {
   try {
     let q = query(
-      collection(db, USERS_COLLECTION),
+      collection(getDb(), USERS_COLLECTION),
       where('location', '==', location),
       where('isActive', '==', true),
       limit(20)
@@ -210,7 +214,7 @@ export async function getUsersByLocation(location: string, excludeUserId?: strin
 
     if (excludeUserId) {
       q = query(
-        collection(db, USERS_COLLECTION),
+        collection(getDb(), USERS_COLLECTION),
         where('location', '==', location),
         where('isActive', '==', true),
         where('id', '!=', excludeUserId),
@@ -235,7 +239,7 @@ export async function getUsersByLocation(location: string, excludeUserId?: strin
 export async function getUsersByInterests(interests: string[], excludeUserId?: string): Promise<User[]> {
   try {
     let q = query(
-      collection(db, USERS_COLLECTION),
+      collection(getDb(), USERS_COLLECTION),
       where('interests', 'array-contains-any', interests),
       where('isActive', '==', true),
       limit(20)
@@ -243,7 +247,7 @@ export async function getUsersByInterests(interests: string[], excludeUserId?: s
 
     if (excludeUserId) {
       q = query(
-        collection(db, USERS_COLLECTION),
+        collection(getDb(), USERS_COLLECTION),
         where('interests', 'array-contains-any', interests),
         where('isActive', '==', true),
         where('id', '!=', excludeUserId),
@@ -266,7 +270,7 @@ export async function getUsersByInterests(interests: string[], excludeUserId?: s
 
 // Listen to user profile changes
 export function subscribeToUser(userId: string, callback: (user: User | null) => void): () => void {
-  const userRef = doc(db, USERS_COLLECTION, userId);
+  const userRef = doc(getDb(), USERS_COLLECTION, userId);
   
   return onSnapshot(userRef, (doc) => {
     if (doc.exists()) {
@@ -288,7 +292,7 @@ export const subscribeToUserChanges = subscribeToUser;
 // Delete user account
 export async function deleteUser(userId: string): Promise<void> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
+    const userRef = doc(getDb(), USERS_COLLECTION, userId);
     await deleteDoc(userRef);
   } catch (error) {
     if (__DEV__) {
@@ -301,7 +305,7 @@ export async function deleteUser(userId: string): Promise<void> {
 // Update user's online status
 export async function updateOnlineStatus(userId: string, isOnline: boolean): Promise<void> {
   try {
-    const userRef = doc(db, USERS_COLLECTION, userId);
+    const userRef = doc(getDb(), USERS_COLLECTION, userId);
     await updateDoc(userRef, {
       isOnline,
       lastSeen: Timestamp.now()
@@ -320,7 +324,7 @@ export async function searchUsers(searchTerm: string): Promise<User[]> {
     // Note: Firestore doesn't support full-text search natively
     // This is a basic implementation - consider using Algolia or similar for production
     const q = query(
-      collection(db, USERS_COLLECTION),
+      collection(getDb(), USERS_COLLECTION),
       where('isActive', '==', true),
       limit(50)
     );
