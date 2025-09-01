@@ -8,6 +8,13 @@ module.exports = function (api) {
       }]
     ],
     plugins: [
+      // Module resolver for path aliases (must be before Reanimated)
+      ['module-resolver', {
+        root: ['.'],
+        alias: {
+          '@': './'
+        }
+      }],
       // Reanimated plugin (must be last)
       'react-native-reanimated/plugin',
     ],
