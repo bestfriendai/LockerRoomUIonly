@@ -293,19 +293,11 @@ export default function HomeScreen() {
     if (locationInitialized) return;
     
     const initLocation = async () => {
-      const savedLocation = await LocationService.getSelectedLocation();
-      if (savedLocation) {
-        const locationData = { type: 'selected', data: savedLocation };
-        setSelectedLocationData(locationData);
-        setLocationInitialized(true);
-        await fetchReviewsForLocation(locationData);
-        return;
-      }
-
-      // Try auto-detect current location
+      // Always try to get current location first
       const granted = await LocationService.requestLocationPermission();
       if (granted) {
         try {
+          console.log('Getting current location...');
           const loc = await LocationService.getCurrentLocation();
           const place = await LocationService.reverseGeocode(loc.latitude, loc.longitude) as any;
           const currentData = {
@@ -316,19 +308,42 @@ export default function HomeScreen() {
             country: place?.country || '',
             coordinates: { latitude: loc.latitude, longitude: loc.longitude },
           };
+          console.log('Current location detected:', currentData.name);
           await LocationService.saveSelectedLocation(currentData);
           const locationData = { type: 'current', data: currentData };
           setSelectedLocationData(locationData);
           setLocationInitialized(true);
           await fetchReviewsForLocation(locationData);
+          return;
         } catch (e) {
-          // Fallback to global if detection fails
+          console.log('Could not get current location, checking for saved location...');
+          // If current location fails, try saved location
+          const savedLocation = await LocationService.getSelectedLocation();
+          if (savedLocation) {
+            const locationData = { type: 'selected', data: savedLocation };
+            setSelectedLocationData(locationData);
+            setLocationInitialized(true);
+            await fetchReviewsForLocation(locationData);
+            return;
+          }
+          // Fallback to global if both fail
           const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
           setSelectedLocationData(locationData);
           setLocationInitialized(true);
           await fetchReviewsForLocation(locationData);
         }
       } else {
+        console.log('Location permission denied, checking for saved location...');
+        // If permission denied, try saved location
+        const savedLocation = await LocationService.getSelectedLocation();
+        if (savedLocation) {
+          const locationData = { type: 'selected', data: savedLocation };
+          setSelectedLocationData(locationData);
+          setLocationInitialized(true);
+          await fetchReviewsForLocation(locationData);
+          return;
+        }
+        // Fallback to global
         const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
         setSelectedLocationData(locationData);
         setLocationInitialized(true);
@@ -349,6 +364,8 @@ export default function HomeScreen() {
 
   const handleCurrentLocation = useCallback(async () => {
     try {
+      console.log('Getting current location from user request...');
+      
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
@@ -356,18 +373,25 @@ export default function HomeScreen() {
         return;
       }
 
-      // Get current location
-      const location = await Location.getCurrentPositionAsync();
+      // Get current location with higher accuracy
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced
+      });
       const { latitude, longitude } = location.coords;
+      console.log('Current coordinates:', latitude, longitude);
 
       // Reverse geocode to get city and state
       const reverseGeocode = await Location.reverseGeocodeAsync({ latitude, longitude });
       let city = 'Unknown';
       let region = 'Unknown';
+      let country = 'Unknown';
       if (reverseGeocode.length > 0) {
-        city = reverseGeocode[0].city || 'Unknown';
-        region = reverseGeocode[0].region || 'Unknown';
+        city = reverseGeocode[0].city || reverseGeocode[0].subregion || 'Unknown';
+        region = reverseGeocode[0].region || reverseGeocode[0].country || 'Unknown';
+        country = reverseGeocode[0].country || 'Unknown';
       }
+
+      console.log('Current location:', `${city}, ${region}, ${country}`);
 
       _setCurrentLocation({
         city,
@@ -383,6 +407,7 @@ export default function HomeScreen() {
           city,
           region,
           state: region,
+          country,
           coordinates: { latitude, longitude },
         }
       };
