@@ -17,10 +17,6 @@ try {
   try {
     execSync('watchman watch-del-all', { stdio: 'ignore' });
   } catch {
-    // Watchman not installed or command failed, continue
-  }
-    execSync('watchman watch-del-all', { stdio: 'ignore' });
-  } catch {
     // Watchman might not be installed, continue anyway
   }
   execSync('rm -rf node_modules/.cache', { stdio: 'ignore' });
