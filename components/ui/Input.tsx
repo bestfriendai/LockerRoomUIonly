@@ -129,7 +129,7 @@ export const Input = forwardRef<TextInput, InputProps>((
         };
       default:
         return {
-          borderWidth: 1,
+          borderWidth: isFocused ? 2 : 1,
           borderColor: getBorderColor(),
           borderRadius: BORDER_RADIUS.md,
         };
@@ -157,7 +157,7 @@ export const Input = forwardRef<TextInput, InputProps>((
     <View style={containerStyle}>
       {label && (
         <RNText
-          style={[styles.label, { color: hasError ? colors.error : colors.textSecondary }]}
+          style={[styles.label, { marginBottom: SPACING.xs - 2, color: hasError ? colors.error : colors.textSecondary }]}
           accessibilityRole="text"
         >
           {label}
@@ -211,7 +211,7 @@ export const Input = forwardRef<TextInput, InputProps>((
       
       {(error || helperText) && (
         <RNText
-          style={[styles.helperText, { color: hasError ? colors.error : colors.textSecondary }]}
+          style={[styles.helperText, { color: hasError ? colors.error : colors.textTertiary }]}
           accessibilityRole="text"
           accessibilityLiveRegion={hasError ? "assertive" : "polite"}
         >

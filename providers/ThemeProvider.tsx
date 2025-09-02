@@ -158,7 +158,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     chipText: isDark ? Colors.textDark.secondary : '#374151',
     divider: isDark ? Colors.uiDark.border : '#E5E7EB',
     errorContainer: isDark ? '#7F1D1D' : '#FEE2E2',
-    card: isDark ? Colors.uiDark.surface : Colors.ui.surface,
+    card: isDark ? Colors.uiDark.surfaceHover : Colors.ui.surface,
     warningBg: isDark ? '#78350F' : '#FEF3C7',
     cardBg: isDark ? Colors.uiDark.surface : Colors.ui.surface,
     errorBg: isDark ? '#7F1D1D' : '#FEE2E2',

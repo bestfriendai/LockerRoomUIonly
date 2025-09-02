@@ -144,7 +144,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'sm':
         return BORDER_RADIUS.sm;
       case 'lg':
-        return BORDER_RADIUS.lg;
+        return 14; // slightly larger for modern feel
       default: // md
         return BORDER_RADIUS.md;
     }
@@ -153,7 +153,7 @@ export const Button: React.FC<ButtonProps> = ({
   // Get background color based on variant and state
   const getBackgroundColor = () => {
     if (disabled) {
-      return colors.surfaceDisabled;
+      return variant === 'primary' ? colors.primaryDisabled : colors.surfaceDisabled;
     }
 
     switch (variant) {
@@ -255,7 +255,7 @@ export const Button: React.FC<ButtonProps> = ({
           />
           {typeof children === 'string' && (
             <Text
-              style={[styles.loadingText, { color: textColor }]}
+              style={[styles.loadingText, { color: textColor, fontWeight: '600', letterSpacing: 0.3 }]}
             >
               {children}
             </Text>
@@ -268,7 +268,7 @@ export const Button: React.FC<ButtonProps> = ({
       <>
         {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
         {typeof children === 'string' ? (
-          <Text style={{ color: textColor }}>
+          <Text style={{ color: textColor, fontWeight: '600', letterSpacing: 0.3 }}>
             {children}
           </Text>
         ) : (

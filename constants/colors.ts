@@ -1,20 +1,20 @@
 // Color palette for the LockerRoom Talk App
 export const Colors = {
-  // Primary brand colors
+  // Primary brand colors - Updated for better accessibility
   primary: {
     50: '#FFF0F7',
-    100: '#FFE1F0',
-    200: '#FFC2E0',
-    300: '#FF94C7',
-    400: '#FF56A3',
-    500: '#FF006B', // Main brand color
-    600: '#E6005F',
-    700: '#CC0054',
-    800: '#B30049',
-    900: '#99003E',
+    100: '#FFE0EF',
+    200: '#FFC1DF',
+    300: '#FF92C5',
+    400: '#FF5AA3',
+    500: '#E91E63', // Main brand color - Better contrast than #FF006B
+    600: '#C2185B',
+    700: '#AD1457',
+    800: '#880E4F',
+    900: '#560027',
   },
 
-  // Neutral grays
+  // Neutral grays - Enhanced for better visual hierarchy
   slate: {
     50: '#F8FAFC',
     100: '#F1F5F9',
@@ -26,6 +26,21 @@ export const Colors = {
     700: '#334155',
     800: '#1E293B',
     900: '#0F172A',
+  },
+
+  // Enhanced neutral colors (softer than pure black)
+  neutral: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#E5E5E5',
+    300: '#D4D4D4',
+    400: '#A3A3A3',
+    500: '#737373',
+    600: '#525252',
+    700: '#404040',
+    800: '#262626',
+    900: '#171717',
+    950: '#0A0A0A', // Softer than pure black
   },
 
   // Semantic colors
@@ -83,15 +98,23 @@ export const Colors = {
     overlay: 'rgba(0, 0, 0, 0.5)',
   },
 
-  // UI colors for dark theme
+  // UI colors for dark theme - Enhanced with neutral colors
   uiDark: {
-    background: '#0A0A0B',
-    surface: '#141416',
-    surfaceHover: '#1A1A1C',
-    surfaceDisabled: '#0F0F10',
-    border: 'rgba(255, 255, 255, 0.08)',
+    background: '#0A0A0A', // Using neutral.950 instead of harsh black
+    surface: '#171717',    // Using neutral.900
+    surfaceHover: '#262626', // Using neutral.800
+    surfaceDisabled: '#171717',
+    border: 'rgba(255, 255, 255, 0.10)',
     borderSubtle: 'rgba(255, 255, 255, 0.06)',
-    overlay: 'rgba(0, 0, 0, 0.8)',
+    overlay: 'rgba(0, 0, 0, 0.75)',
+  },
+
+  // Gradient combinations for modern UI
+  gradients: {
+    primary: 'linear-gradient(135deg, #E91E63 0%, #FF5AA3 100%)',
+    dark: 'linear-gradient(180deg, #0A0A0A 0%, #171717 100%)',
+    card: 'linear-gradient(145deg, rgba(233,30,99,0.05) 0%, rgba(255,90,163,0.02) 100%)',
+    glass: 'linear-gradient(145deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
   },
 
   // Text colors
@@ -105,8 +128,8 @@ export const Colors = {
   // Text colors for dark theme
   textDark: {
     primary: '#FFFFFF',
-    secondary: 'rgba(255, 255, 255, 0.64)',
-    tertiary: 'rgba(255, 255, 255, 0.48)',
+    secondary: 'rgba(255, 255, 255, 0.70)',
+    tertiary: 'rgba(255, 255, 255, 0.50)',
     disabled: 'rgba(255, 255, 255, 0.38)',
   },
 };
