@@ -297,14 +297,14 @@ export const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       hapticOnPress={hapticOnPress}
-      scaleTo={0.96}
       accessibilityRole="button"
-      accessibilityLabel={getDefaultAccessibilityLabel()}
-      accessibilityHint={accessibilityHint}
       accessibilityState={{
         disabled: disabled || loading,
         busy: loading,
       }}
+      scaleTo={0.96}
+      accessibilityLabel={getDefaultAccessibilityLabel()}
+      accessibilityHint={accessibilityHint}
       hitSlop={hitSlop}
       testID={testID}
     >

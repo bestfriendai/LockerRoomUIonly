@@ -32,7 +32,7 @@ export const isValidPassword = (password: string): { isValid: boolean; errors: s
 
 // Phone number validation
 export const isValidPhoneNumber = (phone: string): boolean => {
-  const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/;
+  const phoneRegex = /^[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
   return phoneRegex.test(phone);
 };
 
@@ -135,6 +135,7 @@ export const sanitizeInput = (input: string | undefined | null): string => {
   
   // Remove zero-width characters and control characters
   sanitized = sanitized.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
   
   // Limit consecutive whitespace
@@ -188,7 +189,7 @@ export const isValidCreditCard = (cardNumber: string): boolean => {
 // Validate Firebase document ID
 export const validateFirebaseId = (id: string): boolean => {
   const sanitized = sanitizeInput(id);
-  return sanitized.length > 0 && sanitized.length <= 1500 && !/[\/\0]/.test(sanitized);
+  return sanitized.length > 0 && sanitized.length <= 1500 && !/[/\0]/.test(sanitized);
 };
 
 // Validate and sanitize chat messages

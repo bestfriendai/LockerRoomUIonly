@@ -103,6 +103,15 @@ export default function HomeScreen() {
     }
     setRefreshing(true);
     try {
+      // Check if user is authenticated before making Firestore queries
+      if (!user?.id) {
+        if (__DEV__) {
+          console.log('User not authenticated, skipping reviews fetch');
+        }
+        setReviews([]);
+        return;
+      }
+
       const reviewsCollection = collection(db, "reviews");
       const reviewsSnapshot = await getDocs(reviewsCollection);
       const reviewsList = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data() } as Review));
@@ -111,7 +120,8 @@ export default function HomeScreen() {
       if (__DEV__) {
         __DEV__ && console.error("Error fetching reviews: ", error);
       }
-      Alert.alert("Error", "Could not fetch reviews.");
+      // Set empty reviews instead of showing alert
+      setReviews([]);
     } finally {
       setRefreshing(false);
       setIsInitialLoading(false);
@@ -198,6 +208,16 @@ export default function HomeScreen() {
   const fetchReviewsForLocation = useCallback(async (location: any) => {
     setIsLoadingReviews(true);
     try {
+      // Check if user is authenticated before making Firestore queries
+      if (!user?.id) {
+        if (__DEV__) {
+          console.log('User not authenticated, skipping reviews fetch for location');
+        }
+        setReviews([]);
+        setIsLoadingReviews(false);
+        return;
+      }
+
       // Fetch all reviews first
       const reviewsQuery = collection(db, 'reviews');
       const snapshot = await getDocs(reviewsQuery);
@@ -278,6 +298,8 @@ export default function HomeScreen() {
       if (__DEV__) {
         __DEV__ && console.error('Error fetching reviews for location:', error);
       }
+      // Set empty reviews instead of crashing
+      setReviews([]);
       Alert.alert('Error', 'Failed to fetch reviews for this location.');
     } finally {
       setIsLoadingReviews(false);

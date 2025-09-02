@@ -1,17 +1,17 @@
 // Color palette for the LockerRoom Talk App
 export const Colors = {
-  // Primary brand colors
+  // Primary brand colors (New Professional Blue Palette)
   primary: {
-    50: '#FFF0F7',
-    100: '#FFE1F0',
-    200: '#FFC2E0',
-    300: '#FF94C7',
-    400: '#FF56A3',
-    500: '#FF006B', // Main brand color
-    600: '#E6005F',
-    700: '#CC0054',
-    800: '#B30049',
-    900: '#99003E',
+    50: '#E8F0FE',
+    100: '#D2E3FC',
+    200: '#AECBFA',
+    300: '#8AB4F8',
+    400: '#669DF6',
+    500: '#4285F4', // Main brand color (Google Blue)
+    600: '#1A73E8',
+    700: '#1967D2',
+    800: '#185ABC',
+    900: '#174EA6',
   },
 
   // Neutral grays

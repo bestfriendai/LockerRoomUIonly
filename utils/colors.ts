@@ -4,18 +4,18 @@
  */
 
 export const colors = {
-  // Primary Colors - Refined pink palette
+  // Primary Colors - Professional blue palette
   primary: {
-    50: '#FFF0F7',
-    100: '#FFE0EF',
-    200: '#FFC1DF',
-    300: '#FF92C5',
-    400: '#FF5AA3',
-    500: '#FF1E7D', // Main brand color (refined pink)
-    600: '#E6005C',
-    700: '#BF0049',
-    800: '#99003A',
-    900: '#66002D',
+    50: '#E8F0FE',
+    100: '#D2E3FC',
+    200: '#AECBFA',
+    300: '#8AB4F8',
+    400: '#669DF6',
+    500: '#4285F4', // Main brand color (Google Blue)
+    600: '#1A73E8',
+    700: '#1967D2',
+    800: '#185ABC',
+    900: '#174EA6',
   },
   
   // Neutral Colors - Sophisticated dark grays replacing harsh black
@@ -57,9 +57,9 @@ export const colors = {
   
   // Gradient Combinations for visual interest
   gradients: {
-    primary: 'linear-gradient(135deg, #FF1E7D 0%, #FF5AA3 100%)',
+    primary: 'linear-gradient(135deg, #4285F4 0%, #669DF6 100%)',
     dark: 'linear-gradient(180deg, #0A0A0A 0%, #171717 100%)',
-    card: 'linear-gradient(145deg, rgba(255,30,125,0.05) 0%, rgba(255,90,163,0.02) 100%)',
+    card: 'linear-gradient(145deg, rgba(66,133,244,0.05) 0%, rgba(102,157,246,0.02) 100%)',
     success: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
     error: 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)',
     premium: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
