@@ -61,11 +61,12 @@ service cloud.firestore {
       // Only authenticated adult users can create reviews
       allow create: if isValidReview();
       
-      // Authors can update their own reviews
+      // Authors can update their own reviews, or anyone can update just the views count
       allow update: if isSignedIn() && 
-        resource.data.authorId == request.auth.uid &&
-        request.resource.data.authorId == resource.data.authorId && // Can't change author
-        isValidString(request.resource.data.content, 10, 5000);
+        ((resource.data.authorId == request.auth.uid &&
+          request.resource.data.authorId == resource.data.authorId && // Can't change author
+          isValidString(request.resource.data.content, 10, 5000)) ||
+         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])));
       
       // Authors can delete their own reviews
       allow delete: if isSignedIn() && 
