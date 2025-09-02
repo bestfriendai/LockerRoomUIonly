@@ -5,8 +5,12 @@
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
 import { 
   getAuth, 
+  initializeAuth,
+  getReactNativePersistence,
   type Auth,
 } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { 
   getFirestore,
   type Firestore 
@@ -62,8 +66,28 @@ const initializeFirebase = () => {
       }
     }
 
-    // Initialize services
-    firebaseAuth = getAuth(firebaseApp);
+    // Initialize auth with persistence for React Native
+    if (Platform.OS === 'web') {
+      // For web, use default persistence
+      firebaseAuth = getAuth(firebaseApp);
+    } else {
+      // For React Native, use AsyncStorage persistence
+      try {
+        firebaseAuth = initializeAuth(firebaseApp, {
+          persistence: getReactNativePersistence(AsyncStorage)
+        });
+        if (__DEV__) {
+          console.log('🔐 Auth initialized with AsyncStorage persistence');
+        }
+      } catch (authError) {
+        // If auth already initialized, get the existing instance
+        firebaseAuth = getAuth(firebaseApp);
+        if (__DEV__) {
+          console.log('🔐 Using existing auth instance');
+        }
+      }
+    }
+    
     firebaseDb = getFirestore(firebaseApp);
     firebaseStorage = getStorage(firebaseApp);
 
