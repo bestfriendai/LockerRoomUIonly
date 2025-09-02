@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   StyleSheet,
   Pressable,
@@ -108,7 +109,7 @@ export default function HomeScreen() {
       setReviews(reviewsList);
     } catch (error) {
       if (__DEV__) {
-        console.error("Error fetching reviews: ", error);
+        __DEV__ && console.error("Error fetching reviews: ", error);
       }
       Alert.alert("Error", "Could not fetch reviews.");
     } finally {
@@ -226,7 +227,7 @@ export default function HomeScreen() {
               // Don't show alert, just show all reviews
               setReviews(reviewsData);
               // Optionally show a less intrusive notification
-              console.log(`No reviews found within ${searchRadius} miles. Showing all reviews.`);
+              __DEV__ && console.log(`No reviews found within ${searchRadius} miles. Showing all reviews.`);
             } else {
               setReviews(reviewsData);
             }
@@ -275,7 +276,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error fetching reviews for location:', error);
+        __DEV__ && console.error('Error fetching reviews for location:', error);
       }
       Alert.alert('Error', 'Failed to fetch reviews for this location.');
     } finally {
@@ -297,7 +298,7 @@ export default function HomeScreen() {
       const granted = await LocationService.requestLocationPermission();
       if (granted) {
         try {
-          console.log('Getting current location...');
+          __DEV__ && console.log('Getting current location...');
           const loc = await LocationService.getCurrentLocation();
           const place = await LocationService.reverseGeocode(loc.latitude, loc.longitude) as any;
           const currentData = {
@@ -308,7 +309,7 @@ export default function HomeScreen() {
             country: place?.country || '',
             coordinates: { latitude: loc.latitude, longitude: loc.longitude },
           };
-          console.log('Current location detected:', currentData.name);
+          __DEV__ && console.log('Current location detected:', currentData.name);
           await LocationService.saveSelectedLocation(currentData);
           const locationData = { type: 'current', data: currentData };
           setSelectedLocationData(locationData);
@@ -316,7 +317,7 @@ export default function HomeScreen() {
           await fetchReviewsForLocation(locationData);
           return;
         } catch (e) {
-          console.log('Could not get current location, checking for saved location...');
+          __DEV__ && console.log('Could not get current location, checking for saved location...');
           // If current location fails, try saved location
           const savedLocation = await LocationService.getSelectedLocation();
           if (savedLocation) {
@@ -333,7 +334,7 @@ export default function HomeScreen() {
           await fetchReviewsForLocation(locationData);
         }
       } else {
-        console.log('Location permission denied, checking for saved location...');
+        __DEV__ && console.log('Location permission denied, checking for saved location...');
         // If permission denied, try saved location
         const savedLocation = await LocationService.getSelectedLocation();
         if (savedLocation) {
@@ -364,7 +365,7 @@ export default function HomeScreen() {
 
   const handleCurrentLocation = useCallback(async () => {
     try {
-      console.log('Getting current location from user request...');
+      __DEV__ && console.log('Getting current location from user request...');
       
       // Request location permissions
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -378,7 +379,7 @@ export default function HomeScreen() {
         accuracy: Location.Accuracy.Balanced
       });
       const { latitude, longitude } = location.coords;
-      console.log('Current coordinates:', latitude, longitude);
+      __DEV__ && console.log('Current coordinates:', latitude, longitude);
 
       // Reverse geocode to get city and state
       const reverseGeocode = await Location.reverseGeocodeAsync({ latitude, longitude });
@@ -391,7 +392,7 @@ export default function HomeScreen() {
         country = reverseGeocode[0].country || 'Unknown';
       }
 
-      console.log('Current location:', `${city}, ${region}, ${country}`);
+      __DEV__ && console.log('Current location:', `${city}, ${region}, ${country}`);
 
       _setCurrentLocation({
         city,

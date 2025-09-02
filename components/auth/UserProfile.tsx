@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+import logger from '../../utils/logger';
   View,
   Text as RNText,
   StyleSheet,
@@ -37,7 +38,7 @@ export default function UserProfile() {
               router.replace('/(auth)');
             } catch (error) {
               if (__DEV__) {
-                console.error('Sign out error:', error);
+                __DEV__ && console.error('Sign out error:', error);
               }
             }
           },

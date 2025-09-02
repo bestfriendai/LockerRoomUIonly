@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   StyleSheet,
   TouchableOpacity,
@@ -94,7 +95,7 @@ export default function SignInScreen() {
       // Don't manually navigate - let the AuthProvider and index.tsx handle navigation
       // This prevents race conditions and navigation conflicts
       if (__DEV__) {
-        console.log('Sign in successful, waiting for auth state change...');
+        __DEV__ && console.log('Sign in successful, waiting for auth state change...');
       }
       // Navigation will happen automatically via auth state change
     } catch (err: unknown) {

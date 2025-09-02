@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from "react";
 import {
+import logger from '../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -52,7 +53,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     if (notification.userId) {
       getUserById(notification.userId)
         .then(userData => setUser(userData))
-        .catch(error => console.error('Error fetching user:', error));
+        .catch(error => __DEV__ && console.error('Error fetching user:', error));
     }
   }, [notification.userId]);
 

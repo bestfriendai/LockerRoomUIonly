@@ -3,6 +3,7 @@ import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
 import { tokens } from '../constants/tokens';
+import logger from '../utils/logger';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -83,7 +84,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       } catch (error) {
         // Failed to load theme from storage
         if (__DEV__) {
-          console.warn('Failed to load theme from storage:', error);
+          __DEV__ && console.warn('Failed to load theme from storage:', error);
         }
       } finally {
         if (mountedRef.current) {
@@ -105,7 +106,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     } catch (error) {
       // Failed to save theme to storage
       if (__DEV__) {
-        console.warn('Failed to save theme to storage:', error);
+        __DEV__ && console.warn('Failed to save theme to storage:', error);
       }
       if (mountedRef.current) {
         setThemeState(newTheme); // Still update state even if storage fails

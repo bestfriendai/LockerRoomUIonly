@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
+import logger from '../utils/logger';
   View,
   StyleSheet,
   Text
@@ -53,7 +54,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             level: 'info' as const
           });
         } catch (sentryError) {
-          console.warn('Sentry breadcrumb failed:', sentryError);
+          __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
         }
       }
 
@@ -68,7 +69,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             level: 'info' as const
           });
         } catch (sentryError) {
-          console.warn('Sentry breadcrumb failed:', sentryError);
+          __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
         }
       }
 

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -175,7 +176,7 @@ export default function EditProfileScreen() {
       );
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating profile:', error);
+        __DEV__ && console.error('Error updating profile:', error);
       }
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {

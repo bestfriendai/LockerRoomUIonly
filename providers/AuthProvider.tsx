@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut as firebaseSignOut, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirebaseAuth } from '../utils/firebase';
+import logger from '../utils/logger';
 
 // Get auth instance lazily
 const getAuth = () => getFirebaseAuth();
@@ -52,12 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         Sentry.Native.setTag('auth_state', firebaseUser ? 'authenticated' : 'unauthenticated');
       } catch (sentryError) {
-        console.warn('Sentry tag failed:', sentryError);
+        __DEV__ && console.warn('Sentry tag failed:', sentryError);
       }
 
       if (__DEV__) {
 
-        console.log('Auth state changed:', firebaseUser ? firebaseUser.uid : 'null');
+        __DEV__ && console.log('Auth state changed:', firebaseUser ? firebaseUser.uid : 'null');
 
       }
 
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (firebaseUser) {
           if (__DEV__) {
-            console.log('Firebase user found, getting user data...');
+            __DEV__ && console.log('Firebase user found, getting user data...');
           }
 
           // Try to get user data from Firestore with retry logic
@@ -82,13 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               userData = await getUserById(firebaseUser.uid);
               if (userData) {
                 if (__DEV__) {
-                  console.log('User data found in Firestore');
+                  __DEV__ && console.log('User data found in Firestore');
                 }
                 break;
               }
             } catch (error) {
               if (__DEV__) {
-                console.log(`Attempt ${4 - retries} failed, retrying...`, error);
+                __DEV__ && console.log(`Attempt ${4 - retries} failed, retrying...`, error);
               }
               retries--;
               if (retries > 0 && mounted) {
@@ -105,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               // Subscribe to real-time updates for this user
               userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
                 if (__DEV__) {
-                  console.log('User data updated from Firestore');
+                  __DEV__ && console.log('User data updated from Firestore');
                 }
                 if (mounted) {
                   setUser(updatedUser);
@@ -114,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } else {
             if (__DEV__) {
-              console.log('User not found in Firestore, creating new user document...');
+              __DEV__ && console.log('User not found in Firestore, creating new user document...');
             }
 
             // Ensure we have a fresh authentication token
@@ -145,7 +146,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               const createdUser = await createUser(firebaseUser.uid, newUser);
               if (__DEV__) {
-                console.log('New user created successfully');
+                __DEV__ && console.log('New user created successfully');
               }
               if (mounted) {
                 setUser(createdUser);
@@ -153,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 // Subscribe to real-time updates for the new user
                 userUnsubscribe = subscribeToUserChanges(firebaseUser.uid, (updatedUser) => {
                   if (__DEV__) {
-                    console.log('New user data updated from Firestore');
+                    __DEV__ && console.log('New user data updated from Firestore');
                   }
                   if (mounted) {
                     setUser(updatedUser);
@@ -162,13 +163,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             } catch (createError: any) {
               if (__DEV__) {
-                console.error('Failed to create user document:', createError);
+                __DEV__ && console.error('Failed to create user document:', createError);
               }
 
               // If it's a permission error, show user-friendly message
               if (createError?.message?.includes('Permission denied')) {
                 if (__DEV__) {
-                  console.log('Permission denied - user will need to refresh or retry');
+                  __DEV__ && console.log('Permission denied - user will need to refresh or retry');
                 }
                 // Still set a minimal user to allow navigation
               }
@@ -207,13 +208,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 level: 'info' as const
               });
             } catch (sentryError) {
-              console.warn('Sentry breadcrumb failed:', sentryError);
+              __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
             }
 
           }
         } else {
           if (__DEV__) {
-            console.log('No Firebase user, setting user to null');
+            __DEV__ && console.log('No Firebase user, setting user to null');
           }
           if (mounted) {
             setUser(null);
@@ -221,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('Auth state change error:', error);
+          __DEV__ && console.error('Auth state change error:', error);
         }
         if (mounted) {
           setUser(null);
@@ -249,7 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string): Promise<void> => {
     try {
       if (__DEV__) {
-        console.log('Starting sign in process for email:', email);
+        __DEV__ && console.log('Starting sign in process for email:', email);
       }
       if (mountedRef.current) {
         setIsLoading(true);
@@ -257,22 +258,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const auth = getAuth();
       if (__DEV__) {
-        console.log('Auth instance obtained, attempting signInWithEmailAndPassword...');
+        __DEV__ && console.log('Auth instance obtained, attempting signInWithEmailAndPassword...');
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       if (__DEV__) {
-        console.log('Sign in successful for user:', userCredential.user.uid);
-        console.log('User email verified:', userCredential.user.emailVerified);
+        __DEV__ && console.log('Sign in successful for user:', userCredential.user.uid);
+        __DEV__ && console.log('User email verified:', userCredential.user.emailVerified);
       }
 
       // Don't set loading to false here - let the auth state change handler do it
       // This prevents race conditions with navigation
     } catch (error: any) {
       if (__DEV__) {
-        console.error('Sign in error:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
+        __DEV__ && console.error('Sign in error:', error);
+        __DEV__ && console.error('Error code:', error.code);
+        __DEV__ && console.error('Error message:', error.message);
       }
 
       logError(error, 'Sign In');
@@ -280,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         Sentry.Native.captureException(error);
       } catch (sentryError) {
-        console.warn('Sentry exception capture failed:', sentryError);
+        __DEV__ && console.warn('Sentry exception capture failed:', sentryError);
       }
 
       if (mountedRef.current) {
@@ -298,7 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (userData: Partial<User> & { email: string; password: string }): Promise<void> => {
     try {
       if (__DEV__) {
-        console.log('Starting sign up process...');
+        __DEV__ && console.log('Starting sign up process...');
       }
       if (mountedRef.current) {
         setIsLoading(true);
@@ -307,7 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { user: firebaseUser } = await createUserWithEmailAndPassword(getAuth(), userData.email, userData.password);
       if (__DEV__) {
-        console.log('Firebase user created:', firebaseUser.uid);
+        __DEV__ && console.log('Firebase user created:', firebaseUser.uid);
       }
 
       // Wait for the auth token to be fully established
@@ -337,7 +338,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         if (__DEV__) {
-          console.log('Creating user document in Firestore...');
+          __DEV__ && console.log('Creating user document in Firestore...');
         }
         await createUser(firebaseUser.uid, newUser);
         try {
@@ -347,14 +348,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             level: 'info' as const
           });
         } catch (sentryError) {
-          console.warn('Sentry breadcrumb failed:', sentryError);
+          __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
         }
 
         // The auth state change handler will update the user state
         // and handle navigation automatically
       } catch (createError: unknown) {
         if (__DEV__) {
-          console.error('Failed to create user document:', createError);
+          __DEV__ && console.error('Failed to create user document:', createError);
         }
         const error = createError as { message?: string };
 
@@ -362,7 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // The auth state handler will retry or handle it
         if (error.message?.includes('Permission denied')) {
           if (__DEV__) {
-            console.log('Permission issue detected, but user is authenticated');
+            __DEV__ && console.log('Permission issue detected, but user is authenticated');
           }
         }
       }
@@ -375,7 +376,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         Sentry.Native.captureException(error);
       } catch (sentryError) {
-        console.warn('Sentry exception capture failed:', sentryError);
+        __DEV__ && console.warn('Sentry exception capture failed:', sentryError);
       }
       
       if (mountedRef.current) {
@@ -396,7 +397,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(getAuth());
     } catch (error) {
       if (__DEV__) {
-        console.error('Sign out error:', error);
+        __DEV__ && console.error('Sign out error:', error);
       }
     }
   };
@@ -409,7 +410,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Update profile error:', error);
+        __DEV__ && console.error('Update profile error:', error);
       }
       throw error;
     }
@@ -420,7 +421,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await sendPasswordResetEmail(getAuth(), email);
     } catch (error) {
       if (__DEV__) {
-        console.error('Reset password error:', error);
+        __DEV__ && console.error('Reset password error:', error);
       }
       throw error;
     }
@@ -437,7 +438,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Delete account error:', error);
+        __DEV__ && console.error('Delete account error:', error);
       }
       throw error;
     }

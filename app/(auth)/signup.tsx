@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useState, useRef, useEffect } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   StyleSheet,
   TouchableOpacity,
@@ -127,7 +128,7 @@ export default function SignUpScreen() {
           level
         });
       } catch (sentryError) {
-        console.warn('Sentry breadcrumb failed:', sentryError);
+        __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
       }
 
       await signUp({
@@ -145,10 +146,10 @@ export default function SignUpScreen() {
           level
         });
       } catch (sentryError) {
-        console.warn('Sentry breadcrumb failed:', sentryError);
+        __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
       }
       if (__DEV__) {
-        console.log('Sign up successful, waiting for auth state change...');
+        __DEV__ && console.log('Sign up successful, waiting for auth state change...');
       }
 
       // Show brief success message
@@ -157,7 +158,7 @@ export default function SignUpScreen() {
         { text: "OK", onPress: () => {
           // The auth state listener in AuthProvider will handle navigation
           if (__DEV__) {
-            console.log('User acknowledged success, navigation will happen automatically');
+            __DEV__ && console.log('User acknowledged success, navigation will happen automatically');
           }
         }}
       ]);

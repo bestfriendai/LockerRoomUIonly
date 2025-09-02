@@ -9,23 +9,53 @@ service cloud.firestore {
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid;
     }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function hasAppCheck() {
+      return request.auth.token.firebase != null && 
+             request.auth.token.firebase.app_check != null;
+    }
 
     function isValidString(value, minLength, maxLength) {
       return value is string &&
              value.size() >= minLength &&
-             value.size() <= maxLength;
+             value.size() <= maxLength &&
+             !value.matches('.*<script.*>.*</script>.*') && // No script tags
+             !value.matches('.*javascript:.*'); // No javascript URLs
+    }
+    
+    function isRateLimited(action) {
+      let lastAction = get(/databases/$(database)/documents/rateLimits/$(request.auth.uid)/actions/$(action));
+      return !exists(lastAction.data) || 
+             request.time > lastAction.data.timestamp + duration.value(1, 'm');
+    }
+    
+    function hasNoSQLInjection(value) {
+      return !value.matches('.*[\$\{\}\[\]].*'); // Block common injection patterns
+    }
+    
+    function isValidTimestamp(field) {
+      return request.resource.data[field] == request.time;
     }
     
     function isValidReview() {
       return isSignedIn() &&
+        isEmailVerified() && // Require email verification
         request.resource.data.keys().hasAll(['title', 'content', 'authorId', 'createdAt', 'category', 'rating']) &&
         request.resource.data.authorId == request.auth.uid &&
         isValidString(request.resource.data.title, 1, 200) &&
+        hasNoSQLInjection(request.resource.data.title) &&
         isValidString(request.resource.data.content, 10, 5000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
         isValidString(request.resource.data.category, 1, 50) &&
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 &&
-        request.resource.data.rating <= 5;
+        request.resource.data.rating <= 5 &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createReview'); // Rate limit review creation
     }
 
 
@@ -58,8 +88,8 @@ service cloud.firestore {
       // Public can read all reviews
       allow read: if true;
       
-      // Only authenticated adult users can create reviews
-      allow create: if isValidReview();
+      // Only authenticated, verified users can create reviews with rate limiting
+      allow create: if isValidReview() && (hasAppCheck() || __DEV__);
       
       // Authors can update their own reviews, or anyone can update just the views count
       allow update: if isSignedIn() && 
@@ -78,9 +108,13 @@ service cloud.firestore {
       allow read: if true;
       
       allow create: if isSignedIn() &&
+        isEmailVerified() &&
         request.resource.data.authorId == request.auth.uid &&
         isValidString(request.resource.data.content, 1, 1000) &&
-        request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']);
+        hasNoSQLInjection(request.resource.data.content) &&
+        request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createComment');
       
       allow update: if isSignedIn() && 
         resource.data.authorId == request.auth.uid &&
@@ -118,13 +152,17 @@ service cloud.firestore {
         (request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('members', []) ||
          request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('participants', []));
       
-      // Room members or participants can send messages
+      // Room members or participants can send messages with rate limiting
       allow create: if isSignedIn() &&
+        isEmailVerified() &&
         (request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('members', []) ||
          request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('participants', [])) &&
         request.resource.data.senderId == request.auth.uid &&
         isValidString(request.resource.data.content, 1, 2000) &&
-        request.resource.data.keys().hasAll(['content', 'senderId', 'createdAt']);
+        hasNoSQLInjection(request.resource.data.content) &&
+        request.resource.data.keys().hasAll(['content', 'senderId', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('sendMessage');
       
       // Senders can edit their own messages
       allow update: if isSignedIn() && 
@@ -171,13 +209,17 @@ service cloud.firestore {
       // Only admins can read reports (via Cloud Functions)
       allow read: if false;
       
-      // Authenticated users can report content
+      // Authenticated, verified users can report content with rate limiting
       allow create: if isSignedIn() &&
+        isEmailVerified() &&
         request.resource.data.reporterId == request.auth.uid &&
         request.resource.data.keys().hasAll(['type', 'targetId', 'reason', 'createdAt']) &&
         isValidString(request.resource.data.type, 1, 20) &&
         isValidString(request.resource.data.targetId, 1, 100) &&
-        isValidString(request.resource.data.reason, 10, 500);
+        isValidString(request.resource.data.reason, 10, 500) &&
+        hasNoSQLInjection(request.resource.data.reason) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createReport');
       
       // No updates or deletes allowed
       allow update, delete: if false;

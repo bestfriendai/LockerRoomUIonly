@@ -1,4 +1,5 @@
 import {
+import logger from '../utils/logger';
   collection,
   doc,
   getDoc,
@@ -37,13 +38,13 @@ const retryOperation = async <T>(
     } catch (error: unknown) {
       lastError = error;
       if (__DEV__) {
-        console.log(`Attempt ${i + 1} failed:`, (error as any)?.message || error);
+        __DEV__ && console.log(`Attempt ${i + 1} failed:`, (error as any)?.message || error);
       }
       
       // Don't retry on authentication errors
       if ((error as any)?.code === 'permission-denied' && i < maxRetries - 1) {
         if (__DEV__) {
-          console.log(`Retrying in ${delay}ms...`);
+          __DEV__ && console.log(`Retrying in ${delay}ms...`);
         }
         await new Promise(resolve => setTimeout(resolve, delay));
         delay *= 2; // Exponential backoff
@@ -59,7 +60,7 @@ const retryOperation = async <T>(
 export const createUser = async (userId: string, userData: any) => {
   try {
     if (__DEV__) {
-      console.log('Creating user with ID:', userId);
+      __DEV__ && console.log('Creating user with ID:', userId);
     }
 
     // Verify we have an authenticated user
@@ -80,7 +81,7 @@ export const createUser = async (userId: string, userData: any) => {
     
     if (existingUser.exists()) {
       if (__DEV__) {
-        console.log('User already exists, returning existing data');
+        __DEV__ && console.log('User already exists, returning existing data');
       }
       return { id: existingUser.id, ...existingUser.data() } as User;
     }
@@ -96,7 +97,7 @@ export const createUser = async (userId: string, userData: any) => {
 
     if (__DEV__) {
 
-      console.log('Creating new user document...');
+      __DEV__ && console.log('Creating new user document...');
 
     }
     
@@ -113,7 +114,7 @@ export const createUser = async (userId: string, userData: any) => {
     if (createdUserSnap.exists()) {
       const createdUser = { id: createdUserSnap.id, ...createdUserSnap.data() } as User;
       if (__DEV__) {
-        console.log('User created successfully!');
+        __DEV__ && console.log('User created successfully!');
       }
       return createdUser;
     } else {
@@ -123,7 +124,7 @@ export const createUser = async (userId: string, userData: any) => {
     // Enhanced error messages for common Firestore permission errors
     if ((error as any)?.code === 'permission-denied') {
       if (__DEV__) {
-        console.error('Firestore permission denied. Please check security rules.', {
+        __DEV__ && console.error('Firestore permission denied. Please check security rules.', {
         userId,
         errorDetails: error
       });
@@ -133,7 +134,7 @@ export const createUser = async (userId: string, userData: any) => {
     
     if (__DEV__) {
     
-      console.error('Error creating user:', {
+      __DEV__ && console.error('Error creating user:', {
       code: (error as any)?.code,
       message: (error as any)?.message,
       userId
@@ -156,7 +157,7 @@ export async function getUserById(userId: string): Promise<User | null> {
     return null;
   } catch (error) {
     if (__DEV__) {
-      console.error('Error getting user:', error);
+      __DEV__ && console.error('Error getting user:', error);
     }
     throw error;
   }
@@ -185,7 +186,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
     // Enhanced error messages
     if ((error as any)?.code === 'permission-denied') {
       if (__DEV__) {
-        console.error('Firestore permission denied during update.', {
+        __DEV__ && console.error('Firestore permission denied during update.', {
         userId,
         errorDetails: error
       });
@@ -195,7 +196,7 @@ export async function updateUser(userId: string, updates: Partial<User>): Promis
     
     if (__DEV__) {
     
-      console.error('Error updating user:', error);
+      __DEV__ && console.error('Error updating user:', error);
     
     }
     throw error;
@@ -229,7 +230,7 @@ export async function getUsersByLocation(location: string, excludeUserId?: strin
     })) as User[];
   } catch (error) {
     if (__DEV__) {
-      console.error('Error getting users by location:', error);
+      __DEV__ && console.error('Error getting users by location:', error);
     }
     throw error;
   }
@@ -262,7 +263,7 @@ export async function getUsersByInterests(interests: string[], excludeUserId?: s
     })) as User[];
   } catch (error) {
     if (__DEV__) {
-      console.error('Error getting users by interests:', error);
+      __DEV__ && console.error('Error getting users by interests:', error);
     }
     throw error;
   }
@@ -280,7 +281,7 @@ export function subscribeToUser(userId: string, callback: (user: User | null) =>
     }
   }, (error) => {
     if (__DEV__) {
-      console.error('Error listening to user:', error);
+      __DEV__ && console.error('Error listening to user:', error);
     }
     callback(null);
   });
@@ -296,7 +297,7 @@ export async function deleteUser(userId: string): Promise<void> {
     await deleteDoc(userRef);
   } catch (error) {
     if (__DEV__) {
-      console.error('Error deleting user:', error);
+      __DEV__ && console.error('Error deleting user:', error);
     }
     throw error;
   }
@@ -312,7 +313,7 @@ export async function updateOnlineStatus(userId: string, isOnline: boolean): Pro
     });
   } catch (error) {
     if (__DEV__) {
-      console.error('Error updating online status:', error);
+      __DEV__ && console.error('Error updating online status:', error);
     }
     throw error;
   }
@@ -342,7 +343,7 @@ export async function searchUsers(searchTerm: string): Promise<User[]> {
     );
   } catch (error) {
     if (__DEV__) {
-      console.error('Error searching users:', error);
+      __DEV__ && console.error('Error searching users:', error);
     }
     throw error;
   }

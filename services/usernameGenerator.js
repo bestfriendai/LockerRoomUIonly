@@ -4,6 +4,7 @@
  */
 
 import { uniqueNamesGenerator, adjectives, colors, animals, names } from 'unique-names-generator';
+import logger from '../utils/logger';
 
 // Anonymous-themed adjectives for dating app
 const anonymousAdjectives = [
@@ -222,7 +223,7 @@ export const generateAIUsername = async (preferences = {}) => {
   // Check if OpenAI API key is available
   if (!process.env.OPENAI_API_KEY) {
     if (__DEV__) {
-      console.warn('OpenAI API key not found, falling back to standard generation');
+      __DEV__ && console.warn('OpenAI API key not found, falling back to standard generation');
     }
     return generateAnonymousUsername({ theme });
   }
@@ -280,7 +281,7 @@ export const generateAIUsername = async (preferences = {}) => {
     }
   } catch (error) {
     if (__DEV__) {
-      console.error('AI username generation failed:', error);
+      __DEV__ && console.error('AI username generation failed:', error);
     }
     // Fallback to standard generation
     return generateAnonymousUsername({ theme });

@@ -1,4 +1,5 @@
 import {
+import logger from '../utils/logger';
   collection,
   doc,
   addDoc,
@@ -84,7 +85,7 @@ export class ReviewService {
       return reviewRef.id;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error creating review:', error);
+        __DEV__ && console.error('Error creating review:', error);
       }
       throw error;
     }
@@ -114,7 +115,7 @@ export class ReviewService {
         } catch (updateError) {
           // Silently ignore permission errors for view count updates
           if (__DEV__) {
-            console.log('Could not update view count (expected for non-authors)');
+            __DEV__ && console.log('Could not update view count (expected for non-authors)');
           }
         }
         
@@ -123,7 +124,7 @@ export class ReviewService {
       return null;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting review:', error);
+        __DEV__ && console.error('Error getting review:', error);
       }
       throw error;
     }
@@ -210,7 +211,7 @@ export class ReviewService {
       return result;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting reviews:', error);
+        __DEV__ && console.error('Error getting reviews:', error);
       }
       return { reviews: [], lastDoc: null, hasMore: false };
     }
@@ -233,7 +234,7 @@ export class ReviewService {
       })) as Review[];
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting reviews by user:', error);
+        __DEV__ && console.error('Error getting reviews by user:', error);
       }
       throw error;
     }
@@ -256,7 +257,7 @@ export class ReviewService {
       })) as Review[];
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting reviews about user:', error);
+        __DEV__ && console.error('Error getting reviews about user:', error);
       }
       throw error;
     }
@@ -291,7 +292,7 @@ export class ReviewService {
       return reviews;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting trending reviews:', error);
+        __DEV__ && console.error('Error getting trending reviews:', error);
       }
       return [];
     }
@@ -319,7 +320,7 @@ export class ReviewService {
       await this.invalidateCache();
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating review:', error);
+        __DEV__ && console.error('Error updating review:', error);
       }
       throw error;
     }
@@ -358,7 +359,7 @@ export class ReviewService {
       await this.invalidateCache();
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting review:', error);
+        __DEV__ && console.error('Error deleting review:', error);
       }
       throw error;
     }
@@ -399,7 +400,7 @@ export class ReviewService {
       await this.invalidateCache();
     } catch (error) {
       if (__DEV__) {
-        console.error('Error toggling like:', error);
+        __DEV__ && console.error('Error toggling like:', error);
       }
       throw error;
     }
@@ -428,7 +429,7 @@ export class ReviewService {
       return commentRef.id;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error adding comment:', error);
+        __DEV__ && console.error('Error adding comment:', error);
       }
       throw error;
     }
@@ -450,7 +451,7 @@ export class ReviewService {
       })) as Comment[];
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting comments:', error);
+        __DEV__ && console.error('Error getting comments:', error);
       }
       
       // Fallback for missing index
@@ -495,7 +496,7 @@ export class ReviewService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting comment:', error);
+        __DEV__ && console.error('Error deleting comment:', error);
       }
       throw error;
     }
@@ -528,7 +529,7 @@ export class ReviewService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error reporting review:', error);
+        __DEV__ && console.error('Error reporting review:', error);
       }
       throw error;
     }
@@ -570,7 +571,7 @@ export class ReviewService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error searching reviews:', error);
+        __DEV__ && console.error('Error searching reviews:', error);
       }
       return [];
     }
@@ -593,7 +594,7 @@ export class ReviewService {
       callback(reviews);
     }, (error) => {
       if (__DEV__) {
-        console.error('Error listening to reviews:', error);
+        __DEV__ && console.error('Error listening to reviews:', error);
       }
       callback([]);
     });
@@ -611,7 +612,7 @@ export class ReviewService {
       }));
     } catch (error) {
       if (__DEV__) {
-        console.error('Error saving draft:', error);
+        __DEV__ && console.error('Error saving draft:', error);
       }
     }
   }
@@ -623,7 +624,7 @@ export class ReviewService {
       return draft ? JSON.parse(draft) : null;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting draft:', error);
+        __DEV__ && console.error('Error getting draft:', error);
       }
       return null;
     }
@@ -635,7 +636,7 @@ export class ReviewService {
       await AsyncStorage.removeItem(this.DRAFT_KEY);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error clearing draft:', error);
+        __DEV__ && console.error('Error clearing draft:', error);
       }
     }
   }
@@ -683,7 +684,7 @@ export class ReviewService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating user stats:', error);
+        __DEV__ && console.error('Error updating user stats:', error);
       }
     }
   }
@@ -705,7 +706,7 @@ export class ReviewService {
       }));
     } catch (error) {
       if (__DEV__) {
-        console.error('Error caching data:', error);
+        __DEV__ && console.error('Error caching data:', error);
       }
     }
   }
@@ -726,7 +727,7 @@ export class ReviewService {
       return data;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting cached data:', error);
+        __DEV__ && console.error('Error getting cached data:', error);
       }
       return null;
     }
@@ -742,7 +743,7 @@ export class ReviewService {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error invalidating cache:', error);
+        __DEV__ && console.error('Error invalidating cache:', error);
       }
     }
   }

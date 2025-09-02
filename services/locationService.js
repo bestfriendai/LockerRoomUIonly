@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import logger from '../utils/logger';
 // Mock Geolocation for development (replace with react-native-geolocation-service in production)
 const mockGeolocation = {
   getCurrentPosition: (success, error, options) => {
@@ -41,7 +42,7 @@ export class LocationService {
       // For development, always return true
       // In production, implement proper permission handling
       if (__DEV__) {
-        console.log('Requesting location permission...');
+        __DEV__ && console.log('Requesting location permission...');
       }
       
       // Mock permission request
@@ -57,7 +58,7 @@ export class LocationService {
       return granted;
     } catch (error) {
       if (__DEV__) {
-        console.error('Location permission error:', error);
+        __DEV__ && console.error('Location permission error:', error);
       }
       return false;
     }
@@ -70,7 +71,7 @@ export class LocationService {
   static async getCurrentLocation() {
     return new Promise((resolve, reject) => {
       if (__DEV__) {
-        console.log('Getting current location...');
+        __DEV__ && console.log('Getting current location...');
       }
       
       Geolocation.getCurrentPosition(
@@ -82,13 +83,13 @@ export class LocationService {
             timestamp: position.timestamp,
           };
           if (__DEV__) {
-            console.log('Current location obtained:', location);
+            __DEV__ && console.log('Current location obtained:', location);
           }
           resolve(location);
         },
         (error) => {
           if (__DEV__) {
-            console.error('Geolocation error:', error);
+            __DEV__ && console.error('Geolocation error:', error);
           }
           reject(error);
         },
@@ -110,7 +111,7 @@ export class LocationService {
   static async reverseGeocode(latitude, longitude) {
     try {
       if (__DEV__) {
-        console.log(`Reverse geocoding: ${latitude}, ${longitude}`);
+        __DEV__ && console.log(`Reverse geocoding: ${latitude}, ${longitude}`);
       }
       
       // For development, use a mock geocoding service
@@ -152,7 +153,7 @@ export class LocationService {
       };
     } catch (error) {
       if (__DEV__) {
-        console.error('Reverse geocoding error:', error);
+        __DEV__ && console.error('Reverse geocoding error:', error);
       }
       return null;
     }
@@ -166,7 +167,7 @@ export class LocationService {
   static async searchLocations(query) {
     try {
       if (__DEV__) {
-        console.log(`Searching locations for: ${query}`);
+        __DEV__ && console.log(`Searching locations for: ${query}`);
       }
       
       if (!query || query.length < 2) {
@@ -243,7 +244,7 @@ export class LocationService {
       return filtered.slice(0, 10); // Return max 10 results
     } catch (error) {
       if (__DEV__) {
-        console.error('Location search error:', error);
+        __DEV__ && console.error('Location search error:', error);
       }
       return [];
     }
@@ -256,7 +257,7 @@ export class LocationService {
   static async saveSelectedLocation(location) {
     try {
       if (__DEV__) {
-        console.log('Saving selected location:', location);
+        __DEV__ && console.log('Saving selected location:', location);
       }
       await AsyncStorage.setItem(
         this.STORAGE_KEYS.SELECTED_LOCATION, 
@@ -270,7 +271,7 @@ export class LocationService {
       await this.addToLocationHistory(location);
     } catch (error) {
       if (__DEV__) {
-        console.error('Save location error:', error);
+        __DEV__ && console.error('Save location error:', error);
       }
     }
   }
@@ -285,14 +286,14 @@ export class LocationService {
       if (locationData) {
         const location = JSON.parse(locationData);
         if (__DEV__) {
-          console.log('Retrieved saved location:', location);
+          __DEV__ && console.log('Retrieved saved location:', location);
         }
         return location;
       }
       return null;
     } catch (error) {
       if (__DEV__) {
-        console.error('Get location error:', error);
+        __DEV__ && console.error('Get location error:', error);
       }
       return null;
     }
@@ -322,7 +323,7 @@ export class LocationService {
       await AsyncStorage.setItem(this.STORAGE_KEYS.LOCATION_HISTORY, JSON.stringify(history));
     } catch (error) {
       if (__DEV__) {
-        console.error('Add to history error:', error);
+        __DEV__ && console.error('Add to history error:', error);
       }
     }
   }
@@ -337,7 +338,7 @@ export class LocationService {
       return historyData ? JSON.parse(historyData) : [];
     } catch (error) {
       if (__DEV__) {
-        console.error('Get history error:', error);
+        __DEV__ && console.error('Get history error:', error);
       }
       return [];
     }
@@ -351,7 +352,7 @@ export class LocationService {
       await AsyncStorage.removeItem(this.STORAGE_KEYS.LOCATION_HISTORY);
     } catch (error) {
       if (__DEV__) {
-        console.error('Clear history error:', error);
+        __DEV__ && console.error('Clear history error:', error);
       }
     }
   }

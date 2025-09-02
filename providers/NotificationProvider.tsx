@@ -5,6 +5,7 @@ import { useAuth } from './AuthProvider';
 import { Notification } from '../types';
 import { subscribeToFirestore, ConnectionState, onFirestoreConnectionStateChange } from '../utils/firestoreConnectionManager';
 import { notificationService } from '../services/notificationService';
+import logger from '../utils/logger';
 
 interface NotificationContextType {
   // Notifications
@@ -126,7 +127,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       },
       (error: FirestoreError) => {
         if (__DEV__) {
-          console.error('Error listening to notifications:', error);
+          __DEV__ && console.error('Error listening to notifications:', error);
         }
         // Don't clear notifications on error, keep existing data
         if (mountedRef.current) {
@@ -145,7 +146,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('Error loading notification settings:', error);
+          __DEV__ && console.error('Error loading notification settings:', error);
         }
       }
     };
@@ -164,7 +165,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       await notificationService.markAsRead(notificationId);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking notification as read:', error);
+        __DEV__ && console.error('Error marking notification as read:', error);
       }
       throw error;
     }
@@ -180,7 +181,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       );
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking all notifications as read:', error);
+        __DEV__ && console.error('Error marking all notifications as read:', error);
       }
       throw error;
     }
@@ -191,7 +192,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       await notificationService.deleteNotification(notificationId);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting notification:', error);
+        __DEV__ && console.error('Error deleting notification:', error);
       }
       throw error;
     }
@@ -208,7 +209,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating notification settings:', error);
+        __DEV__ && console.error('Error updating notification settings:', error);
       }
       throw error;
     }
@@ -223,7 +224,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       // In a real implementation, you would also clear from Firestore
     } catch (error) {
       if (__DEV__) {
-        console.error('Error clearing notifications:', error);
+        __DEV__ && console.error('Error clearing notifications:', error);
       }
       throw error;
     }
@@ -232,7 +233,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const reconnect = () => {
     // The connection manager will handle reconnection automatically
     if (__DEV__) {
-      console.log('Reconnecting notifications...');
+      __DEV__ && console.log('Reconnecting notifications...');
     }
   };
 
@@ -251,7 +252,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     addNotification: async (notification: unknown) => {
       // Placeholder implementation
       if (__DEV__) {
-        console.log('Adding notification:', notification);
+        __DEV__ && console.log('Adding notification:', notification);
       }
     }
   };

@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -208,7 +209,7 @@ export default function PrivacyScreen() {
       );
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating privacy settings:', error);
+        __DEV__ && console.error('Error updating privacy settings:', error);
       }
       Alert.alert('Error', 'Failed to update privacy settings. Please try again.');
     } finally {

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -109,7 +110,7 @@ export default function SearchScreen() {
         setUsers(usersData);
       } catch (error) {
         if (__DEV__) {
-          console.error('Error loading search data:', error);
+          __DEV__ && console.error('Error loading search data:', error);
         }
         setReviews([]);
         setUsers([]);

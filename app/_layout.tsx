@@ -1,5 +1,6 @@
 // Import TypeScript helpers first to prevent '__extends' undefined errors
 import 'tslib';
+import logger from '../utils/logger';
 
 import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
@@ -15,6 +16,7 @@ import { ChatProvider } from '../providers/ChatProvider';
 import { NotificationProvider } from '../providers/NotificationProvider';
 import AuthGuard from '../components/AuthGuard';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { initializeFirebaseAppCheck } from '../utils/appCheck';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,6 +25,13 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     // Add custom fonts here if needed
   });
+
+  useEffect(() => {
+    // Initialize Firebase App Check for security
+    initializeFirebaseAppCheck().catch(error => {
+      __DEV__ && console.warn('App Check initialization failed:', error);
+    });
+  }, []);
 
   useEffect(() => {
     if (loaded) {

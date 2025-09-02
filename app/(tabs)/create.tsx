@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -134,7 +135,7 @@ export default function CreateReviewScreen() {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting location:', error);
+        __DEV__ && console.error('Error getting location:', error);
       }
       Alert.alert('Error', 'Failed to get your current location.');
     }

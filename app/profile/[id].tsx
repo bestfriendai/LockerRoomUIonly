@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
+import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -206,7 +207,7 @@ export default function UserProfileScreen() {
         setReceivedReviews(aboutReviews);
       } catch (err) {
         if (__DEV__) {
-          console.error('Error loading user data:', err);
+          __DEV__ && console.error('Error loading user data:', err);
         }
         setError("Failed to load profile. The user may not exist.");
       } finally {
@@ -290,7 +291,7 @@ export default function UserProfileScreen() {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error refreshing user data:', error);
+        __DEV__ && console.error('Error refreshing user data:', error);
       }
     } finally {
       setRefreshing(false);
@@ -315,14 +316,14 @@ export default function UserProfileScreen() {
     setIsFollowing(!isFollowing);
     // Simulate API call
     if (__DEV__) {
-      console.log(isFollowing ? 'Unfollowed' : 'Followed', user?.username);
+      __DEV__ && console.log(isFollowing ? 'Unfollowed' : 'Followed', user?.username);
     }
   }, [isFollowing, user]);
 
   const handleShare = useCallback(() => {
     // Implement share functionality
     if (__DEV__) {
-      console.log('Share profile', user?.username);
+      __DEV__ && console.log('Share profile', user?.username);
     }
   }, [user]);
 
@@ -331,10 +332,10 @@ export default function UserProfileScreen() {
       'Report User',
       'Why are you reporting this user?',
       [
-        { text: 'Inappropriate content', onPress: () => console.log('Report: Inappropriate content') },
-        { text: 'Spam or fake account', onPress: () => console.log('Report: Spam') },
-        { text: 'Harassment', onPress: () => console.log('Report: Harassment') },
-        { text: 'Other', onPress: () => console.log('Report: Other') },
+        { text: 'Inappropriate content', onPress: () => __DEV__ && console.log('Report: Inappropriate content') },
+        { text: 'Spam or fake account', onPress: () => __DEV__ && console.log('Report: Spam') },
+        { text: 'Harassment', onPress: () => __DEV__ && console.log('Report: Harassment') },
+        { text: 'Other', onPress: () => __DEV__ && console.log('Report: Other') },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
