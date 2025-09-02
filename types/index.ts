@@ -101,21 +101,23 @@ export interface Review {
   _id?: string; // For compatibility with existing code
   authorId: string;
   reviewerId?: string; // Alternative property name
-  targetUserId: string;
+  targetUserId?: string;
+  targetName?: string; // Person being reviewed
   reviewedUserId?: string; // Alternative property name
-  userId: string; // Made required since it's used extensively in mockData
+  userId?: string; // Made required since it's used extensively in mockData
   rating: number;
   content: string;
   comment?: string; // Alternative property name
   title?: string;
-  createdAt: Timestamp | Date | number; // Firestore Timestamp
-  updatedAt: Timestamp | Date | number; // Firestore Timestamp
+  createdAt?: Timestamp | Date | number; // Firestore Timestamp
+  updatedAt?: Timestamp | Date | number; // Firestore Timestamp
   timestamp?: Timestamp | Date | number; // Alternative timestamp property
   _creationTime?: Timestamp | Date | number; // Another alternative timestamp property
-  likes: number;
+  likes?: number;
+  dislikes?: number;
   helpfulCount?: number; // Alternative property name
   likedBy?: string[];
-  comments: string[]; // Array of comment IDs
+  comments?: string[] | Comment[]; // Array of comment IDs or Comment objects
   isAnonymous?: boolean;
   category?: string;
   categories?: string[]; // Alternative property name
@@ -123,14 +125,26 @@ export interface Review {
   images?: string[]; // Alternative property name
   platform?: string;
   location?: string;
+  locationData?: any;
+  coordinates?: { latitude: number; longitude: number };
   tags?: string[];
   author?: {
     username: string;
     isVerified: boolean;
   };
-  // Additional properties used in mockData
+  // Additional properties
   personName?: string;
   photos?: string[];
+  reports?: number;
+  views?: number;
+  engagement?: number;
+  trending?: boolean;
+  deleted?: boolean;
+  flagged?: boolean;
+  searchKeywords?: string[];
+  deletedAt?: Timestamp | Date | number;
+  lastReportedAt?: Timestamp | Date | number;
+  verified?: boolean;
 }
 
 export interface Comment {
@@ -199,6 +213,33 @@ export interface NotificationContextType {
 // Export Message type alias for compatibility
 export type Message = ChatMessage;
 
+// Review Filter interface for search and filtering
+export interface ReviewFilter {
+  category?: string | null;
+  rating?: number | null;
+  platform?: string | null;
+  location?: string | null;
+  authorId?: string | null;
+  verified?: boolean | null;
+  sortBy?: 'createdAt' | 'rating' | 'likes' | 'views' | 'engagement';
+  sortDirection?: 'asc' | 'desc';
+}
+
+// Review Draft interface for saved drafts
+export interface ReviewDraft {
+  targetName?: string;
+  categories?: string[];
+  title?: string;
+  content?: string;
+  rating?: number;
+  platform?: string;
+  location?: any;
+  media?: any[];
+  isAnonymous?: boolean;
+  tags?: string[];
+  savedAt?: string;
+}
+
 // Connection state interface for network status
 export interface ConnectionState {
   isConnected: boolean;
@@ -208,3 +249,9 @@ export interface ConnectionState {
   lastPing?: number;
   error?: string | null;
 }
+
+// Firebase Timestamp type for consistency
+export type FirebaseTimestamp = Timestamp | Date | number;
+
+// Document Snapshot type
+export type DocumentSnapshot = any;
