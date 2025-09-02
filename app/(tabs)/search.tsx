@@ -1,12 +1,12 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import {
-import logger from '../../utils/logger';
   View,
   Text,
   StyleSheet,
   Pressable,
   TextInput
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";

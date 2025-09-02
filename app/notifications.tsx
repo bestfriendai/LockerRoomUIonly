@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
 import {
-import logger from '../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -8,6 +7,7 @@ import logger from '../utils/logger';
   ScrollView,
   RefreshControl
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";

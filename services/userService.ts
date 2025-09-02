@@ -1,5 +1,4 @@
 import {
-import logger from '../utils/logger';
   collection,
   doc,
   getDoc,
@@ -15,6 +14,7 @@ import logger from '../utils/logger';
   deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
+import logger from '../utils/logger';
 import { onAuthStateChanged } from 'firebase/auth';
 import { getFirebaseDb, getFirebaseAuth } from '../utils/firebase';
 import { User } from '../types';

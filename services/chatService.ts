@@ -1,5 +1,4 @@
 import { 
-import logger from '../utils/logger';
   collection, 
   doc, 
   getDoc, 
@@ -16,6 +15,7 @@ import logger from '../utils/logger';
   addDoc,
   and
 } from 'firebase/firestore';
+import logger from '../utils/logger';
 import { db } from '../utils/firebase';
 import { ChatRoom, ChatMessage } from '../types';
 

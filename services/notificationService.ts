@@ -1,7 +1,7 @@
 import {
-import logger from '../utils/logger';
   View
 } from 'react-native';
+import logger from '../utils/logger';
 import { 
   collection, 
   doc, 

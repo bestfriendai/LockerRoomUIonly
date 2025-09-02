@@ -1,7 +1,6 @@
 import { useRouter } from "expo-router";
 import React, { useState, useRef, useEffect } from "react";
 import {
-import logger from '../../utils/logger';
   View,
   StyleSheet,
   TouchableOpacity,
@@ -14,6 +13,7 @@ import logger from '../../utils/logger';
   Alert,
   Text
 } from 'react-native';
+import logger from '../../utils/logger';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Check } from "lucide-react-native";
 import * as Sentry from "sentry-expo";

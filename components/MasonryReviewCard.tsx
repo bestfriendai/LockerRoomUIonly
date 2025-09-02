@@ -1,6 +1,5 @@
 import React from "react";
 import {
-import logger from '../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -8,6 +7,7 @@ import logger from '../utils/logger';
   Alert,
   Share
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Image } from "expo-image";
 import { Star, ThumbsUp, MessageCircle, Share2 } from "lucide-react-native";

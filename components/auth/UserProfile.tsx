@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-import logger from '../../utils/logger';
   View,
   Text as RNText,
   StyleSheet,
@@ -8,6 +7,7 @@ import logger from '../../utils/logger';
   Pressable,
   Alert
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { useRouter } from 'expo-router';
 import { LogOut, Settings, User, MapPin } from 'lucide-react-native';

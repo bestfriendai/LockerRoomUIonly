@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
-import logger from '../utils/logger';
   View,
   StyleSheet,
   Text
 } from 'react-native';
+import logger from '../utils/logger';
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "../providers/AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";

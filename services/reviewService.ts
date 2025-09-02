@@ -1,5 +1,4 @@
 import {
-import logger from '../utils/logger';
   collection,
   doc,
   addDoc,
@@ -23,6 +22,7 @@ import logger from '../utils/logger';
   arrayRemove,
   Timestamp
 } from 'firebase/firestore';
+import logger from '../utils/logger';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { db } from '../utils/firebase';

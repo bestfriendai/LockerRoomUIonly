@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-import logger from '../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -16,6 +15,7 @@ import logger from '../utils/logger';
   TextInput,
   Modal
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';

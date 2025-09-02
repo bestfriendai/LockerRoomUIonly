@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-import logger from '../utils/logger';
   View,
   Text,
   StyleSheet,
@@ -8,6 +7,7 @@ import logger from '../utils/logger';
   Share,
   ViewStyle
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Image } from "expo-image";
 import { MessageCircle, ThumbsUp, MapPin, Clock, Share2 } from "lucide-react-native";
