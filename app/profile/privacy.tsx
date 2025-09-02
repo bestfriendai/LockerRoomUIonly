@@ -7,6 +7,7 @@ import {
   Alert,
   Switch
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -208,7 +209,7 @@ export default function PrivacyScreen() {
       );
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating privacy settings:', error);
+        __DEV__ && console.error('Error updating privacy settings:', error);
       }
       Alert.alert('Error', 'Failed to update privacy settings. Please try again.');
     } finally {

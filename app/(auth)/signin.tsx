@@ -10,6 +10,7 @@ import {
   Pressable,
   Text,
 } from 'react-native';
+import logger from '../../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail, Lock } from 'lucide-react-native';
 import { useTheme } from '../../providers/ThemeProvider';
@@ -94,7 +95,7 @@ export default function SignInScreen() {
       // Don't manually navigate - let the AuthProvider and index.tsx handle navigation
       // This prevents race conditions and navigation conflicts
       if (__DEV__) {
-        console.log('Sign in successful, waiting for auth state change...');
+        __DEV__ && console.log('Sign in successful, waiting for auth state change...');
       }
       // Navigation will happen automatically via auth state change
     } catch (err: unknown) {

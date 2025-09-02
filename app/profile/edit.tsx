@@ -8,6 +8,7 @@ import {
   Platform,
   KeyboardAvoidingView
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -175,7 +176,7 @@ export default function EditProfileScreen() {
       );
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating profile:', error);
+        __DEV__ && console.error('Error updating profile:', error);
       }
       Alert.alert('Error', 'Failed to update profile. Please try again.');
     } finally {

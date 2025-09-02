@@ -15,6 +15,7 @@ import {
   TextInput,
   Modal
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
@@ -96,7 +97,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           setSearchResults(results);
         } catch (error) {
           if (__DEV__) {
-            console.error('Search error:', error);
+            __DEV__ && console.error('Search error:', error);
           }
           setSearchResults([]);
         } finally {
@@ -120,7 +121,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       setLocationHistory(history);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error loading location history:', error);
+        __DEV__ && console.error('Error loading location history:', error);
       }
     }
   };
@@ -162,7 +163,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Current location error:', error);
+        __DEV__ && console.error('Current location error:', error);
       }
       Alert.alert('Error', 'Unable to get current location. Please try again.');
     } finally {
@@ -184,7 +185,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       setSearchResults([]);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error selecting location:', error);
+        __DEV__ && console.error('Error selecting location:', error);
       }
     }
   };

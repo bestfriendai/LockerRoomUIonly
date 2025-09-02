@@ -15,6 +15,7 @@ import {
   addDoc,
   and
 } from 'firebase/firestore';
+import logger from '../utils/logger';
 import { db } from '../utils/firebase';
 import { ChatRoom, ChatMessage } from '../types';
 
@@ -51,7 +52,7 @@ export class ChatService {
       return roomId;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error creating/getting chat room:', error);
+        __DEV__ && console.error('Error creating/getting chat room:', error);
       }
       throw error;
     }
@@ -69,7 +70,7 @@ export class ChatService {
       return null;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting chat room:', error);
+        __DEV__ && console.error('Error getting chat room:', error);
       }
       throw error;
     }
@@ -91,7 +92,7 @@ export class ChatService {
       })) as ChatRoom[];
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting user chat rooms:', error);
+        __DEV__ && console.error('Error getting user chat rooms:', error);
       }
       throw error;
     }
@@ -138,7 +139,7 @@ export class ChatService {
       return messageRef.id;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error sending message:', error);
+        __DEV__ && console.error('Error sending message:', error);
       }
       throw error;
     }
@@ -164,7 +165,7 @@ export class ChatService {
       return messages.reverse();
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting messages:', error);
+        __DEV__ && console.error('Error getting messages:', error);
       }
       throw error;
     }
@@ -199,7 +200,7 @@ export class ChatService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking messages as read:', error);
+        __DEV__ && console.error('Error marking messages as read:', error);
       }
       throw error;
     }
@@ -212,7 +213,7 @@ export class ChatService {
       await deleteDoc(messageRef);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting message:', error);
+        __DEV__ && console.error('Error deleting message:', error);
       }
       throw error;
     }
@@ -234,7 +235,7 @@ export class ChatService {
       callback(messages);
     }, (error) => {
       if (__DEV__) {
-        console.error('Error listening to messages:', error);
+        __DEV__ && console.error('Error listening to messages:', error);
       }
       callback([]);
     });
@@ -256,7 +257,7 @@ export class ChatService {
       callback(chatRooms);
     }, (error) => {
       if (__DEV__) {
-        console.error('Error listening to chat rooms:', error);
+        __DEV__ && console.error('Error listening to chat rooms:', error);
       }
       callback([]);
     });
@@ -271,7 +272,7 @@ export class ChatService {
       }, 0);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting unread message count:', error);
+        __DEV__ && console.error('Error getting unread message count:', error);
       }
       return 0;
     }
@@ -301,7 +302,7 @@ export class ChatService {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error toggling block user:', error);
+        __DEV__ && console.error('Error toggling block user:', error);
       }
       throw error;
     }

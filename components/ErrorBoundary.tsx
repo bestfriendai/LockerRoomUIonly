@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
 import * as Sentry from 'sentry-expo';
+import logger from '../utils/logger';
 
 interface Props {
   children: React.ReactNode;
@@ -51,7 +52,7 @@ class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     if (__DEV__) {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      __DEV__ && console.error('ErrorBoundary caught an error:', error, errorInfo);
     }
 
     // Send error to Sentry with additional context
@@ -65,7 +66,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       });
       Sentry.Native.captureException(error);
     } catch (sentryError) {
-      console.warn('Failed to send error to Sentry:', sentryError);
+      __DEV__ && console.warn('Failed to send error to Sentry:', sentryError);
     }
 
     // Trigger haptic feedback

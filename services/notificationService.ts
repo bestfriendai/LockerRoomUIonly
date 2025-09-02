@@ -1,6 +1,7 @@
 import {
   View
 } from 'react-native';
+import logger from '../utils/logger';
 import { 
   collection, 
   doc, 
@@ -70,7 +71,7 @@ export class NotificationService {
       return notificationRef.id;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error creating notification:', error);
+        __DEV__ && console.error('Error creating notification:', error);
       }
       throw error;
     }
@@ -93,7 +94,7 @@ export class NotificationService {
       })) as Notification[];
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting user notifications:', error);
+        __DEV__ && console.error('Error getting user notifications:', error);
       }
       throw error;
     }
@@ -114,7 +115,7 @@ export class NotificationService {
       return querySnapshot.size;
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting unread notifications count:', error);
+        __DEV__ && console.error('Error getting unread notifications count:', error);
       }
       return 0;
     }
@@ -130,7 +131,7 @@ export class NotificationService {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking notification as read:', error);
+        __DEV__ && console.error('Error marking notification as read:', error);
       }
       throw error;
     }
@@ -158,7 +159,7 @@ export class NotificationService {
       await Promise.all(updatePromises);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking all notifications as read:', error);
+        __DEV__ && console.error('Error marking all notifications as read:', error);
       }
       throw error;
     }
@@ -171,7 +172,7 @@ export class NotificationService {
       await deleteDoc(notificationRef);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting notification:', error);
+        __DEV__ && console.error('Error deleting notification:', error);
       }
       throw error;
     }
@@ -191,7 +192,7 @@ export class NotificationService {
       await Promise.all(deletePromises);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error deleting all notifications:', error);
+        __DEV__ && console.error('Error deleting all notifications:', error);
       }
       throw error;
     }
@@ -214,7 +215,7 @@ export class NotificationService {
       callback(notifications);
     }, (error) => {
       if (__DEV__) {
-        console.error('Error listening to notifications:', error);
+        __DEV__ && console.error('Error listening to notifications:', error);
       }
       callback([]);
     });
@@ -244,7 +245,7 @@ export class NotificationService {
       };
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting notification settings:', error);
+        __DEV__ && console.error('Error getting notification settings:', error);
       }
       throw error;
     }
@@ -260,7 +261,7 @@ export class NotificationService {
       }, { merge: true });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating notification settings:', error);
+        __DEV__ && console.error('Error updating notification settings:', error);
       }
       throw error;
     }

@@ -7,6 +7,7 @@ import {
   Alert,
   Share
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Image } from "expo-image";
 import { Star, ThumbsUp, MessageCircle, Share2 } from "lucide-react-native";
@@ -34,7 +35,7 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
   // Safety check for review data
   if (!review) {
     if (__DEV__) {
-      console.warn('MasonryReviewCard received undefined review');
+      __DEV__ && console.warn('MasonryReviewCard received undefined review');
     }
     return null;
   }
@@ -55,7 +56,7 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
       await new Promise(resolve => setTimeout(resolve, 300));
     } catch (error: any) {
       if (__DEV__) {
-        console.error('Error liking review:', error);
+        __DEV__ && console.error('Error liking review:', error);
       }
       // Revert optimistic update on error
       setLiked(!liked);
@@ -81,7 +82,7 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
       await Share.share(shareContent);
     } catch (error: any) {
       if (__DEV__) {
-        console.error('Error sharing review:', error);
+        __DEV__ && console.error('Error sharing review:', error);
       }
       Alert.alert('Error', 'Failed to share. Please try again.');
     } finally {

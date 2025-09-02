@@ -5,6 +5,7 @@ import { useAuth } from './AuthProvider';
 import { ChatRoom, Message } from '../types';
 import { chatService } from '../services/chatService';
 import { subscribeToFirestore, ConnectionState, onFirestoreConnectionStateChange } from '../utils/firestoreConnectionManager';
+import logger from '../utils/logger';
 
 interface ChatContextType {
   // Chat rooms
@@ -112,7 +113,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       },
       (error: FirestoreError) => {
         if (__DEV__) {
-          console.error('Error listening to chat rooms:', error);
+          __DEV__ && console.error('Error listening to chat rooms:', error);
         }
         // Don't clear chat rooms on error, keep existing data
         if (mountedRef.current) {
@@ -167,7 +168,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       },
       (error: FirestoreError) => {
         if (__DEV__) {
-          console.error('Error listening to messages:', error);
+          __DEV__ && console.error('Error listening to messages:', error);
         }
         // Don't clear messages on error, keep existing data
       },
@@ -187,7 +188,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       await chatService.sendMessage(activeChatRoom.id, user.id, content, type);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error sending message:', error);
+        __DEV__ && console.error('Error sending message:', error);
       }
       throw error;
     }
@@ -200,7 +201,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       await chatService.markMessagesAsRead(chatRoomId, user.id);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error marking messages as read:', error);
+        __DEV__ && console.error('Error marking messages as read:', error);
       }
       throw error;
     }
@@ -209,7 +210,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
   const reconnect = () => {
     // The connection manager will handle reconnection automatically
     if (__DEV__) {
-      console.log('Reconnecting chat...');
+      __DEV__ && console.log('Reconnecting chat...');
     }
   };
 

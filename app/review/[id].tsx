@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Image
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -68,7 +69,7 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
         setCommenter(user);
       } catch (error) {
         if (__DEV__) {
-          console.error('Error fetching commenter:', error);
+          __DEV__ && console.error('Error fetching commenter:', error);
         }
       }
     };
@@ -187,7 +188,7 @@ export default function ReviewDetailScreen() {
               setReviewer(reviewerData);
             } catch (reviewerError) {
               if (__DEV__) {
-                console.warn('Could not fetch reviewer data:', reviewerError);
+                __DEV__ && console.warn('Could not fetch reviewer data:', reviewerError);
               }
               // Continue without reviewer data
             }
@@ -200,7 +201,7 @@ export default function ReviewDetailScreen() {
               setReviewee(revieweeData);
             } catch (revieweeError) {
               if (__DEV__) {
-                console.warn('Could not fetch reviewee data:', revieweeError);
+                __DEV__ && console.warn('Could not fetch reviewee data:', revieweeError);
               }
               // Continue without reviewee data
             }
@@ -212,24 +213,24 @@ export default function ReviewDetailScreen() {
             setComments(commentsData || []);
           } catch (commentsError) {
             if (__DEV__) {
-              console.warn('Could not fetch comments:', commentsError);
+              __DEV__ && console.warn('Could not fetch comments:', commentsError);
             }
             setComments([]); // Set empty array as fallback
           }
         }
       } catch (error) {
         if (__DEV__) {
-          console.error('Error fetching review data:', error);
+          __DEV__ && console.error('Error fetching review data:', error);
         }
         // Show user-friendly error message
         if (error instanceof Error) {
           if ((error as any)?.message.includes('network') || (error as any)?.message.includes('fetch')) {
             if (__DEV__) {
-              console.log('Network error detected, please check your connection');
+              __DEV__ && console.log('Network error detected, please check your connection');
             }
           } else if ((error as any)?.message.includes('index')) {
             if (__DEV__) {
-              console.log('Database index issue, some features may be limited');
+              __DEV__ && console.log('Database index issue, some features may be limited');
             }
           }
         }
@@ -264,7 +265,7 @@ export default function ReviewDetailScreen() {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error refreshing review:', error);
+        __DEV__ && console.error('Error refreshing review:', error);
       }
     } finally {
       setRefreshing(false);
@@ -280,7 +281,7 @@ export default function ReviewDetailScreen() {
       setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error toggling like:', error);
+        __DEV__ && console.error('Error toggling like:', error);
       }
     }
   }, [review, currentUser?.id, isLiked]);
@@ -295,7 +296,7 @@ export default function ReviewDetailScreen() {
       });
     } catch (error) {
       if (__DEV__) {
-        console.error('Error sharing:', error);
+        __DEV__ && console.error('Error sharing:', error);
       }
     }
   }, [review]);
@@ -305,11 +306,11 @@ export default function ReviewDetailScreen() {
       'Report Review',
       'Why are you reporting this review?',
       [
-        { text: 'Inappropriate content', onPress: () => console.log('Report: Inappropriate content') },
-        { text: 'Spam or fake review', onPress: () => console.log('Report: Spam') },
-        { text: 'Harassment', onPress: () => console.log('Report: Harassment') },
-        { text: 'False information', onPress: () => console.log('Report: False info') },
-        { text: 'Other', onPress: () => console.log('Report: Other') },
+        { text: 'Inappropriate content', onPress: () => __DEV__ && console.log('Report: Inappropriate content') },
+        { text: 'Spam or fake review', onPress: () => __DEV__ && console.log('Report: Spam') },
+        { text: 'Harassment', onPress: () => __DEV__ && console.log('Report: Harassment') },
+        { text: 'False information', onPress: () => __DEV__ && console.log('Report: False info') },
+        { text: 'Other', onPress: () => __DEV__ && console.log('Report: Other') },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
@@ -321,8 +322,8 @@ export default function ReviewDetailScreen() {
     const options = [
       { text: 'Share Review', onPress: handleShare },
       !isOwnReview && { text: 'Report Review', onPress: handleReport, style: 'destructive' },
-      isOwnReview && { text: 'Edit Review', onPress: () => console.log('Edit review') },
-      isOwnReview && { text: 'Delete Review', onPress: () => console.log('Delete review'), style: 'destructive' },
+      isOwnReview && { text: 'Edit Review', onPress: () => __DEV__ && console.log('Edit review') },
+      isOwnReview && { text: 'Delete Review', onPress: () => __DEV__ && console.log('Delete review'), style: 'destructive' },
       { text: 'Cancel', style: 'cancel' },
     ].filter(Boolean) as any[];
 
@@ -331,20 +332,20 @@ export default function ReviewDetailScreen() {
 
   const handleCommentLike = useCallback((commentId: string) => {
     if (__DEV__) {
-      console.log('Like comment:', commentId);
+      __DEV__ && console.log('Like comment:', commentId);
     }
   }, []);
 
   const handleCommentReply = useCallback((comment: Comment) => {
     setReplyingTo(comment);
     if (__DEV__) {
-      console.log('Reply to comment:', comment.id);
+      __DEV__ && console.log('Reply to comment:', comment.id);
     }
   }, []);
 
   const handleMediaPress = useCallback((uri: string, type: 'image' | 'video') => {
     if (__DEV__) {
-      console.log('Open media:', uri, type);
+      __DEV__ && console.log('Open media:', uri, type);
     }
     // Navigate to media viewer or open modal
   }, []);

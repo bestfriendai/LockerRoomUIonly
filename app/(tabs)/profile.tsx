@@ -14,6 +14,7 @@ import {
   Animated,
   RefreshControl
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -223,7 +224,7 @@ export default function ProfileScreen() {
 
     } catch (error) {
       if (__DEV__) {
-        console.error("Error fetching reviews:", error);
+        __DEV__ && console.error("Error fetching reviews:", error);
       }
     } finally {
       setRefreshing(false);
@@ -249,7 +250,7 @@ export default function ProfileScreen() {
       setIsEditingUsername(true);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error generating usernames:', error);
+        __DEV__ && console.error('Error generating usernames:', error);
       }
       Alert.alert('Error', 'Failed to generate username options. Please try again.');
     } finally {
@@ -264,7 +265,7 @@ export default function ProfileScreen() {
       Alert.alert('Success', 'Your anonymous identity has been updated!');
     } catch (error) {
       if (__DEV__) {
-        console.error('Error updating username:', error);
+        __DEV__ && console.error('Error updating username:', error);
       }
       Alert.alert('Error', 'Failed to update username. Please try again.');
     }
@@ -277,7 +278,7 @@ export default function ProfileScreen() {
       setUsernameOptions(newOptions);
     } catch (error) {
       if (__DEV__) {
-        console.error('Error regenerating usernames:', error);
+        __DEV__ && console.error('Error regenerating usernames:', error);
       }
     } finally {
       setIsGeneratingUsernames(false);
@@ -338,7 +339,7 @@ export default function ProfileScreen() {
 
   const handleShare = useCallback(() => {
     if (__DEV__) {
-      console.log('Share profile');
+      __DEV__ && console.log('Share profile');
     }
   }, []);
 

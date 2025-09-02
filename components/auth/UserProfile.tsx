@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { useRouter } from 'expo-router';
 import { LogOut, Settings, User, MapPin } from 'lucide-react-native';
@@ -37,7 +38,7 @@ export default function UserProfile() {
               router.replace('/(auth)');
             } catch (error) {
               if (__DEV__) {
-                console.error('Sign out error:', error);
+                __DEV__ && console.error('Sign out error:', error);
               }
             }
           },

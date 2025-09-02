@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text
 } from 'react-native';
+import logger from '../utils/logger';
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "../providers/AuthProvider";
 import { useTheme } from "../providers/ThemeProvider";
@@ -53,7 +54,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             level: 'info' as const
           });
         } catch (sentryError) {
-          console.warn('Sentry breadcrumb failed:', sentryError);
+          __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
         }
       }
 
@@ -68,7 +69,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             level: 'info' as const
           });
         } catch (sentryError) {
-          console.warn('Sentry breadcrumb failed:', sentryError);
+          __DEV__ && console.warn('Sentry breadcrumb failed:', sentryError);
         }
       }
 

@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -109,7 +110,7 @@ export default function SearchScreen() {
         setUsers(usersData);
       } catch (error) {
         if (__DEV__) {
-          console.error('Error loading search data:', error);
+          __DEV__ && console.error('Error loading search data:', error);
         }
         setReviews([]);
         setUsers([]);

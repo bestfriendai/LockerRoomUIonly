@@ -10,6 +10,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
 } from 'react-native';
+import logger from '../../utils/logger';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Camera, Image as ImageIcon, X, ChevronDown, Check, Flag } from "lucide-react-native";
@@ -134,7 +135,7 @@ export default function CreateReviewScreen() {
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('Error getting location:', error);
+        __DEV__ && console.error('Error getting location:', error);
       }
       Alert.alert('Error', 'Failed to get your current location.');
     }

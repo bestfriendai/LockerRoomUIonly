@@ -7,6 +7,7 @@ import {
   ScrollView,
   RefreshControl
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -52,7 +53,7 @@ function NotificationItem({ notification, onPress, onMarkAsRead, onDelete }: Not
     if (notification.userId) {
       getUserById(notification.userId)
         .then(userData => setUser(userData))
-        .catch(error => console.error('Error fetching user:', error));
+        .catch(error => __DEV__ && console.error('Error fetching user:', error));
     }
   }, [notification.userId]);
 

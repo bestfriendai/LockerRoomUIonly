@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -257,10 +258,10 @@ export default function ChatRoomScreen() {
       'Room Options',
       'Choose an action',
       [
-        { text: 'Room Info', onPress: () => console.log('Room info') },
-        { text: 'Members', onPress: () => console.log('View members') },
-        { text: 'Settings', onPress: () => console.log('Room settings') },
-        { text: 'Leave Room', onPress: () => console.log('Leave room'), style: 'destructive' },
+        { text: 'Room Info', onPress: () => __DEV__ && console.log('Room info') },
+        { text: 'Members', onPress: () => __DEV__ && console.log('View members') },
+        { text: 'Settings', onPress: () => __DEV__ && console.log('Room settings') },
+        { text: 'Leave Room', onPress: () => __DEV__ && console.log('Leave room'), style: 'destructive' },
         { text: 'Cancel', style: 'cancel' },
       ]
     );
@@ -277,7 +278,7 @@ export default function ChatRoomScreen() {
       await sendMessage(content);
     } catch (error) {
       if (__DEV__) {
-        console.error('Failed to send message:', error);
+        __DEV__ && console.error('Failed to send message:', error);
       }
       Alert.alert('Error', 'Failed to send message. Please try again.');
       setMessageText(content); // Restore message text on error
@@ -291,8 +292,8 @@ export default function ChatRoomScreen() {
       'Add Attachment',
       'Choose attachment type',
       [
-        { text: 'Camera', onPress: () => console.log('Open camera') },
-        { text: 'Photo Library', onPress: () => console.log('Open photo library') },
+        { text: 'Camera', onPress: () => __DEV__ && console.log('Open camera') },
+        { text: 'Photo Library', onPress: () => __DEV__ && console.log('Open photo library') },
         { text: 'Cancel', style: 'cancel' },
       ]
     );

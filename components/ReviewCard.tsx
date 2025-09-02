@@ -7,6 +7,7 @@ import {
   Share,
   ViewStyle
 } from 'react-native';
+import logger from '../utils/logger';
 
 import { Image } from "expo-image";
 import { MessageCircle, ThumbsUp, MapPin, Clock, Share2 } from "lucide-react-native";
@@ -57,7 +58,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
       
     } catch (error: any) {
       if (__DEV__) {
-        console.error('Error liking review:', error);
+        __DEV__ && console.error('Error liking review:', error);
       }
       Alert.alert('Error', 'Failed to update like. Please try again.');
     } finally {
@@ -82,7 +83,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
       
       if (result.action === Share.sharedAction) {
         if (__DEV__) {
-          console.log('Share tracked:', {
+          __DEV__ && console.log('Share tracked:', {
           reviewId: review.id,
           platform: result.activityType || 'native_share',
         });
@@ -90,7 +91,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
       }
     } catch (error: any) {
       if (__DEV__) {
-        console.error('Error sharing review:', error);
+        __DEV__ && console.error('Error sharing review:', error);
       }
       Alert.alert('Error', 'Failed to share. Please try again.');
     } finally {

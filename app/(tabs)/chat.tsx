@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Text,
 } from 'react-native';
+import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -210,21 +211,21 @@ export default function ChatScreen() {
       // Check if user is authenticated before making Firestore query
       if (!user?.id) {
         if (__DEV__) {
-          console.log("User not authenticated, skipping chat rooms fetch");
+          __DEV__ && console.log("User not authenticated, skipping chat rooms fetch");
         }
         setChatRooms([]);
         return;
       }
 
       if (__DEV__) {
-        console.log("Fetching chat rooms for user:", user.id);
+        __DEV__ && console.log("Fetching chat rooms for user:", user.id);
       }
 
       const roomsCollection = collection(db, "chatRooms");
       
       // First, try to get all public rooms to see if there's any data
       if (__DEV__) {
-        console.log("Querying for public rooms...");
+        __DEV__ && console.log("Querying for public rooms...");
       }
       
       const publicQuery = query(
@@ -235,12 +236,12 @@ export default function ChatScreen() {
       const publicSnapshot = await getDocs(publicQuery);
       
       if (__DEV__) {
-        console.log(`Found ${publicSnapshot.size} public rooms`);
+        __DEV__ && console.log(`Found ${publicSnapshot.size} public rooms`);
       }
       
       // Query for rooms where user is a participant
       if (__DEV__) {
-        console.log("Querying for participant rooms...");
+        __DEV__ && console.log("Querying for participant rooms...");
       }
       
       const participantQuery = query(
@@ -251,7 +252,7 @@ export default function ChatScreen() {
       const participantSnapshot = await getDocs(participantQuery);
       
       if (__DEV__) {
-        console.log(`Found ${participantSnapshot.size} participant rooms`);
+        __DEV__ && console.log(`Found ${participantSnapshot.size} participant rooms`);
       }
       
       // Combine results and remove duplicates
@@ -275,7 +276,7 @@ export default function ChatScreen() {
       });
       
       if (__DEV__) {
-        console.log(`Total rooms after deduplication: ${allRooms.length}`);
+        __DEV__ && console.log(`Total rooms after deduplication: ${allRooms.length}`);
       }
       
       setChatRooms(allRooms);
@@ -283,15 +284,15 @@ export default function ChatScreen() {
       // If no rooms found, let's create some test data
       if (allRooms.length === 0) {
         if (__DEV__) {
-          console.log("No chat rooms found. Consider creating test data.");
+          __DEV__ && console.log("No chat rooms found. Consider creating test data.");
         }
       }
       
     } catch (error) {
       if (__DEV__) {
-        console.error("Error fetching chat rooms: ", error);
+        __DEV__ && console.error("Error fetching chat rooms: ", error);
         const errorObj = error as any;
-        console.error("Error details:", {
+        __DEV__ && console.error("Error details:", {
           name: errorObj?.name,
           message: errorObj?.message,
           code: errorObj?.code,
@@ -362,12 +363,12 @@ export default function ChatScreen() {
       await fetchChatRooms();
       Alert.alert('Success', 'You have joined the room!');
     } catch (error) {
-      console.error('Error joining room:', error);
+      __DEV__ && console.error('Error joining room:', error);
       Alert.alert('Error', 'Failed to join room');
       
       // Log error details for debugging
       const errorObj = error as any;
-      console.log('Join room error details:', {
+      __DEV__ && console.log('Join room error details:', {
         roomId,
         userId: user?.id,
         name: errorObj?.name,
@@ -389,7 +390,7 @@ export default function ChatScreen() {
       Alert.alert('Success', 'You have left the room.');
     } catch (error) {
       if (__DEV__) {
-        console.error("Error leaving room: ", error);
+        __DEV__ && console.error("Error leaving room: ", error);
       }
       Alert.alert('Error', 'Could not leave the room. Please try again.');
     }
