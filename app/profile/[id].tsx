@@ -192,14 +192,14 @@ export default function UserProfileScreen() {
       setError(null);
       try {
         // Fetch user
-        let userData = await getUserById(id as string);
+        const userData = await getUserById(id as string);
         if (!userData) {
           throw new Error("User not found.");
         }
         setUser(userData);
           
         // Fetch reviews by user
-        let givenReviews = await ReviewService.getReviewsByUser(userData.id);
+        const givenReviews = await ReviewService.getReviewsByUser(userData.id);
         setUserReviews(givenReviews);
           
         // Fetch reviews about user

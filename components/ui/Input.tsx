@@ -145,12 +145,17 @@ export const Input = forwardRef<TextInput, InputProps>((
     ...getPadding(),
   };
 
-  const textInputStyles = {
+  const textInputStyles: TextStyle = {
     flex: 1,
     fontSize: tokens.fontSize.base,
     lineHeight: tokens.lineHeight.base,
     color: isDisabled ? colors.textDisabled : colors.text,
     paddingHorizontal: (leftIcon || rightIcon) ? SPACING.xs : 0,
+    // Improve text input experience
+    includeFontPadding: false,
+    textAlignVertical: multiline ? 'top' : 'center',
+    fontFamily: 'Inter',
+    fontWeight: tokens.fontWeight.normal as any,
   };
 
   return (

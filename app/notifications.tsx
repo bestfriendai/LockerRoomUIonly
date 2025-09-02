@@ -270,7 +270,7 @@ export default function NotificationsScreen() {
     return notifications.filter(n => filter === 'all' || !n.read);
   }, [notifications, filter]);
 
-  let unreadCount = useMemo(() => {
+  const unreadCount = useMemo(() => {
     return notifications.filter(n => !n.read).length;
   }, [notifications]);
 

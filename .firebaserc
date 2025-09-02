@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "locker-room-talk-app",
+    "development": "locker-room-talk-app",
+    "production": "locker-room-talk-app"
+  },
+  "targets": {},
+  "etags": {}
+}

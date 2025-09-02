@@ -404,7 +404,7 @@ async function runAppComponentTests() {
   console.log('='.repeat(70));
   
   const allResults = [];
-  let testUsers = [];
+  const testUsers = [];
   
   try {
     // Test AuthProvider flow

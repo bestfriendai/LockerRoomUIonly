@@ -55,8 +55,13 @@ service cloud.firestore {
     
     function isRateLimited(action) {
       let lastAction = get(/databases/$(database)/documents/rateLimits/$(request.auth.uid)/actions/$(action));
-      return !exists(lastAction.data) || 
-             request.time > lastAction.data.timestamp + duration.value(1, 'm');
+      let rateLimitDuration = action == 'createReview' ? duration.value(5, 'm') :
+                             action == 'sendMessage' ? duration.value(1, 's') :
+                             action == 'createComment' ? duration.value(30, 's') :
+                             action == 'createReport' ? duration.value(10, 'm') :
+                             duration.value(1, 'm');
+      return !exists(lastAction.data) ||
+             request.time > lastAction.data.timestamp + rateLimitDuration;
     }
     
     function hasNoSQLInjection(value) {
@@ -64,9 +69,26 @@ service cloud.firestore {
     }
     
     function hasProfanity(text) {
-      // List of inappropriate words to block (simplified for production)
+      // Enhanced profanity detection (simplified for production)
       // In production, consider using Firebase Extensions for content moderation
-      return text.matches('(?i).*(hate|violence|harassment|spam).*');
+      return text.matches('(?i).*(hate|violence|harassment|spam|abuse|threat|kill|die|suicide|drug|illegal|scam|fraud|phishing).*');
+    }
+
+    function hasValidContentLength(content, minLength, maxLength) {
+      return content is string &&
+             content.size() >= minLength &&
+             content.size() <= maxLength &&
+             content.trim().size() > 0; // Not just whitespace
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+             email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isValidPhoneNumber(phone) {
+      return phone is string &&
+             phone.matches('^\\+?[1-9]\\d{1,14}$'); // E.164 format
     }
     
     function isValidTimestamp(field) {
@@ -96,17 +118,41 @@ service cloud.firestore {
 
     // ====== User Profiles ======
     match /users/{userId} {
-      // Anyone authenticated can read basic profile info
+      // Anyone authenticated can read basic profile info (excluding sensitive fields)
       allow read: if isSignedIn();
 
-      // Users can only create their own profile
+      // Users can only create their own profile with validation
       allow create: if isOwner(userId) &&
-        request.resource.data.keys().hasAll(['email', 'createdAt']) &&
-        (request.resource.data.get('email', '') == '' ||
-         request.resource.data.email == request.auth.token.email);
+        isEmailVerified() &&
+        request.resource.data.keys().hasAll(['email', 'createdAt', 'anonymousUsername']) &&
+        request.resource.data.email == request.auth.token.email &&
+        isValidEmail(request.resource.data.email) &&
+        isValidString(request.resource.data.get('anonymousUsername', ''), 3, 30) &&
+        hasNoSQLInjection(request.resource.data.anonymousUsername) &&
+        !hasProfanity(request.resource.data.anonymousUsername) &&
+        isValidTimestamp('createdAt') &&
+        // Optional fields validation
+        (!request.resource.data.keys().hasAny(['displayName']) ||
+         isValidString(request.resource.data.displayName, 1, 50)) &&
+        (!request.resource.data.keys().hasAny(['bio']) ||
+         hasValidContentLength(request.resource.data.bio, 0, 500)) &&
+        (!request.resource.data.keys().hasAny(['phoneNumber']) ||
+         isValidPhoneNumber(request.resource.data.phoneNumber));
 
-      // Users can only update their own profile
-      allow update: if isOwner(userId);
+      // Users can only update their own profile with validation
+      allow update: if isOwner(userId) &&
+        // Cannot change immutable fields
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        // Validate updated fields
+        (!request.resource.data.keys().hasAny(['displayName']) ||
+         isValidString(request.resource.data.displayName, 1, 50)) &&
+        (!request.resource.data.keys().hasAny(['bio']) ||
+         hasValidContentLength(request.resource.data.bio, 0, 500)) &&
+        (!request.resource.data.keys().hasAny(['anonymousUsername']) ||
+         (isValidString(request.resource.data.anonymousUsername, 3, 30) &&
+          hasNoSQLInjection(request.resource.data.anonymousUsername) &&
+          !hasProfanity(request.resource.data.anonymousUsername)));
 
       // Soft delete only through cloud functions
       allow delete: if false;
@@ -118,25 +164,46 @@ service cloud.firestore {
     }
     
     // ====== Reviews (Dating Reviews) ======
-    // ====== Moderated Reviews ======
     match /reviews/{reviewId} {
-      // Public can read all reviews (temporarily relaxed for debugging)
-      allow read: if true;
+      // Public can read approved reviews, authors can read their own
+      allow read: if resource.data.get('moderationStatus', 'pending') == 'approved' ||
+                     (isSignedIn() && resource.data.authorId == request.auth.uid) ||
+                     canModerateContent();
 
-      // Authenticated users can create reviews (simplified validation)
+      // Authenticated, verified users can create reviews with comprehensive validation
       allow create: if isSignedIn() &&
-        request.resource.data.keys().hasAll(['authorId', 'content', 'rating', 'createdAt']) &&
+        isEmailVerified() &&
+        request.resource.data.keys().hasAll(['authorId', 'content', 'rating', 'createdAt', 'category', 'title']) &&
         request.resource.data.authorId == request.auth.uid &&
-        isValidString(request.resource.data.content, 10, 5000) &&
+        isValidString(request.resource.data.title, 5, 200) &&
+        hasNoSQLInjection(request.resource.data.title) &&
+        !hasProfanity(request.resource.data.title) &&
+        hasValidContentLength(request.resource.data.content, 50, 5000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        !hasProfanity(request.resource.data.content) &&
+        isValidString(request.resource.data.category, 1, 50) &&
         request.resource.data.rating is number &&
         request.resource.data.rating >= 1 &&
-        request.resource.data.rating <= 5;
+        request.resource.data.rating <= 5 &&
+        isValidTimestamp('createdAt') &&
+        // Set default moderation status
+        request.resource.data.get('moderationStatus', 'pending') == 'pending' &&
+        // Optional location validation
+        (!request.resource.data.keys().hasAny(['location']) ||
+         isValidString(request.resource.data.location, 2, 100)) &&
+        isRateLimited('createReview');
 
-      // Authors can update their own reviews, allow view count updates
+      // Authors can update their own reviews (limited fields), allow engagement updates
       allow update: if isSignedIn() &&
         ((resource.data.authorId == request.auth.uid &&
-          request.resource.data.authorId == resource.data.authorId) ||
-         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'dislikes'])));
+          request.resource.data.authorId == resource.data.authorId &&
+          // Cannot change immutable fields
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.rating == resource.data.rating &&
+          // Can only update specific fields
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'title', 'category', 'updatedAt'])) ||
+         // Allow engagement updates (views, likes, etc.)
+         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'dislikes', 'shares'])));
 
       // Authors can delete their own reviews, moderators can delete any
       allow delete: if isSignedIn() &&
@@ -300,6 +367,35 @@ service cloud.firestore {
       
       // No direct deletion
       allow delete: if false;
+    }
+
+    // ====== Security Audit Logs ======
+    match /auditLogs/{logId} {
+      // Only system functions can write audit logs
+      allow read: if canModerateContent();
+      allow write: if false; // Managed by Cloud Functions
+    }
+
+    // ====== Security Events ======
+    match /securityEvents/{eventId} {
+      // Only admins can read security events
+      allow read: if isAdmin();
+      allow write: if false; // Managed by Cloud Functions
+    }
+
+    // ====== User Sessions ======
+    match /userSessions/{sessionId} {
+      // Users can read their own sessions
+      allow read: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      // System manages sessions
+      allow write: if false;
+    }
+
+    // ====== Content Moderation Queue ======
+    match /moderationQueue/{itemId} {
+      // Only moderators can access moderation queue
+      allow read, write: if canModerateContent();
     }
 
     // ====== Deny All Other Access ======

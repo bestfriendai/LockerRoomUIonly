@@ -41,7 +41,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
   const { user } = useAuth();
   const typography = createTypographyStyles(colors);
 
-  let isOwner = room.createdBy === user?.id;
+  const isOwner = room.createdBy === user?.id;
   const memberCount = room.participants?.length || room.memberIds?.length || 0;
   const lastMessage = room.lastMessage;
   const isPrivate = room.type === 'private';
@@ -410,7 +410,7 @@ export default function ChatScreen() {
 
     const isJoined = item.participants?.includes(userId) || item.memberIds?.includes(userId) || false;
     const isOwner = item.createdBy === userId;
-    let isMember = isJoined || isOwner;
+    const isMember = isJoined || isOwner;
 
     return (
       <ChatRoomItem

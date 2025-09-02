@@ -151,7 +151,7 @@ const ActivityItem = ({ type, title, description, timestamp, metadata }: Activit
   };
 
   const formatTime = (timestamp: string) => {
-    let date = new Date(timestamp);
+    const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
@@ -678,7 +678,7 @@ export default function ProfileScreen() {
         <View style={[styles.tabsContainer, { borderBottomColor: colors.border }]}>
           <View style={styles.tabsWrapper}>
             {tabs.map((tab, index) => {
-              let Icon = tab.icon;
+              const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
                 <Pressable
