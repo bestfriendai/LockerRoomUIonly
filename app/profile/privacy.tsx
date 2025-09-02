@@ -127,7 +127,7 @@ function OptionItem({ icon, title, description, options, selectedValue, onValueC
                   {option.label}
                 </Text>
               </Button>
-            ))};
+            ))}
           </View>
         </View>
       </View>

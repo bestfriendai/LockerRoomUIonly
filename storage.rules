@@ -1,0 +1,112 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules for LockerRoom Talk
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    function isValidImageFile() {
+      return resource.contentType.matches('image/.*') &&
+             resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+    
+    function isValidVideoFile() {
+      return resource.contentType.matches('video/.*') &&
+             resource.size < 100 * 1024 * 1024; // 100MB limit
+    }
+    
+    function isValidFileType() {
+      return resource.contentType.matches('image/.*') ||
+             resource.contentType.matches('video/.*') ||
+             resource.contentType.matches('audio/.*');
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{imageId} {
+      // Users can read their own profile images, others can read if public
+      allow read: if isSignedIn();
+      
+      // Users can upload/update their own profile images
+      allow write: if isSignedIn() &&
+                      isOwner(userId) &&
+                      isEmailVerified() &&
+                      isValidImageFile() &&
+                      resource.size < 5 * 1024 * 1024; // 5MB for profile images
+    }
+    
+    // Review images and videos
+    match /reviews/{reviewId}/media/{mediaId} {
+      // Anyone can read review media (public content)
+      allow read: if true;
+      
+      // Authenticated users can upload media for their reviews
+      allow write: if isSignedIn() &&
+                      isEmailVerified() &&
+                      (isValidImageFile() || isValidVideoFile());
+    }
+    
+    // Chat media (images, videos, audio)
+    match /chats/{chatId}/media/{mediaId} {
+      // Only chat participants can read chat media
+      allow read: if isSignedIn() &&
+                     exists(/databases/$(database)/documents/chatRooms/$(chatId)/participants/$(request.auth.uid));
+      
+      // Chat participants can upload media
+      allow write: if isSignedIn() &&
+                      isEmailVerified() &&
+                      exists(/databases/$(database)/documents/chatRooms/$(chatId)/participants/$(request.auth.uid)) &&
+                      isValidFileType() &&
+                      resource.size < 50 * 1024 * 1024; // 50MB for chat media
+    }
+    
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{uploadId} {
+      // Users can manage their own temporary uploads
+      allow read, write: if isSignedIn() &&
+                           isOwner(userId) &&
+                           isValidFileType();
+      
+      // Auto-delete after 24 hours (handled by Cloud Functions)
+    }
+    
+    // App assets and public content
+    match /public/{allPaths=**} {
+      // Public read access for app assets
+      allow read: if true;
+      
+      // Only admins can write public assets (handled by Cloud Functions)
+      allow write: if false;
+    }
+    
+    // Moderation queue (flagged content)
+    match /moderation/{contentId} {
+      // Only moderators can access flagged content
+      allow read, write: if isSignedIn() &&
+                           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+                           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'moderator';
+    }
+    
+    // Backup and system files
+    match /system/{allPaths=**} {
+      // System files are managed by Cloud Functions only
+      allow read, write: if false;
+    }
+    
+    // Default deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

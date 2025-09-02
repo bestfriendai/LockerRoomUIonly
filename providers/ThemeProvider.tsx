@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
 import { tokens } from '../constants/tokens';
@@ -174,7 +174,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Don't render children until theme is loaded
   if (!isLoaded) {
-    return null; // or a loading spinner
+    return (
+      <View style={{ flex: 1, backgroundColor: systemColorScheme === 'dark' ? '#000000' : '#FFFFFF' }}>
+        {/* Optional: Add a minimal loading indicator */}
+      </View>
+    );
   }
 
   return (

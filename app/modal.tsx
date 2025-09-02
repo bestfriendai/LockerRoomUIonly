@@ -32,10 +32,10 @@ interface ModalContentProps {
 
 function UserActionsModal({ data, onClose }: { data: any; onClose: () => void }) {
   const { colors } = useTheme();
-  let router = useRouter();
+  const router = useRouter();
   const user = data?.user;
 
-  let handleAction = useCallback((action: string) => {
+  const handleAction = useCallback((action: string) => {
     switch (action) {
       case 'message':
         router.push(`/chat/1`);
@@ -320,7 +320,7 @@ function ReportModal({ data, onClose }: { data: any; onClose: () => void }) {
 
 function SettingsModal({ onClose }: { onClose: () => void }) {
   const { colors } = useTheme();
-  let router = useRouter();
+  const router = useRouter();
 
   const settingsOptions = [
     { id: 'profile', label: 'Edit Profile', icon: Users },

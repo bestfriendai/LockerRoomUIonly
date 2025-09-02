@@ -18,6 +18,7 @@ import {
 import logger from '../utils/logger';
 import { db } from '../utils/firebase';
 import { ChatRoom, ChatMessage } from '../types';
+import { isUserAuthenticated, getCurrentUserId, createAuthError } from '../utils/authUtils';
 
 const CHAT_ROOMS_COLLECTION = 'chatRooms';
 const MESSAGES_COLLECTION = 'messages';
@@ -79,6 +80,23 @@ export class ChatService {
   // Get all chat rooms for a user
   static async getUserChatRooms(userId: string): Promise<ChatRoom[]> {
     try {
+      // Check authentication first
+      if (!isUserAuthenticated()) {
+        if (__DEV__) {
+          console.log('User not authenticated, returning empty chat rooms');
+        }
+        return [];
+      }
+
+      // Verify the userId matches the current user
+      const currentUserId = getCurrentUserId();
+      if (!currentUserId || currentUserId !== userId) {
+        if (__DEV__) {
+          console.log('User ID mismatch or not authenticated, returning empty chat rooms');
+        }
+        return [];
+      }
+
       const q = query(
         collection(db, CHAT_ROOMS_COLLECTION),
         where('participants', 'array-contains', userId),
@@ -94,7 +112,7 @@ export class ChatService {
       if (__DEV__) {
         __DEV__ && console.error('Error getting user chat rooms:', error);
       }
-      throw error;
+      return []; // Return empty array instead of throwing
     }
   }
 
@@ -243,12 +261,31 @@ export class ChatService {
 
   // Listen to chat rooms in real-time
   static subscribeToUserChatRooms(userId: string, callback: (chatRooms: ChatRoom[]) => void): () => void {
+    // Check authentication first
+    if (!isUserAuthenticated()) {
+      if (__DEV__) {
+        console.log('User not authenticated, returning empty chat rooms subscription');
+      }
+      callback([]);
+      return () => {}; // Return empty unsubscribe function
+    }
+
+    // Verify the userId matches the current user
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId || currentUserId !== userId) {
+      if (__DEV__) {
+        console.log('User ID mismatch or not authenticated, returning empty chat rooms');
+      }
+      callback([]);
+      return () => {};
+    }
+
     const q = query(
       collection(db, CHAT_ROOMS_COLLECTION),
       where('participants', 'array-contains', userId),
       orderBy('updatedAt', 'desc')
     );
-    
+
     return onSnapshot(q, (querySnapshot) => {
       const chatRooms = querySnapshot.docs.map(doc => ({
         id: doc.id,

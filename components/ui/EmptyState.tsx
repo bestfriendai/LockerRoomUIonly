@@ -1,183 +1,181 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ViewStyle,
+} from 'react-native';
+import { MotiView } from 'moti';
 import { Ionicons } from '@expo/vector-icons';
-import { ModernButton } from './ModernButton';
 import { useTheme } from '../../providers/ThemeProvider';
-import { spacing, borderRadius } from '../../utils/spacing';
-import { textStyles } from '../../utils/typography';
+import { Button } from './Button';
+import { tokens } from '../../constants/tokens';
 
 interface EmptyStateProps {
-  type: 'no-reviews' | 'no-matches' | 'no-notifications' | 'no-connection' | 'no-results' | 'no-chats';
   title?: string;
-  description?: string;
-  actionText?: string;
+  message?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   onAction?: () => void;
-  illustration?: React.ReactNode;
-  showIllustration?: boolean;
+  actionText?: string;
+  style?: ViewStyle;
+  showIcon?: boolean;
+  variant?: 'default' | 'search' | 'error' | 'success';
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
-  type,
-  title,
-  description,
-  actionText,
+  title = 'Nothing here yet',
+  message = 'When you have content, it will appear here.',
+  icon = 'document-outline',
   onAction,
-  illustration,
-  showIllustration = true,
+  actionText = 'Get Started',
+  style,
+  showIcon = true,
+  variant = 'default',
 }) => {
   const { colors } = useTheme();
 
-  const getEmptyStateContent = () => {
-    switch (type) {
-      case 'no-reviews':
-        return {
-          icon: 'document-text-outline' as const,
-          title: title || 'No Reviews Yet',
-          description: description || 'Be the first to share your dating experience and help the community grow!',
-          actionText: actionText || 'Write Your First Review',
-        };
-      case 'no-matches':
-        return {
-          icon: 'search-outline' as const,
-          title: title || 'No Matches Found',
-          description: description || 'Try adjusting your filters or expanding your search radius to find more reviews.',
-          actionText: actionText || 'Adjust Filters',
-        };
-      case 'no-notifications':
-        return {
-          icon: 'notifications-outline' as const,
-          title: title || 'All Caught Up!',
-          description: description || 'No new notifications right now. Check back later for updates from the community.',
-          actionText: actionText || 'Explore Reviews',
-        };
-      case 'no-connection':
-        return {
-          icon: 'cloud-offline-outline' as const,
-          title: title || 'Connection Lost',
-          description: description || 'Please check your internet connection and try again.',
-          actionText: actionText || 'Retry',
-        };
-      case 'no-results':
-        return {
-          icon: 'search-outline' as const,
-          title: title || 'No Results Found',
-          description: description || 'We couldn\'t find anything matching your search. Try different keywords.',
-          actionText: actionText || 'Clear Search',
-        };
-      case 'no-chats':
-        return {
-          icon: 'chatbubbles-outline' as const,
-          title: title || 'No Conversations Yet',
-          description: description || 'Start connecting with others by joining chat rooms or starting new conversations.',
-          actionText: actionText || 'Browse Chat Rooms',
-        };
+  const getIconColor = () => {
+    switch (variant) {
+      case 'error':
+        return colors.error;
+      case 'success':
+        return colors.success;
+      case 'search':
+        return colors.warning;
       default:
-        return {
-          icon: 'help-circle-outline' as const,
-          title: title || 'Nothing Here',
-          description: description || 'There\'s nothing to show right now.',
-          actionText: actionText || 'Go Back',
-        };
+        return colors.textTertiary;
     }
   };
 
-  const content = getEmptyStateContent();
+  const getIconBackgroundColor = () => {
+    switch (variant) {
+      case 'error':
+        return colors.errorContainer;
+      case 'success':
+        return colors.successContainer || colors.surface;
+      case 'search':
+        return colors.warningBg;
+      default:
+        return colors.surface;
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      {showIllustration && (
-        <LinearGradient
-          colors={[`${colors.primary}10`, `${colors.primary}05`]}
-          style={styles.illustrationContainer}
-        >
-          {illustration || (
+    <View style={[styles.container, style]}>
+      <MotiView
+        from={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          type: 'spring',
+          damping: 15,
+          stiffness: 150,
+        }}
+        style={styles.content}
+      >
+        {showIcon && (
+          <MotiView
+            from={{ opacity: 0, translateY: -20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 600,
+              delay: 200,
+            }}
+            style={[
+              styles.iconContainer,
+              { backgroundColor: getIconBackgroundColor() }
+            ]}
+          >
             <Ionicons
-              name={content.icon}
-              size={64}
-              color={colors.primary}
+              name={icon}
+              size={32}
+              color={getIconColor()}
             />
-          )}
-        </LinearGradient>
-      )}
+          </MotiView>
+        )}
 
-      <Text style={[styles.title, { color: colors.text }]}>
-        {content.title}
-      </Text>
-
-      <Text style={[styles.description, { color: colors.textSecondary }]}>
-        {content.description}
-      </Text>
-
-      {onAction && (
-        <ModernButton
-          variant="gradient"
-          onPress={onAction}
-          style={styles.actionButton}
+        <MotiView
+          from={{ opacity: 0, translateY: 20 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: 'timing',
+            duration: 600,
+            delay: 300,
+          }}
+          style={styles.textContainer}
         >
-          {content.actionText}
-        </ModernButton>
-      )}
+          <Text style={[styles.title, { color: colors.text }]}>
+            {title}
+          </Text>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>
+            {message}
+          </Text>
+        </MotiView>
+
+        {onAction && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{
+              type: 'timing',
+              duration: 600,
+              delay: 400,
+            }}
+            style={styles.buttonContainer}
+          >
+            <Button
+              variant={variant === 'error' ? 'secondary' : 'primary'}
+              onPress={onAction}
+              accessibilityLabel={`${actionText} button`}
+              accessibilityHint="Tap to perform the suggested action"
+            >
+              {actionText}
+            </Button>
+          </MotiView>
+        )}
+      </MotiView>
     </View>
   );
 };
-
-// Specialized empty state components for convenience
-export const NoReviewsState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-reviews" {...props} />
-);
-
-export const NoMatchesState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-matches" {...props} />
-);
-
-export const NoNotificationsState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-notifications" {...props} />
-);
-
-export const NoConnectionState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-connection" {...props} />
-);
-
-export const NoResultsState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-results" {...props} />
-);
-
-export const NoChatsState: React.FC<Omit<EmptyStateProps, 'type'>> = (props) => (
-  <EmptyState type="no-chats" {...props} />
-);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing['4xl'],
+    paddingHorizontal: tokens.spacing.lg,
   },
-  illustrationContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: borderRadius.full,
+  content: {
+    alignItems: 'center',
+    maxWidth: 320,
+  },
+  iconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: tokens.spacing.lg,
+  },
+  textContainer: {
+    alignItems: 'center',
+    marginBottom: tokens.spacing.xl,
   },
   title: {
-    ...textStyles.h3,
+    fontSize: tokens.fontSize.xl,
+    fontWeight: tokens.fontWeight.semibold as any,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: tokens.spacing.sm,
+    fontFamily: 'Inter',
   },
-  description: {
-    ...textStyles.body,
+  message: {
+    fontSize: tokens.fontSize.base,
+    fontWeight: tokens.fontWeight.normal as any,
     textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: spacing['2xl'],
-    maxWidth: 280,
+    lineHeight: tokens.lineHeight.lg,
+    fontFamily: 'Inter',
   },
-  actionButton: {
-    minWidth: 200,
+  buttonContainer: {
+    width: '100%',
   },
 });
-
-export default EmptyState;
