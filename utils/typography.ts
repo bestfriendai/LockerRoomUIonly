@@ -3,7 +3,10 @@
  * Comprehensive type scale and text styles for consistent UI
  */
 
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, TextStyle } from 'react-native';
+
+// Type-safe font weight values
+export type FontWeight = '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900' | 'normal' | 'bold';
 
 export const typography = {
   fontFamily: {
@@ -33,14 +36,14 @@ export const typography = {
   },
   
   fontWeight: {
-    thin: '100' as const,
-    light: '300' as const,
-    regular: '400' as const,
-    medium: '500' as const,
-    semibold: '600' as const,
-    bold: '700' as const,
-    extrabold: '800' as const,
-    black: '900' as const,
+    thin: '100' as FontWeight,
+    light: '300' as FontWeight,
+    regular: '400' as FontWeight,
+    medium: '500' as FontWeight,
+    semibold: '600' as FontWeight,
+    bold: '700' as FontWeight,
+    extrabold: '800' as FontWeight,
+    black: '900' as FontWeight,
   },
   
   lineHeight: {
@@ -66,72 +69,72 @@ export const typography = {
 export const textStyles = StyleSheet.create({
   h1: {
     fontSize: typography.fontSize['4xl'],
-    fontWeight: typography.fontWeight.bold as any,
+    fontWeight: typography.fontWeight.bold as TextStyle['fontWeight'],
     lineHeight: typography.fontSize['4xl'] * typography.lineHeight.tight,
     letterSpacing: typography.letterSpacing.tight,
   },
   h2: {
     fontSize: typography.fontSize['3xl'],
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
     lineHeight: typography.fontSize['3xl'] * typography.lineHeight.tight,
     letterSpacing: typography.letterSpacing.tight,
   },
   h3: {
     fontSize: typography.fontSize['2xl'],
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
     lineHeight: typography.fontSize['2xl'] * typography.lineHeight.normal,
   },
   h4: {
     fontSize: typography.fontSize.xl,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.xl * typography.lineHeight.normal,
   },
   h5: {
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.lg * typography.lineHeight.normal,
   },
   body: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.base * typography.lineHeight.relaxed,
   },
   bodyLarge: {
     fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.lg * typography.lineHeight.relaxed,
   },
   bodySmall: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.sm * typography.lineHeight.normal,
   },
   caption: {
     fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.regular as any,
+    fontWeight: typography.fontWeight.regular as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.xs * typography.lineHeight.normal,
     opacity: 0.7,
   },
   button: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.semibold as any,
+    fontWeight: typography.fontWeight.semibold as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.base * typography.lineHeight.tight,
     letterSpacing: typography.letterSpacing.wide,
   },
   buttonSmall: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.sm * typography.lineHeight.tight,
   },
   label: {
     fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.sm * typography.lineHeight.tight,
     letterSpacing: typography.letterSpacing.wide,
   },
   link: {
     fontSize: typography.fontSize.base,
-    fontWeight: typography.fontWeight.medium as any,
+    fontWeight: typography.fontWeight.medium as TextStyle['fontWeight'],
     lineHeight: typography.fontSize.base * typography.lineHeight.normal,
     textDecorationLine: 'underline' as const,
   },

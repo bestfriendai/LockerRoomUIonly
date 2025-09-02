@@ -1,9 +1,17 @@
 /**
  * Enhanced Review Card Component
  * Modern card design with animations and interactions
+ * 
+ * @example
+ * <ReviewCard
+ *   review={reviewData}
+ *   onPress={handlePress}
+ *   onLike={handleLike}
+ *   animated
+ * />
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +19,7 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  AccessibilityProps,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,7 +30,7 @@ import { formatRelativeTime } from '@/utils/format';
 
 const { width: screenWidth } = Dimensions.get('window');
 
-interface ReviewCardProps {
+interface ReviewCardProps extends AccessibilityProps {
   review: {
     id: string;
     title: string;
@@ -41,9 +50,15 @@ interface ReviewCardProps {
   onShare?: () => void;
   index?: number;
   animated?: boolean;
+  testID?: string;
 }
 
-export const ReviewCard: React.FC<ReviewCardProps> = ({
+/**
+ * ReviewCard component with animations and interactions
+ * @param {ReviewCardProps} props - Component props
+ * @returns {React.ReactElement} Rendered review card
+ */
+export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({
   review,
   onPress,
   onLike,
@@ -51,53 +66,72 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
   onShare,
   index = 0,
   animated = true,
+  testID,
+  accessibilityLabel,
+  accessibilityHint,
+  ...accessibilityProps
 }) => {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
+  // Use stable animation references
+  const animations = useMemo(() => ({
+    fade: new Animated.Value(0),
+    scale: new Animated.Value(0.9),
+  }), []);
 
   useEffect(() => {
+    let animationHandle: Animated.CompositeAnimation | null = null;
+    
     if (animated) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
+      animationHandle = Animated.parallel([
+        Animated.timing(animations.fade, {
           toValue: 1,
           duration: 500,
           delay: index * 100,
           useNativeDriver: true,
         }),
-        Animated.spring(scaleAnim, {
+        Animated.spring(animations.scale, {
           toValue: 1,
           friction: 8,
           tension: 40,
           delay: index * 100,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]);
+      animationHandle.start();
     } else {
-      fadeAnim.setValue(1);
-      scaleAnim.setValue(1);
+      animations.fade.setValue(1);
+      animations.scale.setValue(1);
     }
-  }, [animated, index]);
+    
+    // Cleanup function to stop animations
+    return () => {
+      if (animationHandle) {
+        animationHandle.stop();
+      }
+    };
+  }, [animated, index, animations]);
 
-  const getRatingColor = (rating: number) => {
+  const getRatingColor = useCallback((rating: number) => {
     if (rating >= 4) return colors.success.main;
     if (rating >= 3) return colors.warning.main;
     return colors.error.main;
-  };
+  }, []);
 
-  const animatedStyle = animated
-    ? {
-        opacity: fadeAnim,
-        transform: [
-          { scale: scaleAnim },
-          {
-            translateY: fadeAnim.interpolate({
-              inputRange: [0, 1],
-              outputRange: [20, 0],
-            }),
-          },
-        ],
-      }
-    : {};
+  const animatedStyle = useMemo(() => {
+    return animated
+      ? {
+          opacity: animations.fade,
+          transform: [
+            { scale: animations.scale },
+            {
+              translateY: animations.fade.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0],
+              }),
+            },
+          ],
+        }
+      : {};
+  }, [animated, animations]);
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -105,6 +139,12 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
         activeOpacity={0.95}
         onPress={onPress}
         style={styles.touchable}
+        accessible={true}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel || `Review: ${review.title}`}
+        accessibilityHint={accessibilityHint || 'Tap to view full review'}
+        testID={testID || `review-card-${review.id}`}
+        {...accessibilityProps}
       >
         <LinearGradient
           colors={['rgba(255,30,125,0.03)', 'rgba(255,90,163,0.01)']}
@@ -197,6 +237,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               style={styles.interactionButton}
               onPress={onLike}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Like review"
+              accessibilityHint="Double tap to like this review"
             >
               <Ionicons
                 name="heart-outline"
@@ -212,6 +255,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               style={styles.interactionButton}
               onPress={onComment}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Comment on review"
+              accessibilityHint="Double tap to comment"
             >
               <Ionicons
                 name="chatbubble-outline"
@@ -227,6 +273,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
               style={styles.interactionButton}
               onPress={onShare}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Share review"
+              accessibilityHint="Double tap to share this review"
             >
               <Ionicons
                 name="share-outline"
@@ -252,7 +301,9 @@ export const ReviewCard: React.FC<ReviewCardProps> = ({
       </TouchableOpacity>
     </Animated.View>
   );
-};
+});
+
+ReviewCard.displayName = 'ReviewCard';
 
 const styles = StyleSheet.create({
   container: {

@@ -3,7 +3,7 @@
  * Modern button with animations and haptic feedback
  */
 
-import React, { useRef } from 'react';
+import React, { useRef, useMemo, useCallback } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
   Pressable,
   Platform,
+  View,
+  AccessibilityProps,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -22,7 +24,7 @@ import { colors } from '@/utils/colors';
 import { typography, textStyles } from '@/utils/typography';
 import { spacing, borderRadius, shadows } from '@/utils/spacing';
 
-interface EnhancedButtonProps {
+interface EnhancedButtonProps extends AccessibilityProps {
   onPress: () => void;
   children?: React.ReactNode;
   title?: string;
@@ -37,9 +39,10 @@ interface EnhancedButtonProps {
   textStyle?: TextStyle;
   gradient?: boolean;
   haptic?: boolean;
+  testID?: string;
 }
 
-export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
+export const EnhancedButton: React.FC<EnhancedButtonProps> = React.memo(({
   onPress,
   children,
   title,
@@ -54,46 +57,57 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
   textStyle,
   gradient = true,
   haptic = true,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityRole = 'button',
+  testID,
+  ...accessibilityProps
 }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(1)).current;
+  // Use stable animation references
+  const animations = useMemo(() => ({
+    scale: new Animated.Value(1),
+    opacity: new Animated.Value(1),
+  }), []);
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     Animated.parallel([
-      Animated.spring(scaleAnim, {
+      Animated.spring(animations.scale, {
         toValue: 0.95,
         useNativeDriver: true,
       }),
-      Animated.timing(opacityAnim, {
+      Animated.timing(animations.opacity, {
         toValue: 0.8,
         duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [animations]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     Animated.parallel([
-      Animated.spring(scaleAnim, {
+      Animated.spring(animations.scale, {
         toValue: 1,
         friction: 3,
         tension: 40,
         useNativeDriver: true,
       }),
-      Animated.timing(opacityAnim, {
+      Animated.timing(animations.opacity, {
         toValue: 1,
         duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [animations]);
 
-  const handlePress = () => {
-    if (haptic && Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handlePress = useCallback(() => {
+    // Platform check for haptic feedback
+    if (haptic && Platform.OS !== 'web' && Platform.OS !== 'windows' && Platform.OS !== 'macos') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        // Silently fail if haptics not available
+      });
     }
     onPress();
-  };
+  }, [haptic, onPress]);
 
   const sizeStyles = {
     sm: {
@@ -213,8 +227,8 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
     <Animated.View
       style={[
         {
-          transform: [{ scale: scaleAnim }],
-          opacity: opacityAnim,
+          transform: [{ scale: animations.scale }],
+          opacity: animations.opacity,
         },
         fullWidth && styles.fullWidth,
       ]}
@@ -224,6 +238,12 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={disabled || loading}
+        accessibilityRole={accessibilityRole}
+        accessibilityLabel={accessibilityLabel || title || 'Button'}
+        accessibilityHint={accessibilityHint || `Tap to ${title?.toLowerCase() || 'activate'}`}
+        accessibilityState={{ disabled: disabled || loading }}
+        testID={testID}
+        {...accessibilityProps}
         style={({ pressed }) => [
           buttonStyle,
           pressed && styles.pressed,
@@ -244,7 +264,9 @@ export const EnhancedButton: React.FC<EnhancedButtonProps> = ({
       </Pressable>
     </Animated.View>
   );
-};
+});
+
+EnhancedButton.displayName = 'EnhancedButton';
 
 const styles = StyleSheet.create({
   button: {
