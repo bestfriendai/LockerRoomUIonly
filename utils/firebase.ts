@@ -1,71 +1,117 @@
-import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getAuth, initializeAuth, getReactNativePersistence, type Auth } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+/**
+ * Firebase configuration with React Native compatibility
+ */
 
+import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
+import { 
+  getAuth, 
+  type Auth,
+} from 'firebase/auth';
+import { 
+  getFirestore,
+  type Firestore 
+} from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
 };
 
-// Lazy initialization variables
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+// Validate config
+const validateConfig = () => {
+  const required = ['apiKey', 'projectId', 'appId'];
+  for (const field of required) {
+    if (!firebaseConfig[field as keyof typeof firebaseConfig]) {
+      console.error(`Missing required Firebase config: ${field}`);
+      return false;
+    }
+  }
+  return true;
+};
 
-// Lazy initialization function
-function initializeFirebase() {
-  if (app && auth && db) return { app, auth, db };
+// Initialize Firebase services
+const initializeFirebase = () => {
+  let firebaseApp: FirebaseApp;
+  let firebaseAuth: Auth;
+  let firebaseDb: Firestore;
+  let firebaseStorage: FirebaseStorage;
 
   try {
-    // Initialize Firebase app
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    // Validate configuration
+    if (!validateConfig()) {
+      throw new Error('Invalid Firebase configuration');
+    }
 
-    // Initialize Auth with proper RN persistence on native
-    if (typeof document === 'undefined') {
-      try {
-        auth = initializeAuth(app, {
-          persistence: getReactNativePersistence(AsyncStorage),
-        });
-      } catch (e) {
-        // If Auth was already initialized (e.g., Fast Refresh), fall back
-        auth = getAuth(app);
+    // Check for existing app
+    const existingApps = getApps();
+    if (existingApps.length > 0) {
+      firebaseApp = existingApps[0];
+      if (__DEV__) {
+        console.log('🔥 Using existing Firebase app');
       }
     } else {
-      auth = getAuth(app);
+      firebaseApp = initializeApp(firebaseConfig);
+      if (__DEV__) {
+        console.log('🔥 Initialized new Firebase app');
+      }
     }
 
-    // Initialize Firestore
-    db = getFirestore(app);
+    // Initialize services
+    firebaseAuth = getAuth(firebaseApp);
+    firebaseDb = getFirestore(firebaseApp);
+    firebaseStorage = getStorage(firebaseApp);
 
-    if (__DEV__) {
-      console.log('Firebase initialized with project:', firebaseConfig.projectId);
-    }
-
-    return { app, auth, db };
+    return {
+      app: firebaseApp,
+      auth: firebaseAuth,
+      db: firebaseDb,
+      storage: firebaseStorage
+    };
   } catch (error) {
-    console.error('Firebase initialization failed:', error);
-    throw error;
+    console.error('❌ Firebase initialization failed:', error);
+    // Return mock objects to prevent crashes
+    return {
+      app: {} as FirebaseApp,
+      auth: {} as Auth,
+      db: {} as Firestore,
+      storage: {} as FirebaseStorage,
+    };
   }
-}
+};
 
-// Export lazy getters
-export const getFirebaseApp = () => initializeFirebase().app;
-export const getFirebaseAuth = () => initializeFirebase().auth;
-export const getFirebaseDb = () => initializeFirebase().db;
+// Initialize on import
+const firebase = initializeFirebase();
+
+// Export initialized instances
+export const app = firebase.app;
+export const auth = firebase.auth;
+export const db = firebase.db;
+export const storage = firebase.storage;
+
+// Backward compatibility exports
+export const firebaseApp = app;
+export const firebaseAuth = auth;
+export const firebaseDb = db;
+
+// Export getters for components that need them
+export const getFirebaseApp = () => app;
+export const getFirebaseAuth = () => auth;
+export const getFirebaseDb = () => db;
+export const getFirebaseStorage = () => storage;
+
+// Export config for reference
 export { firebaseConfig };
 
-// For backward compatibility, export the lazy-initialized instances
-export const { app: firebaseApp, auth: firebaseAuth, db: firebaseDb } = new Proxy({} as any, {
-  get(target, prop) {
-    const firebase = initializeFirebase();
-    return firebase[prop as keyof typeof firebase];
-  }
-});
-
-// Default exports for convenience
-export { firebaseApp as app, firebaseAuth as auth, firebaseDb as db };
+// Default export for convenience
+export default {
+  app,
+  auth,
+  db,
+  storage,
+};

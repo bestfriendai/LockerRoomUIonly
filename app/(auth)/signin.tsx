@@ -15,10 +15,9 @@ import { ArrowLeft, Mail, Lock } from 'lucide-react-native';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useAuth } from '../../providers/AuthProvider';
 import { Input } from '../../components/ui/Input';
-import { validateInput, checkRateLimit } from '../../utils/inputSanitization';
+// Removed problematic import - using inline validation instead
 import type {
   SignInFormData,
-  ValidationResult,
   AuthError,
   AuthFormState,
   FirebaseAuthErrorCode,
@@ -68,39 +67,30 @@ export default function SignInScreen() {
   const handleSignIn = async (): Promise<void> => {
     setFormState(prev => ({ ...prev, error: "" }));
 
-    // Rate limiting check
-    const userKey = `signin_${formData.email || 'unknown'}`;
-    if (!checkRateLimit(userKey, 5, 300000)) { // 5 attempts per 5 minutes
-      setFormState(prev => ({
-        ...prev,
-        error: "Too many sign in attempts. Please wait 5 minutes before trying again."
-      }));
+    // Basic validation
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setFormState(prev => ({ ...prev, error: "Please enter both email and password" }));
       return;
     }
 
-    if (!formData.email.trim() || !formData.password.trim()) {
-      setFormState(prev => ({ ...prev, error: "Please enter both email and password" }));
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setFormState(prev => ({ ...prev, error: "Please enter a valid email address" }));
+      return;
+    }
+
+    // Password length validation
+    if (formData.password.length < 6) {
+      setFormState(prev => ({ ...prev, error: "Password must be at least 6 characters" }));
       return;
     }
 
     setFormState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // Validate and sanitize input
-      const validationResult = validateInput(formData, 'signup') as ValidationResult<SignInFormData>;
-
-      if (!validationResult.isValid) {
-        setFormState(prev => ({
-          ...prev,
-          error: validationResult.errors[0] || "Invalid input",
-          isLoading: false
-        }));
-        return;
-      }
-
-      const sanitizedData = validationResult.data;
-
-      await signIn(sanitizedData.email, sanitizedData.password);
+      // Call signIn directly with the form data
+      await signIn(formData.email.trim(), formData.password);
       // Don't manually navigate - let the AuthProvider and index.tsx handle navigation
       // This prevents race conditions and navigation conflicts
       if (__DEV__) {

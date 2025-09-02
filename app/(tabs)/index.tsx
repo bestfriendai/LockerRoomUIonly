@@ -90,6 +90,7 @@ export default function HomeScreen() {
   // New location system state
   const [selectedLocationData, setSelectedLocationData] = useState<any>(null);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const [hasShownNoReviewsAlert, setHasShownNoReviewsAlert] = useState(false);
 
   useEffect(() => {
     fetchReviews();
@@ -219,11 +220,19 @@ export default function HomeScreen() {
           setReviews(filtered);
 
           if (filtered.length === 0) {
-            Alert.alert(
-              'No Reviews Nearby',
-              `No reviews found within ${searchRadius} miles. Showing all reviews instead.`,
-              [{ text: 'OK', onPress: () => setReviews(reviewsData) }]
-            );
+            // Only show alert once to avoid spam
+            if (!hasShownNoReviewsAlert) {
+              setHasShownNoReviewsAlert(true);
+              // Don't show alert, just show all reviews
+              setReviews(reviewsData);
+              // Optionally show a less intrusive notification
+              console.log(`No reviews found within ${searchRadius} miles. Showing all reviews.`);
+            } else {
+              setReviews(reviewsData);
+            }
+          } else {
+            // Reset flag when reviews are found
+            setHasShownNoReviewsAlert(false);
           }
         } else {
           // Fallback to string-based matching if no coords or radius filter off
@@ -275,13 +284,20 @@ export default function HomeScreen() {
     }
   }, [normalizeLocationToString, getSelectedCoords, getReviewCoords, distanceMiles, searchRadius, useRadiusFilter]);
 
+  // Track if location has been initialized to prevent duplicate loads
+  const [locationInitialized, setLocationInitialized] = useState(false);
+
   // Load saved location on component mount; if none, auto-detect current location
   useEffect(() => {
+    // Skip if already initialized
+    if (locationInitialized) return;
+    
     const initLocation = async () => {
       const savedLocation = await LocationService.getSelectedLocation();
       if (savedLocation) {
         const locationData = { type: 'selected', data: savedLocation };
         setSelectedLocationData(locationData);
+        setLocationInitialized(true);
         await fetchReviewsForLocation(locationData);
         return;
       }
@@ -303,29 +319,33 @@ export default function HomeScreen() {
           await LocationService.saveSelectedLocation(currentData);
           const locationData = { type: 'current', data: currentData };
           setSelectedLocationData(locationData);
+          setLocationInitialized(true);
           await fetchReviewsForLocation(locationData);
         } catch (e) {
           // Fallback to global if detection fails
           const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
           setSelectedLocationData(locationData);
+          setLocationInitialized(true);
           await fetchReviewsForLocation(locationData);
         }
       } else {
         const locationData = { type: 'global', data: { name: 'Global', coordinates: null } };
         setSelectedLocationData(locationData);
+        setLocationInitialized(true);
         await fetchReviewsForLocation(locationData);
       }
     };
 
     initLocation();
-  }, [fetchReviewsForLocation]);
+  }, []); // Empty dependency array to run only once on mount
 
   // Re-apply location filtering when radius or toggle changes
-  useEffect(() => {
-    if (selectedLocationData) {
-      fetchReviewsForLocation(selectedLocationData);
-    }
-  }, [searchRadius, useRadiusFilter, selectedLocationData, fetchReviewsForLocation]);
+  // Commented out to prevent duplicate fetches and multiple alerts
+  // useEffect(() => {
+  //   if (selectedLocationData) {
+  //     fetchReviewsForLocation(selectedLocationData);
+  //   }
+  // }, [searchRadius, useRadiusFilter, selectedLocationData, fetchReviewsForLocation]);
 
   const handleCurrentLocation = useCallback(async () => {
     try {

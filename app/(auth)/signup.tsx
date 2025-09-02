@@ -20,7 +20,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
 import { Input } from "../../components/ui/Input";
 import AnimatedPressable from "../../components/ui/AnimatedPressable";
-import { validateInput, checkRateLimit } from "../../utils/inputSanitization";
+// Removed problematic import - using inline validation instead
 import type {
   SignUpFormData,
   ValidationResult,
@@ -79,18 +79,16 @@ export default function SignUpScreen() {
   const handleSignUp = async (): Promise<void> => {
     setFormState(prev => ({ ...prev, error: "" }));
 
-    // Rate limiting check
-    const userKey = `signup_${formData.email || 'unknown'}`;
-    if (!checkRateLimit(userKey, 3, 300000)) { // 3 attempts per 5 minutes
-      setFormState(prev => ({
-        ...prev,
-        error: "Too many signup attempts. Please wait 5 minutes before trying again."
-      }));
+    // Basic validation
+    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword?.trim()) {
+      setFormState(prev => ({ ...prev, error: "Please fill in all fields" }));
       return;
     }
 
-    if (!formData.email.trim() || !formData.password.trim() || !formData.confirmPassword?.trim()) {
-      setFormState(prev => ({ ...prev, error: "Please fill in all fields" }));
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setFormState(prev => ({ ...prev, error: "Please enter a valid email address" }));
       return;
     }
 
@@ -117,23 +115,6 @@ export default function SignUpScreen() {
     setFormState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      // Validate and sanitize input
-      const validationResult = validateInput({
-        email: formData.email,
-        password: formData.password
-      }, 'signup') as ValidationResult<SignUpFormData>;
-
-      if (!validationResult.isValid) {
-        setFormState(prev => ({
-          ...prev,
-          error: validationResult.errors[0] || "Invalid input",
-          isLoading: false
-        }));
-        return;
-      }
-
-      const sanitizedData = validationResult.data;
-
       // Generate anonymous username automatically
       const anonymousUsername = generateMultipleUsernames(1)[0];
 
@@ -150,8 +131,8 @@ export default function SignUpScreen() {
       }
 
       await signUp({
-        email: sanitizedData.email,
-        password: sanitizedData.password,
+        email: formData.email.trim(),
+        password: formData.password,
         name: anonymousUsername,
         isAnonymous: true
       });
