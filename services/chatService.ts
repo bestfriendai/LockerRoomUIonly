@@ -128,9 +128,7 @@ export class ChatService {
       
       return roomId;
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error creating/getting chat room:', error);
-      }
+      logger.error('Error creating/getting chat room', { error, user1Id, user2Id });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -169,9 +167,7 @@ export class ChatService {
       }
       return null;
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error getting chat room:', error);
-      }
+      logger.error('Error getting chat room', { error, roomId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -216,9 +212,7 @@ export class ChatService {
       
       return chatRooms;
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error getting user chat rooms:', error);
-      }
+      logger.error('Error getting user chat rooms', { error, userId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -282,9 +276,7 @@ export class ChatService {
       
       return messageRef.id;
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error sending message:', error);
-      }
+      logger.error('Error sending message', { error, roomId, content: content.substring(0, 50) + '...' });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -333,9 +325,7 @@ export class ChatService {
       // Return messages in chronological order (oldest first)
       return messages.reverse();
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error getting messages:', error);
-      }
+      logger.error('Error getting messages', { error, roomId, limitCount });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -385,9 +375,7 @@ export class ChatService {
         [`unreadCount.${currentUserId}`]: 0
       });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error marking messages as read:', error);
-      }
+      logger.error('Error marking messages as read', { error, roomId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -421,9 +409,7 @@ export class ChatService {
         deletedBy: currentUserId
       });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error deleting message:', error);
-      }
+      logger.error('Error deleting message', { error, roomId, messageId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -461,15 +447,11 @@ export class ChatService {
         });
         callback(messages);
       }, (error) => {
-        if (__DEV__) {
-          console.error('Error listening to messages:', error);
-        }
+        logger.error('Error listening to messages', { error, roomId });
         callback([]);
       });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error setting up message subscription:', error);
-      }
+      logger.error('Error setting up message subscription', { error, roomId });
       // Return empty unsubscribe function
       return () => {};
     }
@@ -482,9 +464,7 @@ export class ChatService {
       
       // Verify the userId matches the current user
       if (currentUserId !== userId) {
-        if (__DEV__) {
-          console.log('User ID mismatch, returning empty subscription');
-        }
+        logger.warn('User ID mismatch in chat rooms subscription', { currentUserId, requestedUserId: userId });
         callback([]);
         return () => {};
       }
@@ -515,15 +495,11 @@ export class ChatService {
         });
         callback(chatRooms);
       }, (error) => {
-        if (__DEV__) {
-          console.error('Error listening to chat rooms:', error);
-        }
+        logger.error('Error listening to chat rooms', { error, userId });
         callback([]);
       });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error setting up chat rooms subscription:', error);
-      }
+      logger.error('Error setting up chat rooms subscription', { error, userId });
       callback([]);
       return () => {};
     }
@@ -544,9 +520,7 @@ export class ChatService {
         return total + (room.unreadCount?.[targetUserId] || 0);
       }, 0);
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error getting unread message count:', error);
-      }
+      logger.error('Error getting unread message count', { error, userId });
       return 0;
     }
   }
@@ -589,9 +563,7 @@ export class ChatService {
         });
       }
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error toggling block user:', error);
-      }
+      logger.error('Error toggling block user', { error, roomId, targetUserId, block });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -615,9 +587,7 @@ export class ChatService {
       
       // Check if user is already a participant
       if (this.isUserParticipant(roomData, currentUserId)) {
-        if (__DEV__) {
-          console.log('User is already a participant in this room');
-        }
+        logger.info('User is already a participant in this room', { roomId, currentUserId });
         return;
       }
       
@@ -628,13 +598,9 @@ export class ChatService {
         [`unreadCount.${currentUserId}`]: 0
       });
       
-      if (__DEV__) {
-        console.log(`User ${currentUserId} joined chat room ${roomId}`);
-      }
+      logger.info('User joined chat room', { roomId, currentUserId });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error joining chat room:', error);
-      }
+      logger.error('Error joining chat room', { error, roomId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -658,9 +624,7 @@ export class ChatService {
       
       // Check if user is a participant
       if (!this.isUserParticipant(roomData, currentUserId)) {
-        if (__DEV__) {
-          console.log('User is not a participant in this room');
-        }
+        logger.info('User is not a participant in this room', { roomId, currentUserId });
         return;
       }
       
@@ -675,13 +639,9 @@ export class ChatService {
       
       await updateDoc(chatRoomRef, updateData);
       
-      if (__DEV__) {
-        console.log(`User ${currentUserId} left chat room ${roomId}`);
-      }
+      logger.info('User left chat room', { roomId, currentUserId });
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error leaving chat room:', error);
-      }
+      logger.error('Error leaving chat room', { error, roomId });
       if (error instanceof ChatServiceError) {
         throw error;
       }
@@ -695,9 +655,7 @@ export class ChatService {
       const chatRoom = await this.getChatRoom(roomId);
       return chatRoom ? (chatRoom.participants?.length || 0) : 0;
     } catch (error) {
-      if (__DEV__) {
-        console.error('Error getting room member count:', error);
-      }
+      logger.error('Error getting room member count', { error, roomId });
       return 0;
     }
   }

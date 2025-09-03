@@ -19,11 +19,15 @@ import { ArrowLeft, Star, Heart, MessageCircle, Share2, Flag, MoreVertical, Thum
 import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
 import { Button } from "../../components/ui/Button";
+import { ModernButton } from "../../components/ui/ModernButton";
+import { ModernCard } from "../../components/ui/ModernCard";
 import Avatar from "../../components/ui/Avatar";
-import Card from "../../components/ui/Card";
 import { Review, Comment, User } from "../../types";
 import { ReviewService } from "../../services/reviewService";
 import { getUserById } from "../../services/userService";
+import { compactTextPresets } from "../../constants/tokens";
+import { createTypographyStyles } from "../../styles/typography";
+import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -95,21 +99,21 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
   return (
     <View style={styles.commentItem}>
       <Avatar
-        size="sm"
+        size="xs"
         name={commenter?.username || 'Anonymous'}
         isAnonymous={true}
         style={styles.commentAvatar}
       />
       <View style={styles.commentContent}>
         <View style={styles.commentHeader}>
-          <Text >
+          <Text style={[compactTextPresets.caption, { fontWeight: '600', color: colors.text }]}>
             {commenter?.displayName || commenter?.username || 'Anonymous'}
           </Text>
-          <Text style={{ color: colors.textSecondary }}>
+          <Text style={[compactTextPresets.caption, { color: colors.textSecondary }]}>
             {formatTime(comment._creationTime || comment.timestamp)}
           </Text>
         </View>
-        <Text style={{ marginTop: 4, lineHeight: 20 }}>
+        <Text style={[compactTextPresets.bodySmall, { marginTop: 3, lineHeight: 18, color: colors.text }]}>
           {comment.content}
         </Text>
         <View style={styles.commentActions}>
@@ -118,15 +122,18 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
             style={styles.commentAction}
           >
             <ThumbsUp
-              size={14}
+              size={12}
               color={comment.isLiked ? colors.primary : colors.textSecondary}
               strokeWidth={1.5}
               fill={comment.isLiked ? colors.primary : 'none'}
             />
-            <Text style={{
-                color: comment.isLiked ? colors.primary : colors.textSecondary,
-                marginLeft: 4
-              }}
+            <Text style={[
+                compactTextPresets.caption,
+                {
+                  color: comment.isLiked ? colors.primary : colors.textSecondary,
+                  marginLeft: 3
+                }
+              ]}
             >
               {comment.likesCount || 0}
             </Text>
@@ -135,8 +142,8 @@ const CommentItem = ({ comment, onReply, onLike }: CommentItemProps) => {
             onPress={() => onReply(comment)}
             style={styles.commentAction}
           >
-            <MessageCircle size={14} color={colors.textSecondary} strokeWidth={1.5} />
-            <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
+            <MessageCircle size={12} color={colors.textSecondary} strokeWidth={1.5} />
+            <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginLeft: 3 }]}>
               Reply
             </Text>
           </Pressable>
@@ -152,6 +159,7 @@ export default function ReviewDetailScreen() {
   const { colors, tokens, isDark } = useTheme();
   const { user: currentUser } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
+  const typography = createTypographyStyles(colors);
 
   // State
   const [refreshing, setRefreshing] = useState(false);
@@ -447,50 +455,58 @@ export default function ReviewDetailScreen() {
           />
         }
       >
-        {/* Header */}
+        {/* COMPACT Header - Modern Design */}
         <View style={styles.header}>
-          <Button
+          <ModernButton
+            variant="ghost"
             size="sm"
             onPress={handleBack}
-            leftIcon={<ArrowLeft size={20} color={colors.text} strokeWidth={1.5} />}
-          >
-            
-          </Button>
-          <Button
+            icon={<ArrowLeft size={18} color={colors.text} strokeWidth={1.5} />}
+            style={styles.headerButton}
+          />
+          <Text style={[compactTextPresets.h4, { color: colors.text, fontWeight: '600' }]}>
+            Review Details
+          </Text>
+          <ModernButton
+            variant="ghost"
             size="sm"
             onPress={handleMoreOptions}
-            leftIcon={<MoreVertical size={20} color={colors.text} strokeWidth={1.5} />}
-          >
-            
-          </Button>
+            icon={<MoreVertical size={18} color={colors.text} strokeWidth={1.5} />}
+            style={styles.headerButton}
+          />
         </View>
 
-        {/* Review Content */}
-        <Card style={styles.reviewCard}>
-          {/* Reviewer Info */}
+        {/* MODERN Review Content Card */}
+        <ModernCard
+          variant="elevated"
+          style={styles.reviewCard}
+          padding="lg"
+          shadow="md"
+        >
+          {/* COMPACT Reviewer Info */}
           <Pressable
             onPress={() => handleUserPress(reviewer?.id || '')}
             style={styles.reviewerInfo}
           >
             <Avatar
-              size="md"
+              size="sm"
               name={reviewer?.username || 'Anonymous'}
               isAnonymous={true}
             />
             <View style={styles.reviewerDetails}>
-              <Text >
+              <Text style={[compactTextPresets.bodySmall, { fontWeight: '600', color: colors.text }]}>
                 {reviewer?.displayName || reviewer?.username || 'Anonymous'}
               </Text>
               <View style={styles.reviewMeta}>
-                <Calendar size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                <Calendar size={10} color={colors.textSecondary} strokeWidth={1.5} />
+                <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginLeft: 3 }]}>
                   {formatDate(review.createdAt)}
                 </Text>
                 {review.location && (
                   <>
-                    <Text style={{ color: colors.textSecondary, marginHorizontal: 8 }}>•</Text>
-                    <MapPin size={12} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
+                    <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginHorizontal: 6 }]}>•</Text>
+                    <MapPin size={10} color={colors.textSecondary} strokeWidth={1.5} />
+                    <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginLeft: 3 }]}>
                       {typeof review.location === 'string' ? review.location : review.location?.city || review.location?.name || 'Unknown location'}
                     </Text>
                   </>
@@ -499,51 +515,51 @@ export default function ReviewDetailScreen() {
             </View>
           </Pressable>
 
-          {/* Review Title & Rating */}
+          {/* COMPACT Review Title & Rating */}
           <View style={styles.reviewHeader}>
-            <Text style={styles.reviewTitle}>
+            <Text style={[compactTextPresets.h3, { color: colors.text, fontWeight: '700', marginBottom: 6 }]}>
               {review.title}
             </Text>
             <View style={styles.ratingContainer}>
               {renderStars(review.rating)}
-              <Text style={{ marginLeft: 8 }}>
+              <Text style={[compactTextPresets.bodySmall, { marginLeft: 6, fontWeight: '600', color: colors.text }]}>
                 {review.rating || 0}.0
               </Text>
             </View>
           </View>
 
-          {/* Reviewee Info */}
+          {/* COMPACT Reviewee Info */}
           {reviewee && (
             <Pressable
               onPress={() => handleUserPress(reviewee.id)}
               style={styles.revieweeInfo}
             >
-              <Text style={{ color: colors.textSecondary }}>
+              <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginBottom: 4 }]}>
                 Review about
               </Text>
               <View style={styles.revieweeDetails}>
                 <Avatar
-                  size="sm"
+                  size="xs"
                   name={reviewee.username}
                   isAnonymous={true}
-                  style={{ marginRight: 8 }}
+                  style={{ marginRight: 6 }}
                 />
-                <Text >
+                <Text style={[compactTextPresets.bodySmall, { fontWeight: '600', color: colors.primary }]}>
                   {reviewee.displayName || reviewee.username}
                 </Text>
               </View>
             </Pressable>
           )}
 
-          {/* Categories */}
+          {/* COMPACT Categories */}
           {review.categories && review.categories.length > 0 && (
             <View style={styles.categoriesContainer}>
               {review.categories.map((category, index) => (
                 <View
                   key={index}
-                  style={[styles.categoryChip, { backgroundColor: colors.primary + '20', borderColor: colors.primary + '40' }]}
+                  style={[styles.categoryChip, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}
                 >
-                  <Text style={{ color: colors.primary }}>
+                  <Text style={[compactTextPresets.caption, { color: colors.primary, fontWeight: '500' }]}>
                     {category}
                   </Text>
                 </View>
@@ -551,16 +567,16 @@ export default function ReviewDetailScreen() {
             </View>
           )}
 
-          {/* Review Content */}
-          <Text style={styles.reviewContent}>
+          {/* COMPACT Review Content */}
+          <Text style={[compactTextPresets.body, { color: colors.text, lineHeight: 20, marginBottom: 12 }]}>
             {review.content}
           </Text>
 
-          {/* Platform */}
+          {/* COMPACT Platform */}
           {review.platform && (
             <View style={styles.platformContainer}>
-              <Text style={{ color: colors.textSecondary }}>
-                Platform: <Text >{review.platform}</Text>
+              <Text style={[compactTextPresets.caption, { color: colors.textSecondary }]}>
+                Platform: <Text style={[compactTextPresets.caption, { color: colors.text, fontWeight: '500' }]}>{review.platform}</Text>
               </Text>
             </View>
           )}
@@ -589,54 +605,63 @@ export default function ReviewDetailScreen() {
             </View>
           )}
 
-          {/* Actions */}
+          {/* MODERN Actions */}
           <View style={styles.actionsContainer}>
-            <Pressable onPress={handleLike} style={styles.actionButton}>
-              <Heart
-                size={20}
-                color={isLiked ? colors.error : colors.textSecondary}
-                fill={isLiked ? colors.error : 'none'}
-                strokeWidth={1.5}
-              />
-              <Text style={{
-                  color: isLiked ? colors.error : colors.textSecondary,
-                  marginLeft: 6
-                }}
-              >
-                {likesCount}
-              </Text>
-            </Pressable>
+            <ModernButton
+              variant={isLiked ? "solid" : "ghost"}
+              size="sm"
+              onPress={handleLike}
+              icon={
+                <Heart
+                  size={16}
+                  color={isLiked ? colors.white : colors.textSecondary}
+                  fill={isLiked ? colors.white : 'none'}
+                  strokeWidth={1.5}
+                />
+              }
+              style={[styles.actionButton, isLiked && { backgroundColor: colors.error }]}
+            >
+              {likesCount}
+            </ModernButton>
 
-            <Pressable
+            <ModernButton
+              variant="ghost"
+              size="sm"
               onPress={() => setShowComments(!showComments)}
+              icon={<MessageCircle size={16} color={colors.textSecondary} strokeWidth={1.5} />}
               style={styles.actionButton}
             >
-              <MessageCircle size={20} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ color: colors.textSecondary, marginLeft: 6 }}>
-                {comments.length}
-              </Text>
-            </Pressable>
+              {comments.length}
+            </ModernButton>
 
-            <Pressable onPress={handleShare} style={styles.actionButton}>
-              <Share2 size={20} color={colors.textSecondary} strokeWidth={1.5} />
-              <Text style={{ color: colors.textSecondary, marginLeft: 6 }}>
-                Share
-              </Text>
-            </Pressable>
+            <ModernButton
+              variant="ghost"
+              size="sm"
+              onPress={handleShare}
+              icon={<Share2 size={16} color={colors.textSecondary} strokeWidth={1.5} />}
+              style={styles.actionButton}
+            >
+              Share
+            </ModernButton>
           </View>
-        </Card>
+        </ModernCard>
 
-        {/* Comments Section */}
+        {/* MODERN Comments Section */}
         {showComments && (
-          <Card style={styles.commentsCard}>
-            <Text style={styles.commentsTitle}>
+          <ModernCard
+            variant="elevated"
+            style={styles.commentsCard}
+            padding="lg"
+            shadow="sm"
+          >
+            <Text style={[compactTextPresets.h4, { color: colors.text, marginBottom: 12 }]}>
               Comments ({comments.length})
             </Text>
-            
+
             {comments.length === 0 ? (
               <View style={styles.emptyComments}>
-                <MessageCircle size={32} color={colors.textSecondary} strokeWidth={1} />
-                <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 12 }}>
+                <MessageCircle size={28} color={colors.textSecondary} strokeWidth={1} />
+                <Text style={[compactTextPresets.bodySmall, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
                   No comments yet. Be the first to comment!
                 </Text>
               </View>
@@ -652,7 +677,7 @@ export default function ReviewDetailScreen() {
                 ))}
               </View>
             )}
-          </Card>
+          </ModernCard>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -660,29 +685,29 @@ export default function ReviewDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  // COMPACT REVIEW DETAILS STYLES
   actionButton: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginRight: 24,
+    marginRight: 12, // reduced from 24
   },
   actionsContainer: {
     alignItems: 'center',
-    borderTopColor: '#E5E5E5',
+    borderTopColor: 'rgba(0,0,0,0.08)',
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
-    paddingTop: 16,
+    paddingTop: 12, // reduced from 16
+    gap: 8,
   },
   categoriesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: 6, // reduced from 8
+    marginBottom: 12, // reduced from 16
   },
   categoryChip: {
-    borderRadius: 16,
+    borderRadius: 12, // reduced from 16
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 8, // reduced from 12
+    paddingVertical: 4, // reduced from 6
   },
   commentAction: {
     alignItems: 'center',
@@ -690,11 +715,11 @@ const styles = StyleSheet.create({
   },
   commentActions: {
     flexDirection: 'row',
-    gap: 16,
-    marginTop: 8,
+    gap: 12, // reduced from 16
+    marginTop: 6, // reduced from 8
   },
   commentAvatar: {
-    marginRight: 12,
+    marginRight: 8, // reduced from 12
   },
   commentContent: {
     flex: 1,
@@ -706,38 +731,40 @@ const styles = StyleSheet.create({
   },
   commentItem: {
     flexDirection: 'row',
+    marginBottom: 8, // added spacing between comments
   },
   commentsCard: {
-    margin: 16,
+    margin: 12, // reduced from 16
     marginTop: 0,
-    padding: 16,
   },
   commentsList: {
-    gap: 16,
-  },
-  commentsTitle: {
-    marginBottom: 16,
+    gap: 12, // reduced from 16
   },
   container: {
     flex: 1,
   },
   emptyComments: {
     alignItems: 'center',
-    padding: 32,
+    padding: 24, // reduced from 32
   },
   emptyState: {
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    padding: 32,
+    padding: 24, // reduced from 32
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingBottom: 16,
-    paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingBottom: 12, // reduced from 16
+    paddingHorizontal: 12, // increased from 8 for better touch targets
+    paddingTop: 6, // reduced from 8
+  },
+  headerButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   mediaContainer: {
     marginBottom: 16,
@@ -776,55 +803,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   reviewCard: {
-    margin: 16,
-    padding: 16,
-  },
-  reviewContent: {
-    lineHeight: 22,
-    marginBottom: 16,
+    margin: 12, // reduced from 16
   },
   reviewHeader: {
-    marginBottom: 16,
+    marginBottom: 12, // reduced from 16
   },
   reviewMeta: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginTop: 4,
-  },
-  reviewTitle: {
-    lineHeight: 24,
-    marginBottom: 8,
+    marginTop: 3, // reduced from 4
   },
   revieweeDetails: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginTop: 8,
+    marginTop: 6, // reduced from 8
   },
   revieweeInfo: {
-    marginBottom: 16,
+    marginBottom: 12, // reduced from 16
   },
   reviewerDetails: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 8, // reduced from 12
   },
   reviewerInfo: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 12, // reduced from 16
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 24, // reduced from 32
   },
   scrollView: {
     flex: 1,
   },
   starsContainer: {
     flexDirection: 'row',
-    gap: 2,
+    gap: 1, // reduced from 2
   },
   viewsContainer: {
     alignItems: 'center',
     flexDirection: 'row',
     marginLeft: 'auto',
+  },
+  platformContainer: {
+    marginBottom: 8, // added for spacing
   },
 });

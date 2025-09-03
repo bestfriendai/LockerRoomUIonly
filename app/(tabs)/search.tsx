@@ -23,6 +23,7 @@ import type { Review, User as UserType, ChatRoom } from "../../types";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
 import { SearchResultsSkeleton } from "../../components/ui/LoadingSkeletons";
+import { compactTextPresets } from "../../constants/tokens";
 
 type SearchTab = 'reviews' | 'users' | 'rooms';
 type SortOption = 'relevance' | 'date' | 'rating' | 'popularity';
@@ -367,10 +368,10 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Search Header */}
+      {/* COMPACT Search Header - TeaOnHer style */}
       <View style={[styles.searchHeader, { borderBottomColor: colors.border }]}>
         <View style={[styles.searchBar, { backgroundColor: colors.surfaceElevated }]}>
-          <SearchIcon size={20} color={colors.textSecondary} strokeWidth={1.5} />
+          <SearchIcon size={18} color={colors.textSecondary} strokeWidth={1.5} />
           <TextInput
             ref={searchInputRef}
             style={[styles.searchInput, { color: colors.text }]}
@@ -384,7 +385,7 @@ export default function SearchScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable onPress={clearSearch} style={styles.clearButton}>
-              <X size={18} color={colors.textSecondary} strokeWidth={1.5} />
+              <X size={16} color={colors.textSecondary} strokeWidth={1.5} />
             </Pressable>
           )}
         </View>
@@ -392,7 +393,7 @@ export default function SearchScreen() {
           onPress={() => setShowFilters(!showFilters)}
           style={[styles.filterButton, { backgroundColor: colors.surfaceElevated }]}
         >
-          <SlidersHorizontal size={18} color={colors.text} strokeWidth={1.5} />
+          <SlidersHorizontal size={16} color={colors.text} strokeWidth={1.5} />
         </Pressable>
       </View>
 
@@ -411,16 +412,16 @@ export default function SearchScreen() {
               ]}
             >
               <Icon
-                size={16}
+                size={14}
                 color={isActive ? colors.primary : colors.textSecondary}
                 strokeWidth={1.5}
               />
               <Text
                 style={[
-                  typography.body,
+                  compactTextPresets.bodySmall,
                   {
                     color: isActive ? colors.primary : colors.textSecondary,
-                    marginLeft: 6,
+                    marginLeft: 4,
                     fontWeight: isActive ? "500" : "normal"
                   }
                 ]}
@@ -462,75 +463,76 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    padding: 16,
+    padding: 14,     // Reduced from 16 for tighter layout
   },
   filterButton: {
     alignItems: "center",
-    borderRadius: 12,
-    height: 44,
+    borderRadius: 10,  // Slightly smaller radius
+    height: 40,        // Reduced from 44 for more compact design
     justifyContent: "center",
-    width: 44,
+    width: 40,         // Reduced from 44
   },
   resultsContainer: {
-    padding: 16,
+    padding: 10,       // Reduced from 12 for tighter spacing
   },
   roomIcon: {
     alignItems: "center",
-    borderRadius: 20,
-    height: 40,
+    borderRadius: 16,
+    height: 32,
     justifyContent: "center",
-    width: 40,
+    width: 32,
   },
   roomInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
   },
   roomResult: {
-    borderRadius: 12,
+    borderRadius: 8,   // Slightly smaller radius for tighter design
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    marginBottom: 8,
-    padding: 16,
+    marginBottom: 5,   // Reduced spacing between items
+    padding: 10,       // Reduced from 12 for more compact cards
   },
   roomStats: {
     flexDirection: "row",
-    marginTop: 4,
+    marginTop: 3,
   },
+  // COMPACT SEARCH STYLES - TeaOnHer-like
   searchBar: {
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 8, // reduced from 10
     flex: 1,
     flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    // gap: 4, // Removed gap property - not supported in React Native Web
+    paddingHorizontal: 8, // reduced from 10
+    paddingVertical: 6, // reduced from 8
   },
   searchHeader: {
     alignItems: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    // gap: 8, // Removed gap property - not supported in React Native Web
+    paddingHorizontal: 8, // reduced from 12
+    paddingVertical: 8, // reduced from 10
   },
   searchInput: {
     flex: 1,
     fontFamily: "Inter_400Regular",
-    fontSize: 16,
+    fontSize: 14, // reduced from 16
   },
   searchItem: {
-    borderRadius: 8,
-    marginBottom: 4,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 6, // reduced from 8
+    marginBottom: 3, // reduced from 4
+    paddingHorizontal: 12, // reduced from 16
+    paddingVertical: 8, // reduced from 12
   },
   searchSection: {
-    marginBottom: 24,
+    marginBottom: 18, // reduced from 24
   },
   sectionHeader: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 12,
+    marginBottom: 8, // reduced from 12
   },
   tab: {
     alignItems: "center",
@@ -539,7 +541,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 8, // reduced from 12
   },
   tabsContainer: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -547,17 +549,17 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 8, // reduced from 12
   },
   userResult: {
-    borderRadius: 12,
+    borderRadius: 8, // reduced from 10
     borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    marginBottom: 8,
-    padding: 16,
+    marginBottom: 4, // reduced from 6
+    padding: 8, // reduced from 12
   },
   userStats: {
     flexDirection: "row",
-    marginTop: 4,
+    marginTop: 3, // reduced from 4
   },
 });

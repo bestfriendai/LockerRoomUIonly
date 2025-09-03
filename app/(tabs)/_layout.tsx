@@ -9,11 +9,13 @@ import {
   
 } from 'react-native';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+// import { LinearGradient } from "expo-linear-gradient";
 import { Home, Search, PlusCircle, MessageCircle, Users } from "lucide-react-native";
 import { useTheme } from "../../providers/ThemeProvider";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { Route } from "@react-navigation/native";
 import { createTypographyStyles } from "../../styles/typography";
+// import { MODERN_SHADOWS } from "../../constants/shadows";
 import ErrorBoundary from "../../components/ErrorBoundary";
 
 type MyTabBarProps = BottomTabBarProps;
@@ -31,6 +33,7 @@ function MyTabBar({ state, descriptors, navigation }: MyTabBarProps) {
           paddingBottom: Math.max(insets.bottom, Platform.OS === "ios" ? 20 : 10),
           backgroundColor: colors.background,
           borderTopColor: colors.border,
+          // ...MODERN_SHADOWS.header,
         },
       ]}
     >
@@ -208,31 +211,34 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   activeIndicator: {
     borderRadius: 2,
-    bottom: -8,
-    height: 4,
+    bottom: -6,     // Moved closer to icon
+    height: 3,      // Slightly thinner
     position: "absolute",
-    width: 4,
+    width: 3,       // Smaller dot
   },
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 4,
+    marginBottom: 3, // Reduced spacing between icon and label
     position: "relative",
   },
   tabBar: {
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 12, // Reduced horizontal padding
+    paddingTop: 6,         // Reduced top padding
+    paddingBottom: 4,      // Added bottom padding for balance
+    minHeight: 60,         // Ensure consistent height
   },
   tabItem: {
     alignItems: "center",
     flex: 1,
     justifyContent: "center",
-    paddingVertical: 8,
+    paddingVertical: 6,    // Reduced vertical padding
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,          // Slightly smaller text
     textAlign: "center",
+    fontWeight: '500',     // Medium weight for better readability
   },
 });

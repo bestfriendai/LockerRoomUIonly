@@ -29,10 +29,15 @@ import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
 import { DiscoverFeedSkeleton } from "../../components/ui/LoadingSkeletons";
 import { SHADOWS } from "../../constants/shadows";
+import { compactTextPresets } from "../../constants/tokens";
+// MODERN DESIGN IMPORTS
+// import { GradientBackground } from "../../components/ui/GradientBackground";
+import { GlassmorphismCard } from "../../components/ui/GlassmorphismCard";
+import { ModernText, HeadingText, BodyText } from "../../components/ui/ModernText";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
-// Memoized category pill component for better performance
+// COMPACT Category pill component - TeaOnHer style
 const CategoryPill = React.memo(({ category, isSelected, onPress, colors, typography }: {
   category: { id: string; label: string };
   isSelected: boolean;
@@ -54,7 +59,7 @@ const CategoryPill = React.memo(({ category, isSelected, onPress, colors, typogr
   >
     <Text
       style={[
-        typography.body,
+        compactTextPresets.caption,
         {
           color: isSelected ? colors.chipTextActive : colors.chipText,
           fontWeight: isSelected ? "500" : "400",
@@ -487,65 +492,64 @@ export default function HomeScreen() {
   }, []);
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      {/* Modern App Header */}
+    <View style={[styles.header, { backgroundColor: colors.background }]}>
+      {/* Modern App Header with Better Typography */}
       <View style={styles.locationHeader}>
-        <Text style={typography.h1}>
-          LockerRoom Talk
-        </Text>
+        <View style={styles.titleSection}>
+          <HeadingText level={1} color={colors.text} weight="bold">
+            LockerRoom
+          </HeadingText>
+          <HeadingText level={3} color={colors.primary} weight="medium">
+            Talk
+          </HeadingText>
+        </View>
         <View style={styles.headerActions}>
-          <Pressable
+          <ModernButton
+            variant="ghost"
+            size="sm"
             onPress={() => router.push("/search")}
-            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }, SHADOWS.sm]}
-          >
-            <Search size={20} color={colors.text} strokeWidth={1.5} />
-          </Pressable>
-          <Pressable
+            icon={<Search size={18} color={colors.text} strokeWidth={1.5} />}
+            style={styles.headerActionButton}
+          />
+          <ModernButton
+            variant="ghost"
+            size="sm"
             onPress={() => router.push("/notifications")}
-            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }, SHADOWS.sm]}
-          >
-            <Bell size={20} color={colors.text} strokeWidth={1.5} />
-          </Pressable>
+            icon={<Bell size={18} color={colors.text} strokeWidth={1.5} />}
+            style={styles.headerActionButton}
+          />
         </View>
       </View>
 
-      {/* Location Selector */}
-      <View style={styles.locationContainer}>
-        <LocationSelector
-          onLocationSelect={handleLocationSelect}
-          currentLocation={selectedLocationData}
-          style={styles.locationSelector}
-        />
-
-        {selectedLocationData && (
-          <View style={[styles.locationInfo, { backgroundColor: colors.surface }]}>
-            <Text style={[typography.caption, { textAlign: 'center', color: colors.textSecondary }]}>
-              {selectedLocationData.type === 'global'
-                ? '🌍 Showing reviews from everywhere'
-                : selectedLocationData.type === 'current'
-                ? `📍 Within ${searchRadius} miles of your location`
-                : `📍 Within ${searchRadius} miles of ${(selectedLocationData as any)?.data.name}`
-              }
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Title with Location Button */}
+      {/* MODERN Title with Location Button */}
       <View style={styles.titleContainer}>
-        <Text style={typography.h2}>
+        <HeadingText level={4} color="#FFFFFF" weight="semibold">
           Discover
-        </Text>
+        </HeadingText>
         <Pressable
           onPress={() => setShowLocationModal(true)}
           style={[styles.locationButton, { backgroundColor: colors.surfaceElevated }]}
         >
-          <MapPin size={16} color={colors.primary} strokeWidth={1.5} />
-          <Text style={[typography.body, { color: colors.primary, marginLeft: 4 }]}>
+          <MapPin size={12} color={colors.primary} strokeWidth={1.5} />
+          <BodyText size="small" color="#FFFFFF" weight="medium" style={{ marginLeft: 4 }}>
             Location
-          </Text>
+          </BodyText>
         </Pressable>
       </View>
+
+      {/* COMPACT Location Info */}
+      {selectedLocationData && (
+        <View style={[styles.locationInfo, { backgroundColor: colors.surface }]}>
+          <BodyText size="small" color="rgba(255,255,255,0.8)" align="center">
+            {selectedLocationData.type === 'global'
+              ? '🌍 Showing reviews from everywhere'
+              : selectedLocationData.type === 'current'
+              ? `📍 Within ${searchRadius} miles of your location`
+              : `📍 Within ${searchRadius} miles of ${(selectedLocationData as any)?.data.name}`
+            }
+          </BodyText>
+        </View>
+      )}
 
       {/* Category Filter */}
       <ScrollView
@@ -566,21 +570,22 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      {/* Enhanced Filter Toggle */}
+      {/* COMPACT Filter Toggle - TeaOnHer style */}
       <View style={styles.filterToggle}>
         <ModernButton
           variant={useRadiusFilter ? "gradient" : "outline"}
-          size="sm"
+          size="xs"
           onPress={() => setUseRadiusFilter(!useRadiusFilter)}
-          icon={<Target size={16} color={useRadiusFilter ? colors.white : colors.primary} strokeWidth={1.5} />}
+          icon={<Target size={12} color={useRadiusFilter ? colors.white : colors.primary} strokeWidth={1.5} />}
+          style={{ paddingHorizontal: 6, paddingVertical: 3 }}
         >
           Radius Filter
         </ModernButton>
         <ModernButton
           variant="ghost"
-          size="sm"
+          size="xs"
           onPress={() => setShowRadiusModal(true)}
-          style={{ marginLeft: 12 }}
+          style={{ marginLeft: 6, paddingHorizontal: 4, paddingVertical: 3 }}
         >
           {searchRadius} mi
         </ModernButton>
@@ -589,8 +594,10 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {isInitialLoading && filteredReviews.length === 0 ? (
+    <SafeAreaView style={styles.container}>
+      {/* MODERN GRADIENT BACKGROUND */}
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        {isInitialLoading && filteredReviews.length === 0 ? (
         <>
           {renderHeader()}
           <DiscoverFeedSkeleton />
@@ -627,11 +634,11 @@ export default function HomeScreen() {
         }
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        estimatedItemSize={350}
+        estimatedItemSize={250} // reduced from 300 for more compact cards
         keyExtractor={keyExtractor}
         getItemType={getItemType}
         removeClippedSubviews={true}
-        drawDistance={500}
+        drawDistance={400} // reduced for better performance
       />
       )}
 
@@ -733,78 +740,90 @@ export default function HomeScreen() {
           </View>
         </Pressable>
       </Modal>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  // COMPACT STYLES - TeaOnHer-like spacing
   categoriesContainer: {
-    gap: 8,
-    paddingRight: 16,
+    // gap: 3, // Removed gap property - not supported in React Native Web
+    paddingRight: 6, // reduced from 8
   },
   categoriesScroll: {
-    marginBottom: 16,
+    marginBottom: 6, // reduced from 8
   },
   categoryPill: {
-    borderRadius: 20,
+    borderRadius: 10, // reduced from 12
     borderWidth: 1,
-    marginRight: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    marginRight: 3, // reduced from 4
+    paddingHorizontal: 6, // reduced from 8
+    paddingVertical: 3, // reduced from 4
   },
   container: {
     flex: 1,
   },
   filterToggle: {
-    marginBottom: 16,
+    marginBottom: 6, // reduced from 8
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 3, // reduced from 4
   },
   header: {
-    paddingBottom: 24,
-    paddingHorizontal: 16,
+    paddingBottom: 6, // Further reduced for tighter layout
+    paddingHorizontal: 6, // More compact horizontal padding
   },
   headerActions: {
     flexDirection: "row",
-    gap: 12,
+    // gap: 6, // Removed gap property - not supported in React Native Web
   },
   headerButton: {
     alignItems: "center",
-    borderRadius: 24,
-    height: 48,
+    borderRadius: 18, // reduced from 20
+    height: 36, // reduced from 40
     justifyContent: "center",
-    width: 48,
+    width: 36, // reduced from 40
+  },
+  headerActionButton: {
+    width: 36, // reduced from 40
+    height: 36, // reduced from 40
+    borderRadius: 18, // reduced from 20
   },
   listContent: {
-    paddingBottom: 100,
-    paddingHorizontal: 8,
+    paddingBottom: 80, // reduced from 100
+    paddingHorizontal: 8, // reduced from 12
   },
   locationHeader: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 8, // reduced from 12
+  },
+  titleSection: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    // gap: 4, // Removed gap property as it's not fully supported in React Native Web
   },
   locationContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 6, // reduced from 8
   },
   locationSelector: {
-    marginBottom: 8,
+    marginBottom: 3, // reduced from 4
   },
   locationInfo: {
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginTop: 8,
+    paddingHorizontal: 6, // reduced from 8
+    paddingVertical: 2, // reduced from 3
+    borderRadius: 6, // reduced from 8
+    marginTop: 3, // reduced from 4
   },
   modalContent: {
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 14, // reduced from 16
+    padding: 16, // reduced from 20
     width: "85%",
-    maxWidth: 400,
+    maxWidth: 380,
   },
   modalOverlay: {
     alignItems: "center",
@@ -813,50 +832,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   radiusOption: {
-    borderRadius: 12,
-    marginBottom: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    borderRadius: 8, // reduced from 10
+    marginBottom: 8, // reduced from 10
+    paddingHorizontal: 12, // reduced from 16
+    paddingVertical: 10, // reduced from 12
   },
   titleContainer: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 8, // reduced from 10
   },
   locationButton: {
     alignItems: "center",
-    borderRadius: 20,
+    borderRadius: 10, // reduced from 12
     flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 6, // reduced from 8
+    paddingVertical: 3, // reduced from 4
   },
   locationOption: {
     alignItems: "center",
-    borderRadius: 16,
+    borderRadius: 12,
     flexDirection: "row",
-    marginBottom: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   manualLocationContainer: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 16,
   },
   locationInput: {
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     flex: 1,
-    fontSize: 16,
-    marginLeft: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    fontSize: 15,
+    marginLeft: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   confirmButton: {
     alignItems: "center",
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 });

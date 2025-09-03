@@ -17,6 +17,7 @@ import AnimatedPressable from "./ui/AnimatedPressable";
 import { useTheme } from "../providers/ThemeProvider";
 import { SHADOWS } from "../constants/shadows";
 import { tokens as defaultTokens } from "../constants/tokens";
+import { formatRelativeTime } from "../utils/timestampHelpers";
 import type { Review } from "../types";
 
 type ReviewCardProps = {
@@ -248,7 +249,7 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review, onPress, style }) => {
           <View style={styles.footerRight}>
             <Clock size={12} color={colors.textSecondary} strokeWidth={1.5} />
             <Text style={{ marginLeft: 4, color: colors.textSecondary }}>
-              2d ago
+              {formatRelativeTime(review.createdAt)}
             </Text>
           </View>
         </View>
@@ -278,16 +279,16 @@ const createStyles = () => StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingBottom: defaultTokens.spacing.md,
-    paddingHorizontal: defaultTokens.spacing.lg,
+    paddingBottom: 12,  // Reduced from defaultTokens.spacing.md (16)
+    paddingHorizontal: 14, // Reduced from defaultTokens.spacing.lg (24)
   },
   footer: {
     alignItems: "center",
     borderTopWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: defaultTokens.spacing.lg,
-    paddingVertical: defaultTokens.spacing.md,
+    paddingHorizontal: 14, // Reduced for consistency
+    paddingVertical: 10,   // Reduced from defaultTokens.spacing.md
   },
   footerItem: {
     alignItems: "center",
@@ -309,9 +310,9 @@ const createStyles = () => StyleSheet.create({
     fontWeight: '500',
   },
   header: {
-    paddingBottom: defaultTokens.spacing.md,
-    paddingHorizontal: defaultTokens.spacing.lg,
-    paddingTop: defaultTokens.spacing.lg,
+    paddingBottom: 12, // Reduced from defaultTokens.spacing.md
+    paddingHorizontal: 14, // Reduced from defaultTokens.spacing.lg
+    paddingTop: 14,    // Reduced from defaultTokens.spacing.lg
   },
   headerLeft: {
     flex: 1,
@@ -322,8 +323,8 @@ const createStyles = () => StyleSheet.create({
   },
   imageContainer: {
     borderRadius: defaultTokens.radii.lg,
-    marginBottom: defaultTokens.spacing.md,
-    marginHorizontal: defaultTokens.spacing.lg,
+    marginBottom: 12,  // Reduced from defaultTokens.spacing.md
+    marginHorizontal: 14, // Reduced from defaultTokens.spacing.lg
     overflow: "hidden",
     ...SHADOWS.sm,
   },

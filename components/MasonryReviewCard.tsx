@@ -10,15 +10,22 @@ import {
   Pressable,
 } from 'react-native';
 import { Image } from "expo-image";
-import { Star, ThumbsUp, MessageCircle, Share2, MapPin } from "lucide-react-native";
+import { Star, ThumbsUp, MessageCircle, Share2, MapPin, Flag } from "lucide-react-native";
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from "../providers/ThemeProvider";
 import { BORDER_RADIUS, SHADOWS } from '../constants/shadows';
-import { tokens } from '../constants/tokens';
+import { tokens, compactTextPresets } from '../constants/tokens';
 import { createTypographyStyles } from '../styles/typography';
+// MODERN DESIGN IMPORTS
+import { GlassmorphismCard, FloatingCard } from './ui/GlassmorphismCard';
+import { ModernGradient } from './ui/ModernGradient';
+import { ModernText, BodyText, CaptionText } from './ui/ModernText';
+import { modernColors, modernShadows, modernBorderRadius } from '../constants/modernDesign';
 
-const CARD_PADDING = tokens.spacing.xs;
+// COMPACT DESIGN - TeaOnHer-style smaller padding
+const CARD_PADDING = tokens.compactSpacing.xs; // 3 instead of 4
+const CARD_MARGIN = tokens.compactSpacing.sm; // 6 instead of 8
 
 interface MasonryReviewCardProps {
   review: any;
@@ -121,20 +128,30 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
     }
   };
 
-  // Dynamic height calculation for masonry effect
+  // Dynamic height calculation for masonry effect - DRAMATIC variation like TeaOnHer
   const getCardHeight = () => {
-    const baseHeight = 200;
     const contentLength = review.content?.length || 0;
     const hasImage = review.images?.length > 0;
-    
+    const titleLength = review.title?.length || 0;
+
+    // Create MUCH more dramatic height variation like TeaOnHer
+    const heightVariation = Math.floor(Math.random() * 200) + 50; // 50-250px variation!
+
+    // Different base heights for more variety
+    const baseHeights = [140, 180, 220, 260, 300];
+    const randomBaseHeight = baseHeights[Math.floor(Math.random() * baseHeights.length)];
+
     if (hasImage) {
-      return Math.min(baseHeight + (contentLength / 10), 350);
+      return Math.min(randomBaseHeight + (contentLength / 8) + (titleLength / 2) + heightVariation, 500);
     }
-    return Math.min(baseHeight + (contentLength / 5), 280);
+    return Math.min(randomBaseHeight + (contentLength / 4) + titleLength + heightVariation, 400);
   };
-  
+
   const cardHeight = getCardHeight();
-  const imageHeight = review.images?.length > 0 ? Math.max(cardHeight * 0.6, 120) : 100;
+  // More varied image heights - some cards are mostly image, others mostly text
+  const imageRatios = [0.4, 0.5, 0.6, 0.7, 0.8];
+  const randomImageRatio = imageRatios[Math.floor(Math.random() * imageRatios.length)];
+  const imageHeight = review.images?.length > 0 ? Math.max(cardHeight * randomImageRatio, 100) : 80;
 
   // Simple date formatting with error handling
   const formatDate = () => {
@@ -156,24 +173,15 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
 
 
   return (
-    <Animated.View 
-      style={[
-        styles.container, 
-        { transform: [{ scale: scaleAnim }] }
-      ]}
-    >
-      <Pressable
+    <View style={styles.container}>
+      {/* MODERN FLOATING CARD with Advanced Effects */}
+      <FloatingCard
+        elevation="high"
+        borderRadius="2xl"
+        padding={0}
+        interactive={true}
         onPress={handleCardPress}
-        style={[
-          styles.card,
-          {
-            backgroundColor: colors.card,
-            borderColor: colors.borderSubtle,
-            borderWidth: StyleSheet.hairlineWidth,
-            height: cardHeight,
-          },
-          SHADOWS.md,
-        ]}
+        style={[styles.modernCard, { height: cardHeight }]}
       >
         {/* Hero Image Section */}
         <View 
@@ -190,66 +198,136 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
               placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV0IHWPgf/8PGwYAK9gD9oGGPy0AAAAASUVORK5CYII=' }}
             />
           ) : (
-            <LinearGradient
-              colors={[colors.primary + '40', colors.primary + '20']}
+            <ModernGradient
+              gradient="aurora"
               style={styles.placeholderImage}
             >
-              <Text style={[styles.placeholderText, { color: colors.primary }]}>
+              <ModernText
+                variant="h2"
+                weight="black"
+                color="#FFFFFF"
+              >
                 {(review.targetUserId || review.targetName || review.title || "")?.charAt(0)?.toUpperCase() || "?"}
-              </Text>
-            </LinearGradient>
+              </ModernText>
+            </ModernGradient>
           )}
           
-          {/* Overlay gradient for better text readability */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
+          {/* Modern Gradient Overlay */}
+          <ModernGradient
+            gradient="darkGlass"
             style={styles.overlay}
           />
-          
-          {/* Floating Rating Badge */}
-          <View style={[styles.ratingBadge, { backgroundColor: 'rgba(0, 0, 0, 0.75)' }]}>
-            <Star size={14} color="#FFD700" fill="#FFD700" />
-            <Text style={[styles.ratingText, { color: '#FFFFFF' }]}>
-              {review.rating || 5}
-            </Text>
-          </View>
 
-          {/* Category Chip */}
-          <View style={[styles.categoryChip, { backgroundColor: colors.primary }]}>
-            <Text style={[styles.categoryText, { color: colors.onPrimary }]}>
-              {(Array.isArray(review.categories) ? review.categories[0] : review.category)?.toUpperCase() || "REVIEW"}
-            </Text>
-          </View>
+          {/* Glassmorphism Rating Badge */}
+          <GlassmorphismCard
+            style={styles.ratingBadge}
+            intensity={15}
+            tint="dark"
+            borderRadius="lg"
+            padding={6}
+          >
+            <View style={styles.ratingContent}>
+              <Star size={14} color="#FFD700" fill="#FFD700" />
+              <ModernText variant="caption" weight="bold" color="#FFFFFF" style={{ marginLeft: 4 }}>
+                {review.rating || 5}
+              </ModernText>
+            </View>
+          </GlassmorphismCard>
+
+          {/* Modern Report Button with Gradient */}
+          <ModernGradient
+            gradient="danger"
+            style={styles.reportButton}
+            borderRadius="md"
+          >
+            <TouchableOpacity
+              style={styles.reportButtonContent}
+              onPress={() => Alert.alert('Report', 'Report functionality would be implemented here')}
+              accessibilityRole="button"
+              accessibilityLabel="Report this review"
+            >
+              <Flag size={12} color="#FFFFFF" />
+              <CaptionText color="#FFFFFF" weight="semibold" style={{ marginLeft: 3 }}>
+                Report
+              </CaptionText>
+            </TouchableOpacity>
+          </ModernGradient>
+
+          {/* Glassmorphism Location Tag */}
+          {review.location && (
+            <GlassmorphismCard
+              style={styles.locationTag}
+              intensity={10}
+              tint="dark"
+              borderRadius="md"
+              padding={4}
+            >
+              <CaptionText color="#FFFFFF" weight="medium">
+                {typeof review.location === 'string'
+                  ? review.location
+                  : `${review.location?.city || 'Unknown'}, ${review.location?.state || 'Unknown'}`}
+              </CaptionText>
+            </GlassmorphismCard>
+          )}
         </View>
 
-        {/* Content Section */}
-        <View 
+        {/* Content Section - COMPACT DESIGN */}
+        <View
           style={styles.content}
           accessibilityRole="text"
           accessibilityLabel={`Review: ${review.title || 'Untitled'}. Target: ${review.targetUserId || 'Anonymous'}. ${likeCount} likes`}
         >
-          <Text style={[typography.h4, styles.title]} numberOfLines={2}>
+          {/* Modern Title */}
+          <ModernText
+            variant="bodyLarge"
+            weight="semibold"
+            color={colors.text}
+            numberOfLines={3}
+            style={styles.title}
+          >
             {review.title || 'Untitled Review'}
-          </Text>
-          
-          <Text style={[typography.bodySmall, styles.targetUser, { color: colors.primary, fontWeight: '600' }]} numberOfLines={1}>
-            @{review.targetUserId || 'Anonymous'}
-          </Text>
-          
-          {review.location && (
-            <View style={styles.locationContainer}>
-              <MapPin size={12} color={colors.textTertiary} />
-              <Text style={[typography.caption, styles.locationText, { color: colors.textTertiary }]} numberOfLines={1}>
-                {typeof review.location === 'string' 
-                  ? review.location 
-                  : `${review.location?.city || 'Unknown'}, ${review.location?.state || 'Unknown'}`}
-              </Text>
-            </View>
-          )}
-          
-          <Text style={[typography.bodySmall, styles.snippet, { color: colors.textSecondary }]} numberOfLines={3}>
+          </ModernText>
+
+          {/* Modern Meta Row */}
+          <View style={styles.metaRow}>
+            <ModernText
+              variant="caption"
+              weight="medium"
+              color={colors.primary}
+              numberOfLines={1}
+              style={styles.targetUser}
+            >
+              @{review.targetUserId || 'Anonymous'}
+            </ModernText>
+
+            {review.location && (
+              <>
+                <CaptionText color={colors.textTertiary} style={{ marginHorizontal: 6 }}>•</CaptionText>
+                <View style={styles.locationContainer}>
+                  <MapPin size={10} color={colors.textTertiary} />
+                  <CaptionText
+                    color={colors.textTertiary}
+                    numberOfLines={1}
+                    style={styles.locationText}
+                  >
+                    {typeof review.location === 'string'
+                      ? review.location
+                      : `${review.location?.city || 'Unknown'}, ${review.location?.state || 'Unknown'}`}
+                  </CaptionText>
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Modern Content Snippet */}
+          <BodyText
+            size="small"
+            color={colors.textSecondary}
+            numberOfLines={4}
+            style={styles.snippet}
+          >
             {review.content || 'No content available'}
-          </Text>
+          </BodyText>
 
           {/* Enhanced Tags */}
           {review.tags && review.tags.length > 0 && (
@@ -279,65 +357,73 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
 
         </View>
 
-        {/* Bottom Action Bar */}
-        <View style={[styles.actionBar, { borderTopColor: colors.borderSubtle }]}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={handleLike}
-            accessibilityRole="button"
-            accessibilityLabel={`Like button, ${likeCount} likes${liked ? ', liked' : ''}`}
-            accessibilityState={{ selected: liked }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <ThumbsUp
-              size={16}
-              color={liked ? colors.primary : colors.textSecondary}
-              fill={liked ? colors.primary : "transparent"}
-            />
-            <Text style={[typography.caption, styles.actionText, { 
-              color: liked ? colors.primary : colors.textSecondary 
-            }]}>
-              {likeCount}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { opacity: isSharing ? 0.6 : 1 }]}
-            onPress={handleShare}
-            disabled={isSharing}
-            accessibilityRole="button"
-            accessibilityLabel="Share review"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Share2 size={16} color={colors.textSecondary} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.actionButton}>
-            <MessageCircle size={16} color={colors.textSecondary} />
-            <Text style={[typography.caption, styles.actionText, { color: colors.textSecondary }]}>
-              0
-            </Text>
-          </TouchableOpacity>
+        {/* Modern Action Bar with Glassmorphism */}
+        <GlassmorphismCard
+          style={styles.actionBar}
+          intensity={5}
+          tint="light"
+          borderRadius="none"
+          padding={12}
+        >
+          <View style={styles.actionBarContent}>
+            <TouchableOpacity
+              style={[styles.actionButton, liked && styles.likedButton]}
+              onPress={handleLike}
+              accessibilityRole="button"
+              accessibilityLabel={`Like button, ${likeCount} likes${liked ? ', liked' : ''}`}
+              accessibilityState={{ selected: liked }}
+            >
+              <ThumbsUp
+                size={14}
+                color={liked ? '#FFFFFF' : colors.textSecondary}
+                fill={liked ? '#FFFFFF' : "transparent"}
+              />
+              <CaptionText
+                color={liked ? '#FFFFFF' : colors.textSecondary}
+                weight="medium"
+                style={styles.actionText}
+              >
+                {likeCount}
+              </CaptionText>
+            </TouchableOpacity>
 
-          <View style={styles.spacer} />
-          
-          <Text style={[typography.caption, styles.dateText, { color: colors.textTertiary }]}>
-            {formatDate()}
-          </Text>
-        </View>
-      </Pressable>
-    </Animated.View>
+            <TouchableOpacity
+              style={[styles.actionButton, { opacity: isSharing ? 0.6 : 1 }]}
+              onPress={handleShare}
+              disabled={isSharing}
+              accessibilityRole="button"
+              accessibilityLabel="Share review"
+            >
+              <Share2 size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton}>
+              <MessageCircle size={14} color={colors.textSecondary} />
+              <CaptionText color={colors.textSecondary} weight="medium" style={styles.actionText}>
+                0
+              </CaptionText>
+            </TouchableOpacity>
+
+            <View style={styles.spacer} />
+
+            <CaptionText color={colors.textTertiary} weight="normal">
+              {formatDate()}
+            </CaptionText>
+          </View>
+        </GlassmorphismCard>
+      </FloatingCard>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  // MODERN CONTAINER
   container: {
-    marginBottom: tokens.spacing.md,
-    paddingHorizontal: tokens.spacing.xs,
+    marginBottom: 16,
+    paddingHorizontal: 8,
     width: "100%",
   },
-  card: {
-    borderRadius: BORDER_RADIUS.xl,
+  modernCard: {
     overflow: "hidden",
     flex: 1,
   },
@@ -356,76 +442,86 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   placeholderText: {
-    fontSize: tokens.fontSize['3xl'],
+    fontSize: tokens.compactFontSize.xl,
     fontWeight: tokens.fontWeight.bold,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
   },
+  // MODERN RATING BADGE
   ratingBadge: {
-    alignItems: "center",
-    borderRadius: BORDER_RADIUS.full,
+    position: "absolute",
+    top: 12,
+    left: 12,
+  },
+  ratingContent: {
     flexDirection: "row",
-    left: tokens.spacing.xs,
-    paddingHorizontal: tokens.spacing.xs,
-    paddingVertical: tokens.spacing[0.5],
-    position: "absolute",
-    top: tokens.spacing.xs,
-    ...SHADOWS.sm,
+    alignItems: "center",
   },
-  categoryChip: {
-    borderRadius: BORDER_RADIUS.md,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: tokens.spacing[0.5],
+  // MODERN REPORT BUTTON
+  reportButton: {
     position: "absolute",
-    right: tokens.spacing.xs,
-    top: tokens.spacing.xs,
-    ...SHADOWS.sm,
+    top: 12,
+    right: 12,
   },
-  categoryText: {
-    fontSize: tokens.fontSize.xs,
-    fontWeight: tokens.fontWeight.bold,
-    letterSpacing: tokens.letterSpacing.wide,
-    textTransform: 'uppercase',
+  reportButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  // MODERN LOCATION TAG
+  locationTag: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
   },
   ratingText: {
-    fontSize: tokens.fontSize.sm,
     fontWeight: tokens.fontWeight.semibold,
-    marginLeft: tokens.spacing[0.5],
+    marginLeft: 1,
   },
+  // COMPACT CONTENT SECTION
   content: {
-    padding: tokens.spacing.md,
+    padding: tokens.compactSpacing.sm, // 6 instead of 12
     flex: 1,
   },
+  // COMPACT TEXT ELEMENTS
   title: {
-    marginBottom: tokens.spacing.xs,
+    marginBottom: 1, // reduced from 2
   },
   targetUser: {
-    marginBottom: tokens.spacing.xs,
+    flex: 1,
+  },
+  // META ROW - combines target user and location
+  metaRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: 1,
   },
   locationContainer: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: tokens.spacing.xs,
+    flex: 1,
   },
   locationText: {
-    marginLeft: tokens.spacing[0.5],
+    marginLeft: 1,
+    flex: 1,
   },
   snippet: {
-    lineHeight: tokens.lineHeight.sm,
-    marginBottom: tokens.spacing.sm,
+    lineHeight: tokens.compactLineHeight.sm, // tighter line height
+    marginBottom: tokens.compactSpacing.xs,
   },
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: tokens.spacing.xs,
-    marginBottom: tokens.spacing.sm,
+    gap: 1, // reduced gap
+    marginBottom: tokens.compactSpacing.xs,
   },
   modernTag: {
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: BORDER_RADIUS.xs,
     borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: tokens.spacing.sm,
-    paddingVertical: tokens.spacing[0.5],
+    paddingHorizontal: tokens.compactSpacing.xs,
+    paddingVertical: 0.5,
   },
   tagText: {
     fontWeight: tokens.fontWeight.medium,
@@ -433,21 +529,31 @@ const styles = StyleSheet.create({
   moreTagsText: {
     fontWeight: tokens.fontWeight.medium,
   },
+  // MODERN ACTION BAR
   actionBar: {
-    alignItems: "center",
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: modernBorderRadius['2xl'],
+    borderBottomRightRadius: modernBorderRadius['2xl'],
+  },
+  actionBarContent: {
     flexDirection: "row",
-    paddingHorizontal: tokens.spacing.md,
-    paddingVertical: tokens.spacing.sm,
+    alignItems: "center",
   },
   actionButton: {
     alignItems: "center",
     flexDirection: "row",
-    marginRight: tokens.spacing.md,
+    marginRight: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: modernBorderRadius.md,
+  },
+  likedButton: {
+    backgroundColor: modernColors.accent.pink,
   },
   actionText: {
     fontWeight: tokens.fontWeight.medium,
-    marginLeft: tokens.spacing[0.5],
+    marginLeft: 1,
   },
   spacer: {
     flex: 1,

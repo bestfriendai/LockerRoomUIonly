@@ -101,29 +101,29 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
     switch (size) {
       case 'sm':
         return {
-          paddingHorizontal: tokens.spacing.md,
-          paddingVertical: tokens.spacing.xs,
+          paddingHorizontal: 16, // More balanced horizontal padding
+          paddingVertical: 8,    // Tighter vertical padding
           minHeight: 36,
           borderRadius: BORDER_RADIUS.md,
         };
       case 'lg':
         return {
-          paddingHorizontal: tokens.spacing.xl,
-          paddingVertical: tokens.spacing.md,
-          minHeight: 52,
+          paddingHorizontal: 24, // Better proportions
+          paddingVertical: 14,   // More comfortable touch target
+          minHeight: 48,         // Slightly smaller than before
           borderRadius: BORDER_RADIUS.lg,
         };
       case 'xl':
         return {
-          paddingHorizontal: tokens.spacing['2xl'],
-          paddingVertical: tokens.spacing.lg,
-          minHeight: 60,
+          paddingHorizontal: 32, // Generous but not excessive
+          paddingVertical: 16,   // Comfortable for large buttons
+          minHeight: 56,         // Reduced from 60
           borderRadius: BORDER_RADIUS.xl,
         };
       default: // md
         return {
-          paddingHorizontal: tokens.spacing.lg,
-          paddingVertical: tokens.spacing.sm,
+          paddingHorizontal: 20, // Better balance than tokens.spacing.lg
+          paddingVertical: 12,   // More comfortable than tokens.spacing.sm
           minHeight: 44,
           borderRadius: BORDER_RADIUS.lg,
         };
@@ -131,23 +131,31 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
   };
 
   const getTextSize = () => {
-    const typography = createTypographyStyles(colors);
     switch (size) {
       case 'sm':
         return {
-          fontSize: tokens.fontSize.sm,
+          fontSize: 13,  // Slightly smaller for compact buttons
           fontWeight: tokens.fontWeight.medium,
-          letterSpacing: tokens.letterSpacing.wide,
+          letterSpacing: 0.3, // Subtle letter spacing
         };
       case 'lg':
+        return {
+          fontSize: 16,  // Clear and readable
+          fontWeight: tokens.fontWeight.semibold,
+          letterSpacing: 0.4,
+        };
       case 'xl':
         return {
-          fontSize: tokens.fontSize.lg,
+          fontSize: 17,  // Prominent but not overwhelming
           fontWeight: tokens.fontWeight.semibold,
-          letterSpacing: tokens.letterSpacing.wide,
+          letterSpacing: 0.5,
         };
-      default:
-        return typography.button;
+      default: // md
+        return {
+          fontSize: 15,  // Perfect balance for most buttons
+          fontWeight: tokens.fontWeight.medium,
+          letterSpacing: 0.3,
+        };
     }
   };
 
@@ -311,10 +319,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconSpacing: {
-    marginRight: tokens.spacing.xs,
+    marginRight: 8, // Better visual balance with text
   },
   rightIconSpacing: {
-    marginLeft: tokens.spacing.xs,
+    marginLeft: 8,  // Consistent spacing
   },
   glassButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',

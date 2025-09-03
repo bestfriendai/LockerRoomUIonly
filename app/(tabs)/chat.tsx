@@ -456,16 +456,16 @@ export default function ChatScreen() {
       {/* Modern Header */}
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }, SHADOWS.sm]}>
         <View style={styles.headerTop}>
-          <Text style={typography.h1}>
+          <Text style={[typography.h1, { color: colors.text }]}>
             Chat Rooms
           </Text>
           <ModernButton
             variant="gradient"
-            size="sm"
+            size="lg"
             onPress={handleCreateRoom}
             icon={<Plus size={18} color={colors.white} strokeWidth={1.5} />}
           >
-            Create
+            Create Room
           </ModernButton>
         </View>
 
@@ -555,25 +555,25 @@ const styles = StyleSheet.create({
   },
   header: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 6,
   },
   headerTop: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   listContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 16,
   },
   roomItem: {
-    borderRadius: BORDER_RADIUS.lg,
-    marginBottom: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   roomHeader: {
     alignItems: 'flex-start',
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   roomInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   roomTitleRow: {
     alignItems: 'center',
@@ -591,15 +591,15 @@ const styles = StyleSheet.create({
   roomIcon: {
     alignItems: 'center',
     borderRadius: BORDER_RADIUS.full,
-    height: 28,
+    height: 24,
     justifyContent: 'center',
-    marginRight: 12,
-    width: 28,
+    marginRight: 10,
+    width: 24,
   },
   roomMeta: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginTop: 12,
+    marginTop: 8,
   },
   memberCount: {
     alignItems: 'center',
@@ -608,50 +608,50 @@ const styles = StyleSheet.create({
   lastMessage: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginLeft: 20,
+    marginLeft: 16,
   },
   lastMessageContent: {
-    marginTop: 12,
+    marginTop: 8,
   },
   roomActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   joinButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   leaveButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   moreButton: {
-    padding: 8,
-    borderRadius: BORDER_RADIUS.md,
+    padding: 6,
+    borderRadius: BORDER_RADIUS.sm,
   },
   searchBar: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: BORDER_RADIUS.lg,
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    marginLeft: 16,
+    fontSize: 15,
+    marginLeft: 12,
   },
   tab: {
     alignItems: 'center',
-    borderBottomWidth: 3,
+    borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   tabsContainer: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
 });

@@ -19,13 +19,14 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
 import { ModernButton } from "../../components/ui/ModernButton";
 import { Input } from "../../components/ui/Input";
-import Card from "../../components/ui/Card";
+import { ModernCard } from "../../components/ui/ModernCard";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import { LocationSelector } from "../../components/LocationSelector";
 import { LocationService } from "../../services/locationService";
 import { createTypographyStyles } from "../../styles/typography";
 import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
+import { compactTextPresets } from "../../constants/tokens";
 
 
 
@@ -320,55 +321,62 @@ export default function CreateReviewScreen() {
   const renderFlagOptions = () => {
     return (
       <View style={styles.flagContainer}>
-        <Pressable
+        <ModernCard
+          variant={flag === 'green' ? 'gradient' : 'outline'}
           onPress={() => setFlag('green')}
           style={[
             styles.flagButton,
-            {
-              backgroundColor: flag === 'green' ? '#10B981' : colors.surfaceElevated,
-              borderColor: flag === 'green' ? '#10B981' : colors.border,
-            }
+            flag === 'green' && { borderColor: '#10B981' }
           ]}
+          padding="md"
         >
           <Flag
-            size={24}
+            size={20}
             color={flag === 'green' ? '#FFFFFF' : '#10B981'}
             fill={flag === 'green' ? '#FFFFFF' : 'none'}
             strokeWidth={1.5}
           />
-          <Text style={{
+          <Text style={[
+            compactTextPresets.bodySmall,
+            {
               color: flag === 'green' ? '#FFFFFF' : '#10B981',
-              marginLeft: 8
-            }}
-          >
+              marginLeft: 6,
+              fontWeight: '500'
+            }
+          ]}>
             Green Flag
           </Text>
-        </Pressable>
-        
-        <Pressable
+        </ModernCard>
+
+        <ModernCard
+          variant={flag === 'red' ? 'solid' : 'outline'}
           onPress={() => setFlag('red')}
           style={[
             styles.flagButton,
-            {
-              backgroundColor: flag === 'red' ? '#EF4444' : colors.surfaceElevated,
-              borderColor: flag === 'red' ? '#EF4444' : colors.border,
+            flag === 'red' && {
+              backgroundColor: '#EF4444',
+              borderColor: '#EF4444'
             }
           ]}
+          padding="md"
         >
           <Flag
-            size={24}
+            size={20}
             color={flag === 'red' ? '#FFFFFF' : '#EF4444'}
             fill={flag === 'red' ? '#FFFFFF' : 'none'}
             strokeWidth={1.5}
           />
-          <Text style={{
+          <Text style={[
+            compactTextPresets.bodySmall,
+            {
               color: flag === 'red' ? '#FFFFFF' : '#EF4444',
-              marginLeft: 8
-            }}
-          >
+              marginLeft: 6,
+              fontWeight: '500'
+            }
+          ]}>
             Red Flag
           </Text>
-        </Pressable>
+        </ModernCard>
       </View>
     );
   };
@@ -386,19 +394,29 @@ export default function CreateReviewScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Modern Header */}
-          <View style={[styles.header, { backgroundColor: colors.surface }, SHADOWS.sm]}>
-            <Text style={typography.h1}>
+          {/* COMPACT Header - TeaOnHer style */}
+          <ModernCard
+            variant="gradient"
+            style={styles.header}
+            padding="lg"
+            shadow="sm"
+          >
+            <Text style={compactTextPresets.h2}>
               Create Review
             </Text>
-            <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>
+            <Text style={[compactTextPresets.bodySmall, { marginTop: 4, color: colors.textSecondary }]}>
               Share your experience with others anonymously
             </Text>
-          </View>
+          </ModernCard>
 
-          {/* Person Name */}
-          <Card style={[styles.section, SHADOWS.sm]}>
-            <Text style={[typography.h3, { marginBottom: 12 }]}>
+          {/* COMPACT Person Name */}
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="lg"
+            shadow="sm"
+          >
+            <Text style={[compactTextPresets.h4, { marginBottom: 8 }]}>
               Who are you reviewing? *
             </Text>
             <Input
@@ -407,16 +425,23 @@ export default function CreateReviewScreen() {
               onChangeText={setPersonName}
               error={errors.personName}
               style={styles.input}
+              variant="filled"
+              size="md"
             />
-          </Card>
+          </ModernCard>
 
-          {/* Categories */}
-          <Card style={styles.section}>
-            <Text style={typography.h2}>
+          {/* COMPACT Categories */}
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="lg"
+            shadow="sm"
+          >
+            <Text style={compactTextPresets.h4}>
               Categories
             </Text>
             {errors.categories && (
-              <Text style={{ color: colors.error, marginBottom: 8 }}>
+              <Text style={[compactTextPresets.caption, { color: colors.error, marginBottom: 6 }]}>
                 {errors.categories}
               </Text>
             )}
@@ -445,10 +470,15 @@ export default function CreateReviewScreen() {
                 );
               })}
             </View>
-          </Card>
+          </ModernCard>
 
           {/* Enhanced Flag Selection */}
-          <Card style={[styles.section, SHADOWS.sm]}>
+          <ModernCard
+            variant="glass"
+            style={styles.section}
+            padding="xl"
+            shadow="lg"
+          >
             <Text style={[typography.h3, { marginBottom: 8 }]}>
               Flag Type *
             </Text>
@@ -461,10 +491,15 @@ export default function CreateReviewScreen() {
                 {errors.flag}
               </Text>
             )}
-          </Card>
+          </ModernCard>
 
           {/* Title */}
-          <Card style={styles.section}>
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="xl"
+            shadow="md"
+          >
             <Text style={typography.h2}>
               Review Title
             </Text>
@@ -475,30 +510,30 @@ export default function CreateReviewScreen() {
               error={errors.title}
               maxLength={100}
               style={styles.input}
+              variant="filled"
+              size="lg"
             />
-          </Card>
+          </ModernCard>
 
           {/* Content */}
-          <Card style={styles.section}>
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="xl"
+            shadow="md"
+          >
             <Text style={typography.h2}>
               Your Review
             </Text>
-            <TextInput
-              style={[
-                styles.textArea,
-                {
-                  backgroundColor: colors.surfaceElevated,
-                  borderColor: errors.content ? colors.error : colors.border,
-                  color: colors.text,
-                }
-              ]}
-              placeholder="Share your detailed experience... (minimum 50 characters)"
-              placeholderTextColor={colors.textSecondary}
+            <Input
+              placeholder="Share your detailed experience... (minimum 10 characters)"
               value={content}
               onChangeText={setContent}
+              error={errors.content}
               multiline
-              numberOfLines={6}
-              textAlignVertical="top"
+              style={[styles.input, { minHeight: 140 }]}
+              variant="filled"
+              size="lg"
               maxLength={1000}
             />
             <View style={styles.characterCount}>
@@ -506,16 +541,16 @@ export default function CreateReviewScreen() {
                 {content.length}/1000 characters
               </Text>
             </View>
-            {errors.content && (
-              <Text style={{ color: colors.error, marginTop: 4 }}>
-                {errors.content}
-              </Text>
-            )}
-          </Card>
+          </ModernCard>
 
-          {/* Platform */}
-          <Card style={styles.section}>
-             <Text style={[typography.h2, { marginBottom: 12 }]}>
+          {/* COMPACT Platform */}
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="lg"
+            shadow="sm"
+          >
+             <Text style={[compactTextPresets.h4, { marginBottom: 8 }]}>
                Platform (Optional)
              </Text>
             <Pressable
@@ -528,14 +563,17 @@ export default function CreateReviewScreen() {
                 }
               ]}
             >
-              <Text style={{
-                  color: platform ? colors.text : colors.textSecondary,
-                  flex: 1
-                }}
+              <Text style={[
+                  compactTextPresets.bodySmall,
+                  {
+                    color: platform ? colors.text : colors.textSecondary,
+                    flex: 1
+                  }
+                ]}
               >
                 {platform || 'Select platform'}
               </Text>
-              <ChevronDown size={20} color={colors.textSecondary} strokeWidth={1.5} />
+              <ChevronDown size={18} color={colors.textSecondary} strokeWidth={1.5} />
             </Pressable>
             {showPlatformPicker && (
               <View style={[styles.platformList, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
@@ -548,7 +586,7 @@ export default function CreateReviewScreen() {
                     }}
                     style={styles.platformItem}
                   >
-                    <Text style={{ color: colors.text }}>
+                    <Text style={[compactTextPresets.bodySmall, { color: colors.text }]}>
                       {p}
                     </Text>
                     {platform === p && (
@@ -558,14 +596,19 @@ export default function CreateReviewScreen() {
                 ))}
               </View>
             )}
-          </Card>
+          </ModernCard>
 
-          {/* Location */}
-          <Card style={styles.section}>
-             <Text style={[typography.h2, { marginBottom: 8 }]}>
+          {/* COMPACT Location */}
+          <ModernCard
+            variant="elevated"
+            style={styles.section}
+            padding="lg"
+            shadow="sm"
+          >
+             <Text style={[compactTextPresets.h4, { marginBottom: 6 }]}>
                Location (Optional)
              </Text>
-             <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 12 }]}>
+             <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginBottom: 8 }]}>
                Where did this experience take place?
              </Text>
 
@@ -576,15 +619,20 @@ export default function CreateReviewScreen() {
             />
 
             {selectedLocationData && (
-              <Text style={{ color: colors.textSecondary, marginTop: 8 }}>
+              <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginTop: 6 }]}>
                 📍 {selectedLocationData.data.name}
               </Text>
             )}
-          </Card>
+          </ModernCard>
 
-          {/* Media */}
-          <Card style={styles.section}>
-             <Text style={[typography.h2, { marginBottom: 12 }]}>
+          {/* COMPACT Media */}
+          <ModernCard
+            variant="neumorphic"
+            style={styles.section}
+            padding="lg"
+            shadow="sm"
+          >
+             <Text style={[compactTextPresets.h4, { marginBottom: 8 }]}>
                Photos (Optional)
              </Text>
             <View style={styles.mediaContainer}>
@@ -601,40 +649,48 @@ export default function CreateReviewScreen() {
               ))}
               {media.length < 5 && (
                 <View style={styles.mediaActions}>
-                  <Pressable
+                  <ModernCard
+                    variant="outline"
                     onPress={pickImage}
-                    style={[styles.mediaButton, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
+                    style={styles.mediaButton}
+                    padding="md"
                   >
                     <ImageIcon size={20} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+                    <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginTop: 3 }]}>
                       Gallery
                     </Text>
-                  </Pressable>
-                  <Pressable
+                  </ModernCard>
+                  <ModernCard
+                    variant="outline"
                     onPress={takePhoto}
-                    style={[styles.mediaButton, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
+                    style={styles.mediaButton}
+                    padding="md"
                   >
                     <Camera size={20} color={colors.textSecondary} strokeWidth={1.5} />
-                    <Text style={{ color: colors.textSecondary, marginTop: 4 }}>
+                    <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginTop: 3 }]}>
                       Camera
                     </Text>
-                  </Pressable>
+                  </ModernCard>
                 </View>
               )}
             </View>
-          </Card>
+          </ModernCard>
 
-          {/* Anonymous Option */}
-          <Card style={styles.section}>
+          {/* COMPACT Anonymous Option */}
+          <ModernCard
+            variant="outline"
+            style={styles.section}
+            padding="lg"
+          >
             <Pressable
               onPress={() => setIsAnonymous(!isAnonymous)}
               style={styles.anonymousOption}
             >
                <View style={styles.anonymousInfo}>
-                 <Text style={[typography.body, { fontWeight: '500' }]}>
+                 <Text style={[compactTextPresets.bodySmall, { fontWeight: '500' }]}>
                    Post Anonymously
                  </Text>
-                 <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                 <Text style={[compactTextPresets.caption, { color: colors.textSecondary, marginTop: 1 }]}>
                    Your name won't be visible to others
                  </Text>
                </View>
@@ -652,12 +708,12 @@ export default function CreateReviewScreen() {
                 )}
               </View>
             </Pressable>
-          </Card>
+          </ModernCard>
 
-          {/* Modern Submit Button */}
+          {/* COMPACT Submit Button */}
           <ModernButton
             variant="gradient"
-            size="lg"
+            size="md"
             onPress={handleSubmit}
             loading={isSubmitting}
             disabled={isSubmitting}
@@ -685,15 +741,15 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    // gap: 8, // Removed gap property - not supported in React Native Web
   },
   categoryChip: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.full,
+    borderRadius: BORDER_RADIUS.lg, // reduced from full
     borderWidth: 2,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12, // reduced from 16
+    paddingVertical: 8, // reduced from 12
   },
   characterCount: {
     alignItems: 'flex-end',
@@ -711,9 +767,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    marginBottom: 32,
-    padding: 20,
-    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: 20,
+    padding: 16,
+    borderRadius: BORDER_RADIUS.lg,
     marginHorizontal: 4,
   },
   input: {
@@ -727,29 +783,29 @@ const styles = StyleSheet.create({
   },
   mediaActions: {
     flexDirection: 'row',
-    gap: 12,
+    // gap: 10, // Removed gap property - not supported in React Native Web
   },
   mediaButton: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.md,
     borderWidth: 2,
-    height: 90,
+    height: 70,
     justifyContent: 'center',
-    width: 90,
+    width: 70,
   },
   mediaContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    // gap: 10, // Removed gap property - not supported in React Native Web
   },
   mediaItem: {
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: BORDER_RADIUS.lg,
-    height: 90,
+    borderRadius: BORDER_RADIUS.md,
+    height: 70,
     justifyContent: 'center',
     position: 'relative',
-    width: 90,
+    width: 70,
   },
   platformItem: {
     alignItems: 'center',
@@ -757,20 +813,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 12,
   },
   platformList: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.sm, // reduced from md
     borderWidth: 1,
-    marginTop: 12,
-    maxHeight: 240,
+    marginTop: 8, // reduced from 10
+    maxHeight: 180, // reduced from 200
   },
   platformPicker: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.sm, // reduced from md
     borderWidth: 1,
     flexDirection: 'row',
-    padding: 16,
+    padding: 10, // reduced from 12
   },
   removeMediaButton: {
     alignItems: 'center',
@@ -782,42 +838,43 @@ const styles = StyleSheet.create({
     top: -8,
     width: 24,
   },
+  // COMPACT CREATE SCREEN STYLES
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    padding: 12, // reduced from 16
+    paddingBottom: 24, // reduced from 32
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: 12, // reduced from 18
+    padding: 12, // reduced from 16
+    borderRadius: BORDER_RADIUS.md, // reduced from lg
   },
   flagContainer: {
     flexDirection: 'row',
-    gap: 16,
+    // gap: 8, // Removed gap property - not supported in React Native Web
   },
   flagButton: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.sm, // reduced from md
     borderWidth: 2,
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 12, // reduced from 16
+    paddingVertical: 8, // reduced from 12
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: 16, // reduced from 20
     marginHorizontal: 4,
   },
   textArea: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.sm, // reduced from md
     borderWidth: 1,
-    fontSize: 16,
-    minHeight: 140,
-    padding: 16,
+    fontSize: 14, // reduced from 15
+    minHeight: 100, // reduced from 120
+    padding: 10, // reduced from 12
     textAlignVertical: 'top',
   },
 });

@@ -2,7 +2,7 @@
 
 // Typography tokens
 export const tokens = {
-  // Font sizes based on a modular scale
+  // Font sizes based on a modular scale - ORIGINAL
   fontSize: {
     xs: 12,
     sm: 14,
@@ -16,7 +16,21 @@ export const tokens = {
     '6xl': 60,
   },
 
-  // Line heights for optimal readability
+  // COMPACT FONT SIZES - TeaOnHer-style compact typography (15% reduction)
+  compactFontSize: {
+    xs: 10,    // was 12
+    sm: 12,    // was 14
+    base: 14,  // was 16
+    lg: 15,    // was 18
+    xl: 17,    // was 20
+    '2xl': 20, // was 24
+    '3xl': 26, // was 30
+    '4xl': 31, // was 36
+    '5xl': 41, // was 48
+    '6xl': 51, // was 60
+  },
+
+  // Line heights for optimal readability - ORIGINAL
   lineHeight: {
     xs: 16,
     sm: 20,
@@ -28,6 +42,20 @@ export const tokens = {
     '4xl': 40,
     '5xl': 56,
     '6xl': 72,
+  },
+
+  // COMPACT LINE HEIGHTS - Tighter for compact design (15% reduction)
+  compactLineHeight: {
+    xs: 14,    // was 16
+    sm: 17,    // was 20
+    base: 20,  // was 24
+    lg: 24,    // was 28
+    xl: 24,    // was 28
+    '2xl': 27, // was 32
+    '3xl': 31, // was 36
+    '4xl': 34, // was 40
+    '5xl': 48, // was 56
+    '6xl': 61, // was 72
   },
 
   // Font weights
@@ -117,7 +145,7 @@ export const tokens = {
     full: 9999,
   },
 
-  // Spacing values
+  // Spacing values - ORIGINAL
   spacing: {
     0: 0,
     px: 1,
@@ -154,7 +182,7 @@ export const tokens = {
     72: 288,
     80: 320,
     96: 384,
-    // Semantic spacing
+    // Semantic spacing - ORIGINAL VALUES
     xs: 4,
     sm: 8,
     md: 16,
@@ -162,6 +190,53 @@ export const tokens = {
     xl: 32,
     '2xl': 48,
     '3xl': 64,
+  },
+
+  // COMPACT SPACING - TeaOnHer-style compact layout (30% reduction)
+  compactSpacing: {
+    0: 0,
+    px: 1,
+    0.5: 1,
+    1: 3,
+    1.5: 4,
+    2: 6,
+    2.5: 7,
+    3: 8,
+    3.5: 10,
+    4: 11,
+    5: 14,
+    6: 17,
+    7: 20,
+    8: 22,
+    9: 25,
+    10: 28,
+    11: 31,
+    12: 34,
+    14: 39,
+    16: 45,
+    20: 56,
+    24: 67,
+    28: 78,
+    32: 90,
+    36: 101,
+    40: 112,
+    44: 123,
+    48: 134,
+    52: 146,
+    56: 157,
+    60: 168,
+    64: 179,
+    72: 202,
+    80: 224,
+    96: 269,
+    // Semantic compact spacing
+    xs: 3,    // was 4
+    sm: 6,    // was 8
+    md: 11,   // was 16
+    lg: 17,   // was 24
+    xl: 22,   // was 32
+    '2xl': 34, // was 48
+    '3xl': 45, // was 64
   },
 
   // White alpha colors for overlays
@@ -271,4 +346,143 @@ export const textPresets = {
     fontWeight: tokens.fontWeight.medium,
     letterSpacing: tokens.letterSpacing.wide,
   },
+} as const;
+
+// COMPACT TEXT PRESETS - TeaOnHer-style compact typography
+export const compactTextPresets = {
+  // Display text (large headings) - compact
+  display: {
+    fontSize: tokens.compactFontSize['5xl'],
+    lineHeight: tokens.compactLineHeight['5xl'],
+    fontWeight: tokens.fontWeight.bold,
+    letterSpacing: tokens.letterSpacing.tight,
+  },
+
+  // Headings - compact
+  h1: {
+    fontSize: tokens.compactFontSize['4xl'],
+    lineHeight: tokens.compactLineHeight['4xl'],
+    fontWeight: tokens.fontWeight.bold,
+    letterSpacing: tokens.letterSpacing.tight,
+  },
+  h2: {
+    fontSize: tokens.compactFontSize['3xl'],
+    lineHeight: tokens.compactLineHeight['3xl'],
+    fontWeight: tokens.fontWeight.semibold,
+    letterSpacing: tokens.letterSpacing.tight,
+  },
+  h3: {
+    fontSize: tokens.compactFontSize['2xl'],
+    lineHeight: tokens.compactLineHeight['2xl'],
+    fontWeight: tokens.fontWeight.semibold,
+    letterSpacing: tokens.letterSpacing.normal,
+  },
+  h4: {
+    fontSize: tokens.compactFontSize.xl,
+    lineHeight: tokens.compactLineHeight.xl,
+    fontWeight: tokens.fontWeight.medium,
+    letterSpacing: tokens.letterSpacing.normal,
+  },
+
+  // Body text - compact
+  body: {
+    fontSize: tokens.compactFontSize.base,
+    lineHeight: tokens.compactLineHeight.base,
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: tokens.letterSpacing.normal,
+  },
+  bodyLarge: {
+    fontSize: tokens.compactFontSize.lg,
+    lineHeight: tokens.compactLineHeight.lg,
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: tokens.letterSpacing.normal,
+  },
+  bodySmall: {
+    fontSize: tokens.compactFontSize.sm,
+    lineHeight: tokens.compactLineHeight.sm,
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: tokens.letterSpacing.normal,
+  },
+
+  // Labels and captions - compact
+  label: {
+    fontSize: tokens.compactFontSize.sm,
+    lineHeight: tokens.compactLineHeight.sm,
+    fontWeight: tokens.fontWeight.medium,
+    letterSpacing: tokens.letterSpacing.wide,
+  },
+  caption: {
+    fontSize: tokens.compactFontSize.xs,
+    lineHeight: tokens.compactLineHeight.xs,
+    fontWeight: tokens.fontWeight.normal,
+    letterSpacing: tokens.letterSpacing.wide,
+  },
+
+  // Button text - compact
+  button: {
+    fontSize: tokens.compactFontSize.base,
+    lineHeight: tokens.compactLineHeight.base,
+    fontWeight: tokens.fontWeight.medium,
+    letterSpacing: tokens.letterSpacing.wide,
+  },
+  buttonSmall: {
+    fontSize: tokens.compactFontSize.sm,
+    lineHeight: tokens.compactLineHeight.sm,
+    fontWeight: tokens.fontWeight.medium,
+    letterSpacing: tokens.letterSpacing.wide,
+  },
+} as const;
+
+// COMPACT LAYOUT PRESETS - Smaller, less clunky UI components
+export const compactLayoutPresets = {
+  // Card padding - reduced by 25%
+  cardPadding: {
+    xs: tokens.compactSpacing.xs, // 3 instead of 4
+    sm: tokens.compactSpacing.sm, // 6 instead of 8
+    md: tokens.compactSpacing.md, // 11 instead of 16
+    lg: tokens.compactSpacing.lg, // 17 instead of 24
+    xl: tokens.compactSpacing.xl, // 22 instead of 32
+  },
+
+  // Button sizes - more compact
+  buttonHeight: {
+    sm: 32, // instead of 40
+    md: 40, // instead of 48
+    lg: 44, // instead of 56
+  },
+
+  // Input heights - more compact
+  inputHeight: {
+    sm: 36, // instead of 44
+    md: 44, // instead of 52
+    lg: 48, // instead of 60
+  },
+
+  // Header heights - more compact
+  headerHeight: {
+    sm: 48, // instead of 60
+    md: 56, // instead of 72
+    lg: 64, // instead of 80
+  },
+
+  // Tab bar height - more compact
+  tabBarHeight: 60, // instead of 80
+
+  // Avatar sizes - more compact
+  avatarSize: {
+    xs: 24, // instead of 32
+    sm: 32, // instead of 40
+    md: 40, // instead of 48
+    lg: 48, // instead of 64
+    xl: 64, // instead of 80
+  },
+
+  // Icon sizes - more compact
+  iconSize: {
+    xs: 12, // instead of 16
+    sm: 16, // instead of 20
+    md: 20, // instead of 24
+    lg: 24, // instead of 28
+    xl: 28, // instead of 32
+  }
 } as const;

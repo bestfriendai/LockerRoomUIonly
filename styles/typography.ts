@@ -47,93 +47,99 @@ export const createTypographyStyles = (colors: Record<ColorRole, string>) =>
       letterSpacing: tokens.letterSpacing.tight,
     },
     
-    // Headings with improved hierarchy
+    // Headings with improved hierarchy - optimized for better readability
     h1: {
-      fontSize: tokens.fontSize['4xl'],
+      fontSize: 28,  // Reduced from tokens.fontSize['4xl'] (36) for better balance
       fontWeight: tokens.fontWeight.bold,
       color: colors.text,
-      lineHeight: tokens.lineHeight['4xl'],
-      letterSpacing: tokens.letterSpacing.tight,
+      lineHeight: 34,  // Tighter line height for better density
+      letterSpacing: -0.3, // Slightly tighter letter spacing
     },
     h2: {
-      fontSize: tokens.fontSize['3xl'],
+      fontSize: 22,  // Reduced from tokens.fontSize['3xl'] (30)
       fontWeight: tokens.fontWeight.bold,
       color: colors.text,
-      lineHeight: tokens.lineHeight['3xl'],
-      letterSpacing: tokens.letterSpacing.tight,
+      lineHeight: 28,  // Better proportions
+      letterSpacing: -0.2,
     },
     h3: {
-      fontSize: tokens.fontSize['2xl'],
+      fontSize: 18,  // Reduced from tokens.fontSize['2xl'] (24)
       fontWeight: tokens.fontWeight.semibold,
       color: colors.text,
-      lineHeight: tokens.lineHeight['2xl'],
+      lineHeight: 24,  // Improved readability
+      letterSpacing: -0.1,
     },
     h4: {
-      fontSize: tokens.fontSize.xl,
+      fontSize: 16,  // Reduced from tokens.fontSize.xl (20)
       fontWeight: tokens.fontWeight.semibold,
       color: colors.text,
-      lineHeight: tokens.lineHeight.xl,
+      lineHeight: 22,  // Better line height
+      letterSpacing: 0,
     },
     h5: {
-      fontSize: tokens.fontSize.lg,
+      fontSize: 14,  // Reduced from tokens.fontSize.lg (18)
       fontWeight: tokens.fontWeight.medium,
       color: colors.text,
-      lineHeight: tokens.lineHeight.lg,
+      lineHeight: 20,  // Improved spacing
+      letterSpacing: 0.1,
     },
     
-    // Body text variants
+    // Body text variants - improved for better readability
     body: {
-      fontSize: tokens.fontSize.base,
+      fontSize: 15,    // Slightly smaller than tokens.fontSize.base (16)
       fontWeight: tokens.fontWeight.normal,
-      color: colors.textSecondary,
-      lineHeight: tokens.lineHeight.base,
+      color: colors.text, // Changed from textSecondary for better contrast
+      lineHeight: 22,     // Better line height for readability
+      letterSpacing: 0.1,
     },
     bodyLarge: {
-      fontSize: tokens.fontSize.lg,
+      fontSize: 16,    // Reduced from tokens.fontSize.lg (18)
       fontWeight: tokens.fontWeight.normal,
-      color: colors.textSecondary,
-      lineHeight: tokens.lineHeight.lg,
+      color: colors.text,
+      lineHeight: 24,  // Improved spacing
+      letterSpacing: 0.1,
     },
     bodySmall: {
-      fontSize: tokens.fontSize.sm,
+      fontSize: 13,    // Reduced from tokens.fontSize.sm (14)
       fontWeight: tokens.fontWeight.normal,
-      color: colors.textSecondary,
+      color: colors.textSecondary, // Keep secondary for smaller text
       lineHeight: tokens.lineHeight.sm,
     },
     
-    // Labels and captions
+    // Labels and captions - improved for better hierarchy
     label: {
-      fontSize: tokens.fontSize.sm,
+      fontSize: 12,    // Reduced from tokens.fontSize.sm (14)
       fontWeight: tokens.fontWeight.medium,
-      color: colors.text,
-      letterSpacing: tokens.letterSpacing.wide,
-      textTransform: 'uppercase' as const,
+      color: colors.textSecondary, // Better hierarchy
+      letterSpacing: 0.5, // More subtle than tokens.letterSpacing.wide
+      lineHeight: 16,
     },
     caption: {
-      fontSize: tokens.fontSize.sm,
+      fontSize: 11,    // Reduced from tokens.fontSize.sm (14)
       fontWeight: tokens.fontWeight.normal,
       color: colors.textTertiary,
-      lineHeight: tokens.lineHeight.sm,
+      lineHeight: 15,  // Tighter line height
+      letterSpacing: 0.2,
     },
-    
-    // Button text
+
+    // Button text - optimized for different button sizes
     button: {
-      fontSize: tokens.fontSize.base,
+      fontSize: 15,    // Slightly smaller than tokens.fontSize.base
       fontWeight: tokens.fontWeight.medium,
       color: colors.onPrimary,
-      letterSpacing: tokens.letterSpacing.wide,
+      letterSpacing: 0.3, // More subtle letter spacing
     },
     buttonSmall: {
-      fontSize: tokens.fontSize.sm,
+      fontSize: 13,    // Reduced from tokens.fontSize.sm
       fontWeight: tokens.fontWeight.medium,
       color: colors.onPrimary,
-      letterSpacing: tokens.letterSpacing.wide,
+      letterSpacing: 0.2,
     },
     buttonLarge: {
-      fontSize: tokens.fontSize.lg,
+      fontSize: 16,    // Reduced from tokens.fontSize.lg
       fontWeight: tokens.fontWeight.semibold,
       color: colors.onPrimary,
-      letterSpacing: tokens.letterSpacing.wide,
+      letterSpacing: 0.4,
     },
     
     // Utility text styles

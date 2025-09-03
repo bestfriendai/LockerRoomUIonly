@@ -11,41 +11,41 @@ export const SHADOWS = {
     elevation: 0,
   },
   
-  // Light shadows for subtle elevation
+  // Light shadows for subtle elevation - enhanced for better depth
   xs: Platform.select({
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 1,
+      shadowOpacity: 0.08,  // Increased from 0.05 for better visibility
+      shadowRadius: 2,      // Increased from 1 for softer shadow
     },
     android: {
       elevation: 1,
     },
   }),
-  
+
   sm: Platform.select({
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
+      shadowOpacity: 0.12,  // Increased from 0.08 for better definition
+      shadowRadius: 4,      // Increased from 3 for softer edges
     },
     android: {
-      elevation: 2,
+      elevation: 3,         // Increased from 2 for better Android shadow
     },
   }),
-  
-  // Medium shadows for cards and modals
+
+  // Medium shadows for cards and modals - enhanced for modern look
   md: Platform.select({
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.12,
-      shadowRadius: 6,
+      shadowOpacity: 0.15,  // Increased from 0.12 for better depth
+      shadowRadius: 8,      // Increased from 6 for softer shadow
     },
     android: {
-      elevation: 4,
+      elevation: 6,         // Increased from 4 for better elevation
     },
   }),
   
@@ -53,33 +53,33 @@ export const SHADOWS = {
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.15,
-      shadowRadius: 12,
+      shadowOpacity: 0.18,  // Increased from 0.15 for better prominence
+      shadowRadius: 16,     // Increased from 12 for softer shadow
     },
     android: {
       elevation: 8,
     },
   }),
-  
-  // Heavy shadows for floating elements
+
+  // Heavy shadows for floating elements - enhanced for modern depth
   xl: Platform.select({
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 12 },
-      shadowOpacity: 0.18,
-      shadowRadius: 16,
+      shadowOpacity: 0.22,  // Increased from 0.18 for better depth
+      shadowRadius: 20,     // Increased from 16 for softer edges
     },
     android: {
       elevation: 12,
     },
   }),
-  
+
   xxl: Platform.select({
     ios: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.22,
-      shadowRadius: 24,
+      shadowOpacity: 0.25,  // Increased from 0.22 for dramatic effect
+      shadowRadius: 28,     // Increased from 24 for very soft shadow
     },
     android: {
       elevation: 16,
@@ -174,3 +174,71 @@ export const createCardStyle = ({
     ...(backgroundColor && { backgroundColor }),
   };
 };
+
+// Modern shadow presets for specific UI elements
+export const MODERN_SHADOWS = {
+  // For buttons and interactive elements
+  button: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+    },
+    android: {
+      elevation: 3,
+    },
+  }),
+
+  // For cards and content containers
+  card: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 8,
+    },
+    android: {
+      elevation: 4,
+    },
+  }),
+
+  // For floating action buttons
+  fab: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.15,
+      shadowRadius: 12,
+    },
+    android: {
+      elevation: 8,
+    },
+  }),
+
+  // For modals and overlays
+  modal: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 16 },
+      shadowOpacity: 0.2,
+      shadowRadius: 24,
+    },
+    android: {
+      elevation: 16,
+    },
+  }),
+
+  // For navigation bars and headers
+  header: Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+    },
+    android: {
+      elevation: 2,
+    },
+  }),
+} as const;

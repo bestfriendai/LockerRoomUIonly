@@ -18,6 +18,7 @@ import { useTheme } from '../../providers/ThemeProvider';
 import { tokens } from '../../constants/tokens';
 import { BORDER_RADIUS, SHADOWS } from '../../constants/shadows';
 import { createTypographyStyles } from '../../styles/typography';
+import { formatRelativeTime } from '../../utils/timestampHelpers';
 
 const { width: screenWidth } = Dimensions.get('window');
 const CARD_WIDTH = (screenWidth - tokens.spacing.lg * 3) / 2; // Two columns with spacing

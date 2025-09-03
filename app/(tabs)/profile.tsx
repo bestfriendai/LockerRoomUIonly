@@ -38,7 +38,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
 import { ModernButton } from "../../components/ui/ModernButton";
 import { Button } from "../../components/ui/Button";
-import Card from "../../components/ui/Card";
+import { ModernCard } from "../../components/ui/ModernCard";
 import ReviewCard from "../../components/ReviewCard";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../utils/firebase";
@@ -46,7 +46,6 @@ import type { Review } from "../../types";
 import { toMillis, formatDate } from "../../utils/timestampHelpers";
 import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
 import { createTypographyStyles } from "../../styles/typography";
-import { generateMultipleUsernames } from "../../services/usernameGenerator";
 import { generateMultipleUsernames } from "../../services/usernameGenerator";
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -422,16 +421,26 @@ export default function ProfileScreen() {
             contentContainerStyle={styles.tabContent}
             showsVerticalScrollIndicator={false}
           >
-            <Card style={styles.aboutSection}>
+            <ModernCard
+              variant="elevated"
+              style={styles.aboutSection}
+              padding="xl"
+              shadow="md"
+            >
               <Text style={styles.aboutTitle}>
                 Anonymous Bio
               </Text>
               <Text style={{ color: colors.text, lineHeight: 22 }}>
                 {user?.bio || 'No bio available. Edit your profile to add an anonymous bio.'}
               </Text>
-            </Card>
+            </ModernCard>
 
-            <Card style={styles.aboutSection}>
+            <ModernCard
+              variant="elevated"
+              style={styles.aboutSection}
+              padding="xl"
+              shadow="md"
+            >
               <Text style={styles.aboutTitle}>
                 Anonymous Profile Details
               </Text>
@@ -463,9 +472,14 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-            </Card>
+            </ModernCard>
 
-            <Card style={styles.aboutSection}>
+            <ModernCard
+              variant="neumorphic"
+              style={styles.aboutSection}
+              padding="xl"
+              shadow="md"
+            >
               <Text style={styles.aboutTitle}>
                 Privacy & Settings
               </Text>
@@ -500,7 +514,7 @@ export default function ProfileScreen() {
                   <ChevronRight size={20} color={colors.textSecondary} strokeWidth={1.5} />
                 </TouchableOpacity>
               </View>
-            </Card>
+            </ModernCard>
           </ScrollView>
         );
 
@@ -570,7 +584,12 @@ export default function ProfileScreen() {
         </View>
 
         {/* Enhanced Anonymous Profile Header */}
-        <View style={[styles.profileSection, { backgroundColor: colors.surface }, SHADOWS.sm]}>
+        <ModernCard
+          variant="gradient"
+          style={styles.profileSection}
+          padding="xl"
+          shadow="lg"
+        >
           <View style={[styles.anonymousAvatar, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
             <UserIcon size={48} color={colors.primary} strokeWidth={1.5} />
           </View>
@@ -614,37 +633,79 @@ export default function ProfileScreen() {
           >
             Edit Profile
           </ModernButton>
-        </View>
+        </ModernCard>
 
         {/* Enhanced Anonymous Stats */}
         <View style={styles.statsSection}>
-          <StatCard
-            title="Reviews Written"
-            value={user?.reviewCount || 0}
-            subtitle="Total reviews"
-            icon={<Star size={24} color={colors.primary} strokeWidth={1.5} />}
-          />
-          <StatCard
-            title="Helpful Votes"
-            value={user?.helpfulVotes || 0}
-            subtitle="Community appreciation"
-            icon={<Heart size={24} color={colors.primary} strokeWidth={1.5} />}
-          />
-          <StatCard
-            title="Reputation"
-            value={user?.reputationScore || 0}
-            subtitle={`Level ${Math.floor((user?.reputationScore || 0) / 100) + 1}`}
-            icon={<Trophy size={24} color={colors.primary} strokeWidth={1.5} />}
-          />
+          <ModernCard
+            variant="elevated"
+            style={styles.statCardContainer}
+            padding="lg"
+            shadow="md"
+          >
+            <View style={styles.statIcon}>
+              <Star size={24} color={colors.primary} strokeWidth={1.5} />
+            </View>
+            <Text style={[typography.h2, styles.statValue]}>
+              {user?.reviewCount || 0}
+            </Text>
+            <Text style={[typography.caption, styles.statTitle]}>
+              Reviews Written
+            </Text>
+          </ModernCard>
+          
+          <ModernCard
+            variant="elevated"
+            style={styles.statCardContainer}
+            padding="lg"
+            shadow="md"
+          >
+            <View style={styles.statIcon}>
+              <Heart size={24} color={colors.primary} strokeWidth={1.5} />
+            </View>
+            <Text style={[typography.h2, styles.statValue]}>
+              {user?.helpfulVotes || 0}
+            </Text>
+            <Text style={[typography.caption, styles.statTitle]}>
+              Helpful Votes
+            </Text>
+          </ModernCard>
+          
+          <ModernCard
+            variant="elevated"
+            style={styles.statCardContainer}
+            padding="lg"
+            shadow="md"
+          >
+            <View style={styles.statIcon}>
+              <Trophy size={24} color={colors.primary} strokeWidth={1.5} />
+            </View>
+            <Text style={[typography.h2, styles.statValue]}>
+              {user?.reputationScore || 0}
+            </Text>
+            <Text style={[typography.caption, styles.statTitle]}>
+              Level {Math.floor((user?.reputationScore || 0) / 100) + 1}
+            </Text>
+          </ModernCard>
         </View>
 
         {/* Reputation System */}
-        <View style={[styles.reputationContainer, { backgroundColor: colors.surface }]}>
+        <ModernCard
+          variant="glass"
+          style={styles.reputationContainer}
+          padding="xl"
+          shadow="lg"
+        >
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Anonymous Reputation
           </Text>
 
-          <View style={[styles.reputationCard, { backgroundColor: colors.background }]}>
+          <ModernCard
+            variant="elevated"
+            style={styles.reputationCard}
+            padding="lg"
+            shadow="sm"
+          >
             <View style={styles.reputationHeader}>
               <Trophy size={20} color="#FFD700" strokeWidth={1.5} />
               <Text style={[styles.reputationScore, { color: colors.text }]}>
@@ -679,8 +740,8 @@ export default function ProfileScreen() {
                 ))}
               </View>
             )}
-          </View>
-        </View>
+          </ModernCard>
+        </ModernCard>
 
         {/* Tabs */}
         <View style={[styles.tabsContainer, { borderBottomColor: colors.border }]}>
@@ -843,7 +904,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   detailsList: {
-    gap: 12,
+    // gap: 12, // Removed gap property - not supported in React Native Web
   },
   editButton: {
     marginTop: 24,
@@ -857,30 +918,30 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingHorizontal: 12,
+    paddingTop: 6,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: 8,
+    // gap: 6, // Removed gap property - not supported in React Native Web
     justifyContent: 'flex-end',
   },
   preferenceItem: {
-    gap: 4,
+    // gap: 3, // Removed gap property - not supported in React Native Web
   },
   preferencesList: {
-    gap: 16,
+    // gap: 12, // Removed gap property - not supported in React Native Web
   },
   profileSection: {
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    marginHorizontal: 16,
-    marginBottom: 24,
-    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: 20,
+    paddingVertical: 24,
+    marginHorizontal: 12,
+    marginBottom: 20,
+    borderRadius: BORDER_RADIUS.lg,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 24,
   },
   scrollView: {
     flex: 1,
@@ -891,30 +952,35 @@ const styles = StyleSheet.create({
   },
   statCard: {
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: StyleSheet.hairlineWidth,
     flex: 1,
-    padding: 20,
+    padding: 16,
+  },
+  statCardContainer: {
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 3,
   },
   statIcon: {
     alignItems: 'center',
-    borderRadius: 24,
-    height: 48,
+    borderRadius: 20,
+    height: 40,
     justifyContent: 'center',
-    marginBottom: 12,
-    width: 48,
+    marginBottom: 10,
+    width: 40,
   },
   statTitle: {
     textAlign: 'center',
   },
   statValue: {
-    marginBottom: 4,
+    marginBottom: 3,
   },
   statsSection: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 32,
-    paddingHorizontal: 16,
+    // gap: 6, // Removed gap property - not supported in React Native Web
+    marginBottom: 24,
+    paddingHorizontal: 12,
   },
   tab: {
     alignItems: 'center',
@@ -924,11 +990,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   tabContent: {
-    padding: 16,
+    padding: 12,
   },
   tabContentContainer: {
     flex: 1,
-    minHeight: 300,
+    minHeight: 250,
   },
   tabIndicator: {
     bottom: 0,
@@ -949,17 +1015,17 @@ const styles = StyleSheet.create({
   },
   // Anonymous profile styles
   anonymousAvatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
-    marginBottom: 20,
+    borderWidth: 2,
+    marginBottom: 16,
   },
   usernameContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   usernameEditContainer: {
     flexDirection: 'row',
@@ -968,10 +1034,10 @@ const styles = StyleSheet.create({
   anonymousBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: BORDER_RADIUS.full,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   // Modal styles
   modalContainer: {

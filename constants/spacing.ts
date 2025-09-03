@@ -4,28 +4,28 @@
  */
 
 export const SPACING = {
-  // Base unit (8px)
+  // Base unit (8px) - optimized for better visual balance
   xs: 4,   // 0.5x
   sm: 8,   // 1x
-  md: 16,  // 2x
-  lg: 24,  // 3x
-  xl: 32,  // 4x
-  xxl: 40, // 5x
-  xxxl: 48, // 6x
-  
-  // Semantic spacing
-  component: 16,    // Standard component padding
-  section: 24,      // Section spacing
-  screen: 20,       // Screen edge padding
-  card: 16,         // Card internal padding
-  button: 12,       // Button padding
-  input: 16,        // Input field padding
-  
-  // Layout spacing
-  header: 16,       // Header padding
-  footer: 16,       // Footer padding
-  list: 8,          // List item spacing
-  grid: 16,         // Grid gap
+  md: 14,  // 1.75x - better than 16 for most components
+  lg: 20,  // 2.5x - more balanced than 24
+  xl: 28,  // 3.5x - reduced from 32
+  xxl: 36, // 4.5x - reduced from 40
+  xxxl: 44, // 5.5x - reduced from 48
+
+  // Semantic spacing - improved for better proportions
+  component: 14,    // Reduced from 16 for tighter layouts
+  section: 20,      // Reduced from 24 for better flow
+  screen: 16,       // Reduced from 20 for more content space
+  card: 14,         // Reduced from 16 for less clunky cards
+  button: 12,       // Keep button padding tight
+  input: 14,        // Reduced from 16 for better proportions
+
+  // Layout spacing - optimized
+  header: 14,       // Reduced from 16
+  footer: 14,       // Reduced from 16
+  list: 6,          // Reduced from 8 for tighter lists
+  grid: 12,         // Reduced from 16 for better grid density
 } as const;
 
 // Helper function to get spacing value

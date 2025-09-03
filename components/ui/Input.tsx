@@ -55,36 +55,36 @@ export const Input = forwardRef<TextInput, InputProps>((
   const hasError = !!error;
   const isDisabled = !editable;
 
-  // Calculate padding based on size
+  // Calculate padding based on size - improved for better visual balance
   const getPadding = () => {
     switch (size) {
       case 'sm':
         return {
-          paddingHorizontal: tokens.spacing.sm,
-          paddingVertical: tokens.spacing.xs,
+          paddingHorizontal: 12, // More compact but comfortable
+          paddingVertical: 8,    // Tighter vertical padding
         };
       case 'lg':
         return {
-          paddingHorizontal: tokens.spacing.lg,
-          paddingVertical: tokens.spacing.md,
+          paddingHorizontal: 16, // Better proportions
+          paddingVertical: 14,   // More comfortable
         };
       default: // md
         return {
-          paddingHorizontal: tokens.spacing.md,
-          paddingVertical: tokens.spacing.sm,
+          paddingHorizontal: 14, // Better balance than tokens
+          paddingVertical: 10,   // Improved vertical spacing
         };
     }
   };
 
-  // Calculate minimum height based on size
+  // Calculate minimum height based on size - optimized for better proportions
   const getMinHeight = () => {
     switch (size) {
       case 'sm':
-        return 36;
+        return 36;  // Compact but usable
       case 'lg':
-        return 56;
+        return 52;  // Reduced from 56 for better balance
       default: // md
-        return 48;
+        return 44;  // More compact default
     }
   };
 
@@ -150,24 +150,25 @@ export const Input = forwardRef<TextInput, InputProps>((
 
   const textInputStyles: TextStyle = {
     flex: 1,
-    fontSize: tokens.fontSize.base,
-    lineHeight: tokens.lineHeight.base,
+    fontSize: size === 'sm' ? 14 : size === 'lg' ? 16 : 15, // Size-appropriate font
+    lineHeight: size === 'sm' ? 18 : size === 'lg' ? 22 : 20, // Better line height
     color: isDisabled ? colors.textDisabled : colors.text,
-    paddingHorizontal: (leftIcon || rightIcon) ? tokens.spacing.xs : 0,
+    paddingHorizontal: (leftIcon || rightIcon) ? 6 : 0, // Reduced icon padding
     // Improve text input experience
     includeFontPadding: false,
     textAlignVertical: props.multiline ? 'top' : 'center',
-    fontWeight: tokens.fontWeight.normal as any,
+    fontWeight: '400' as any, // Consistent normal weight
   };
 
   return (
     <View style={containerStyle}>
       {label && (
         <RNText
-          style={[typography.label, styles.label, { 
+          style={[typography.label, styles.label, {
             color: hasError ? colors.error : colors.textSecondary,
-            fontSize: tokens.fontSize.sm,
-            fontWeight: tokens.fontWeight.medium,
+            fontSize: 13,    // Slightly smaller for better hierarchy
+            fontWeight: '500', // Medium weight for clarity
+            marginBottom: 6,   // Better spacing from input
           }]}
           accessibilityRole="text"
         >

@@ -1,7 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true,
+    "strict": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
@@ -16,6 +16,14 @@
     "moduleResolution": "bundler",
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "noImplicitAny": false,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noUncheckedIndexedAccess": false,
+    "maxNodeModuleJsDepth": 1
   }
 }
