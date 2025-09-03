@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../constants/colors';
 import { tokens } from '../constants/tokens';
@@ -31,8 +31,10 @@ type ColorRole =
   | 'black'
   | 'info'
   | 'chipBg'
+  | 'chipBgActive'
   | 'chipBorder'
   | 'chipText'
+  | 'chipTextActive'
   | 'divider'
   | 'errorContainer'
   | 'card'
@@ -154,11 +156,13 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Additional colors
     info: '#3B82F6',
     chipBg: isDark ? Colors.uiDark.surface : '#F3F4F6',
+    chipBgActive: Colors.primary[500],
     chipBorder: isDark ? Colors.uiDark.border : '#E5E7EB',
     chipText: isDark ? Colors.textDark.secondary : '#374151',
+    chipTextActive: Colors.white,
     divider: isDark ? Colors.uiDark.border : '#E5E7EB',
     errorContainer: isDark ? '#7F1D1D' : '#FEE2E2',
-    card: isDark ? Colors.uiDark.surface : Colors.ui.surface,
+    card: isDark ? Colors.uiDark.surfaceHover : Colors.ui.surface,
     warningBg: isDark ? '#78350F' : '#FEF3C7',
     cardBg: isDark ? Colors.uiDark.surface : Colors.ui.surface,
     errorBg: isDark ? '#7F1D1D' : '#FEE2E2',
@@ -174,7 +178,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
   // Don't render children until theme is loaded
   if (!isLoaded) {
-    return null; // or a loading spinner
+    return (
+      <View style={{ flex: 1, backgroundColor: systemColorScheme === 'dark' ? '#000000' : '#FFFFFF' }}>
+        {/* Optional: Add a minimal loading indicator */}
+      </View>
+    );
   }
 
   return (

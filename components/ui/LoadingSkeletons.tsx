@@ -4,8 +4,12 @@ import {
   StyleSheet,
   Animated,
   ViewStyle,
+  Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../providers/ThemeProvider';
+import { tokens } from '../../constants/tokens';
+import { BORDER_RADIUS, SHADOWS } from '../../constants/shadows';
 
 interface SkeletonProps {
   width?: number | string;
@@ -14,74 +18,109 @@ interface SkeletonProps {
   style?: ViewStyle;
 }
 
-// Base skeleton component with shimmer animation
+const { width: screenWidth } = Dimensions.get('window');
+
+// Enhanced shimmer skeleton with gradient effect
 export const Skeleton: React.FC<SkeletonProps> = ({
   width = '100%',
   height = 20,
-  borderRadius = 4,
+  borderRadius = BORDER_RADIUS.sm,
   style,
 }) => {
   const { colors, isDark } = useTheme();
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
+  const animatedValue = useRef(new Animated.Value(-1)).current;
 
   useEffect(() => {
-    const shimmerAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmerAnim, {
-          toValue: 1,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerAnim, {
-          toValue: 0,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
+    const animation = Animated.loop(
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: tokens.duration.slower * 3, // 1500ms
+        useNativeDriver: false,
+      }),
     );
-    shimmerAnimation.start();
-    return () => shimmerAnimation.stop();
-  }, [shimmerAnim]);
+    animation.start();
+    return () => animation.stop();
+  }, [animatedValue]);
 
-  const opacity = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.7],
+  const translateX = animatedValue.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-screenWidth, screenWidth],
   });
 
+  const baseColor = isDark ? '#1F2937' : '#F3F4F6';
+  const shimmerColor = isDark ? '#374151' : '#FFFFFF';
+
   return (
-    <Animated.View
+    <View
       style={[
         {
           width: width as any,
           height,
           borderRadius,
-          backgroundColor: isDark ? colors.surfaceElevated : colors.border,
-          opacity,
+          backgroundColor: baseColor,
+          overflow: 'hidden',
         },
         style,
       ]}
-    />
+    >
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            transform: [{ translateX }],
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={[
+            'transparent',
+            shimmerColor,
+            'transparent',
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </Animated.View>
+    </View>
   );
 };
 
-// Review card skeleton
+// Enhanced review card skeleton with proper design tokens
 export const ReviewCardSkeleton: React.FC = () => {
   const { colors } = useTheme();
   const randomHeight = Math.floor(Math.random() * 100) + 150;
 
   return (
-    <View style={[styles.reviewCard, { backgroundColor: colors.card }]}>
+    <View style={[styles.reviewCard, { backgroundColor: colors.card }, SHADOWS.sm]}>
+      {/* Profile section */}
       <View style={styles.reviewHeader}>
-        <Skeleton width={40} height={40} borderRadius={20} />
+        <Skeleton width={40} height={40} borderRadius={BORDER_RADIUS.full} />
         <View style={styles.reviewHeaderText}>
-          <Skeleton width={120} height={16} />
-          <Skeleton width={80} height={12} style={{ marginTop: 4 }} />
+          <Skeleton width={120} height={tokens.fontSize.base} borderRadius={BORDER_RADIUS.sm} />
+          <Skeleton width={80} height={tokens.fontSize.sm} borderRadius={BORDER_RADIUS.sm} style={{ marginTop: tokens.spacing['1'] }} />
         </View>
       </View>
-      <Skeleton width="100%" height={randomHeight} borderRadius={8} style={{ marginTop: 12 }} />
+
+      {/* Rating section */}
+      <View style={styles.ratingSection}>
+        <Skeleton width={80} height={tokens.fontSize.sm} borderRadius={BORDER_RADIUS.sm} />
+      </View>
+
+      {/* Content */}
+      <Skeleton width="100%" height={randomHeight} borderRadius={BORDER_RADIUS.md} style={{ marginTop: tokens.spacing.sm }} />
+      
+      {/* Tags */}
+      <View style={styles.tagsSection}>
+        <Skeleton width={50} height={20} borderRadius={BORDER_RADIUS.lg} />
+        <Skeleton width={60} height={20} borderRadius={BORDER_RADIUS.lg} style={{ marginLeft: tokens.spacing.xs }} />
+        <Skeleton width={45} height={20} borderRadius={BORDER_RADIUS.lg} style={{ marginLeft: tokens.spacing.xs }} />
+      </View>
+      
+      {/* Footer */}
       <View style={styles.reviewFooter}>
-        <Skeleton width={60} height={24} borderRadius={12} />
-        <Skeleton width={100} height={16} />
+        <Skeleton width={100} height={tokens.fontSize.sm} borderRadius={BORDER_RADIUS.sm} />
+        <Skeleton width={60} height={tokens.fontSize.xs} borderRadius={BORDER_RADIUS.sm} />
       </View>
     </View>
   );
@@ -248,42 +287,52 @@ export const ProfileSkeleton: React.FC = () => {
 
 const styles = StyleSheet.create({
   reviewCard: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: tokens.spacing.md,
+    marginBottom: tokens.spacing.sm,
+  },
+  ratingSection: {
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs,
+  },
+  tagsSection: {
+    flexDirection: 'row',
+    marginTop: tokens.spacing.sm,
+    marginBottom: tokens.spacing.xs,
   },
   reviewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   reviewHeaderText: {
-    marginLeft: 12,
+    marginLeft: tokens.spacing.sm,
     flex: 1,
   },
   reviewFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: tokens.spacing.sm,
   },
   masonryCard: {
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: tokens.spacing.md,
     overflow: 'hidden',
+    ...SHADOWS.sm,
   },
   masonryContent: {
-    padding: 12,
+    padding: tokens.spacing.sm,
   },
   masonryFooter: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
+    gap: tokens.spacing.xs,
+    marginTop: tokens.spacing.sm,
   },
   chatRoom: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: tokens.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   chatRoomLeft: {
@@ -291,72 +340,74 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   chatRoomContent: {
-    marginLeft: 12,
+    marginLeft: tokens.spacing.sm,
     flex: 1,
   },
   chatRoomMeta: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 6,
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing['1.5'],
   },
   message: {
     flexDirection: 'row',
-    marginBottom: 16,
-    paddingHorizontal: 16,
+    marginBottom: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.md,
   },
   ownMessage: {
     justifyContent: 'flex-end',
   },
   messageBubble: {
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: tokens.spacing.sm,
     maxWidth: '70%',
   },
   userResult: {
     flexDirection: 'row',
-    padding: 16,
-    borderRadius: 12,
+    padding: tokens.spacing.md,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 8,
+    marginBottom: tokens.spacing.xs,
+    ...SHADOWS.xs,
   },
   userInfo: {
-    marginLeft: 12,
+    marginLeft: tokens.spacing.sm,
     flex: 1,
   },
   userStats: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
+    gap: tokens.spacing.sm,
+    marginTop: tokens.spacing.xs,
   },
   discoverGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
+    paddingHorizontal: tokens.spacing.md,
   },
   discoverColumn: {
     width: '50%',
-    paddingHorizontal: 4,
+    paddingHorizontal: tokens.spacing['1'],
   },
   searchResults: {
-    padding: 16,
+    padding: tokens.spacing.md,
   },
   chatMessages: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: tokens.spacing.md,
   },
   profile: {
     flex: 1,
   },
   profileHeader: {
     alignItems: 'center',
-    padding: 24,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
+    padding: tokens.spacing['6'],
+    borderBottomLeftRadius: tokens.spacing['6'],
+    borderBottomRightRadius: tokens.spacing['6'],
+    ...SHADOWS.sm,
   },
   profileStats: {
     flexDirection: 'row',
-    marginTop: 24,
-    gap: 32,
+    marginTop: tokens.spacing['6'],
+    gap: tokens.spacing['8'],
   },
   profileStat: {
     alignItems: 'center',

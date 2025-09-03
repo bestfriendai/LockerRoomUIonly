@@ -5,15 +5,20 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Share
+  Share,
+  Animated,
+  Pressable,
 } from 'react-native';
-import logger from '../utils/logger';
-
 import { Image } from "expo-image";
-import { Star, ThumbsUp, MessageCircle, Share2 } from "lucide-react-native";
+import { Star, ThumbsUp, MessageCircle, Share2, MapPin } from "lucide-react-native";
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from "../providers/ThemeProvider";
+import { BORDER_RADIUS, SHADOWS } from '../constants/shadows';
+import { tokens } from '../constants/tokens';
+import { createTypographyStyles } from '../styles/typography';
 
-const CARD_PADDING = 6;
+const CARD_PADDING = tokens.spacing.xs;
 
 interface MasonryReviewCardProps {
   review: any;
@@ -21,16 +26,18 @@ interface MasonryReviewCardProps {
   index?: number;
 }
 
-// Simplified MasonryReviewCard for MockTrae
+// Enhanced MasonryReviewCard with Pinterest-style layout
 const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
   review,
   onPress,
 }) => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const typography = createTypographyStyles(colors);
   const [liked, setLiked] = React.useState(false);
   const [likeCount, setLikeCount] = React.useState(review?.helpfulCount || 0);
   const [isLiking, setIsLiking] = React.useState(false);
   const [isSharing, setIsSharing] = React.useState(false);
+  const scaleAnim = React.useRef(new Animated.Value(1)).current;
   
   // Safety check for review data
   if (!review) {
@@ -40,12 +47,36 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
     return null;
   }
 
-  // Mock like handler
+  const handleCardPress = () => {
+    // Haptic feedback for better UX
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Scale animation for press feedback
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.98,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    onPress();
+  };
+
+  // Enhanced like handler with haptic feedback
   const handleLike = async () => {
     if (isLiking) return;
     
     try {
       setIsLiking(true);
+      
+      // Haptic feedback for interaction
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       // Optimistic UI update
       const newLiked = !liked;
@@ -90,8 +121,20 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
     }
   };
 
-  // Simple height calculation for masonry effect
-  const imageHeight = review.images?.length > 0 ? 160 : 120;
+  // Dynamic height calculation for masonry effect
+  const getCardHeight = () => {
+    const baseHeight = 200;
+    const contentLength = review.content?.length || 0;
+    const hasImage = review.images?.length > 0;
+    
+    if (hasImage) {
+      return Math.min(baseHeight + (contentLength / 10), 350);
+    }
+    return Math.min(baseHeight + (contentLength / 5), 280);
+  };
+  
+  const cardHeight = getCardHeight();
+  const imageHeight = review.images?.length > 0 ? Math.max(cardHeight * 0.6, 120) : 100;
 
   // Simple date formatting with error handling
   const formatDate = () => {
@@ -111,238 +154,200 @@ const MasonryReviewCard: React.FC<MasonryReviewCardProps> = ({
     }
   };
 
-  const handleCardPress = () => {
-    onPress();
-  };
 
   return (
-    <View style={styles.container}>
-      <View
+    <Animated.View 
+      style={[
+        styles.container, 
+        { transform: [{ scale: scaleAnim }] }
+      ]}
+    >
+      <Pressable
+        onPress={handleCardPress}
         style={[
           styles.card,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border,
+            borderColor: colors.borderSubtle,
             borderWidth: StyleSheet.hairlineWidth,
-            shadowColor: colors.text,
-            shadowOpacity: 0.12,
-            shadowRadius: 12,
-            shadowOffset: { width: 0, height: 8 },
-            elevation: 4,
+            height: cardHeight,
           },
+          SHADOWS.md,
         ]}
       >
-        {/* Image or Avatar */}
-        <TouchableOpacity 
+        {/* Hero Image Section */}
+        <View 
           style={[styles.imageContainer, { height: imageHeight }]}
-          onPress={handleCardPress}
-          activeOpacity={0.8}
-          accessibilityRole="button"
+          accessibilityRole="image"
           accessibilityLabel={`Review image for ${review.title || 'Untitled Review'}. Rating: ${review.rating || 5} out of 5 stars`}
-          accessibilityHint="Tap to view full review"
         >
           {review.images && review.images[0] ? (
             <Image
               source={{ uri: review.images[0] }}
               style={styles.image}
               contentFit="cover"
-              transition={200}
+              transition={300}
+              placeholder={{ uri: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQV0IHWPgf/8PGwYAK9gD9oGGPy0AAAAASUVORK5CYII=' }}
             />
           ) : (
-            <View style={[styles.placeholderImage, { backgroundColor: colors.surfaceElevated }]}>
+            <LinearGradient
+              colors={[colors.primary + '40', colors.primary + '20']}
+              style={styles.placeholderImage}
+            >
               <Text style={[styles.placeholderText, { color: colors.primary }]}>
-                {review.targetUserId?.charAt(0).toUpperCase() || "?"}
+                {(review.targetUserId || review.targetName || review.title || "")?.charAt(0)?.toUpperCase() || "?"}
+              </Text>
+            </LinearGradient>
+          )}
+          
+          {/* Overlay gradient for better text readability */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.3)', 'rgba(0,0,0,0.6)']}
+            style={styles.overlay}
+          />
+          
+          {/* Floating Rating Badge */}
+          <View style={[styles.ratingBadge, { backgroundColor: 'rgba(0, 0, 0, 0.75)' }]}>
+            <Star size={14} color="#FFD700" fill="#FFD700" />
+            <Text style={[styles.ratingText, { color: '#FFFFFF' }]}>
+              {review.rating || 5}
+            </Text>
+          </View>
+
+          {/* Category Chip */}
+          <View style={[styles.categoryChip, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.categoryText, { color: colors.onPrimary }]}>
+              {(Array.isArray(review.categories) ? review.categories[0] : review.category)?.toUpperCase() || "REVIEW"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Content Section */}
+        <View 
+          style={styles.content}
+          accessibilityRole="text"
+          accessibilityLabel={`Review: ${review.title || 'Untitled'}. Target: ${review.targetUserId || 'Anonymous'}. ${likeCount} likes`}
+        >
+          <Text style={[typography.h4, styles.title]} numberOfLines={2}>
+            {review.title || 'Untitled Review'}
+          </Text>
+          
+          <Text style={[typography.bodySmall, styles.targetUser, { color: colors.primary, fontWeight: '600' }]} numberOfLines={1}>
+            @{review.targetUserId || 'Anonymous'}
+          </Text>
+          
+          {review.location && (
+            <View style={styles.locationContainer}>
+              <MapPin size={12} color={colors.textTertiary} />
+              <Text style={[typography.caption, styles.locationText, { color: colors.textTertiary }]} numberOfLines={1}>
+                {typeof review.location === 'string' 
+                  ? review.location 
+                  : `${review.location?.city || 'Unknown'}, ${review.location?.state || 'Unknown'}`}
               </Text>
             </View>
           )}
           
-          {/* Rating Indicator */}
-          <View style={[styles.ratingIndicator, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
-            <Star size={12} color="#FFD700" fill="#FFD700" />
-            <Text style={styles.ratingText}>
-              {review.rating}/5
-            </Text>
-          </View>
-
-          {/* Category Badge */}
-          <View style={[styles.categoryBadge, { backgroundColor: colors.primary }]}>
-            <Text style={styles.categoryText}>
-              {review.categories?.[0]?.toUpperCase() || "REVIEW"}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Content */}
-        <TouchableOpacity 
-          style={styles.content}
-          onPress={handleCardPress}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel={`Review: ${review.title || 'Untitled'}. Target: ${review.targetUserId || 'Anonymous'}. ${likeCount} likes`}
-          accessibilityHint="Tap to read full review"
-        >
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
-            {review.title || 'Untitled Review'}
-          </Text>
-          
-          <Text style={[styles.targetUser, { color: colors.textSecondary }]} numberOfLines={1}>
-            {review.targetUserId || 'Anonymous'}
-          </Text>
-          
-          {review.location && (
-            <Text style={[styles.location, { color: colors.textSecondary }]} numberOfLines={1}>
-              {review.location.city || 'Unknown'}, {review.location.state || 'Unknown'}
-            </Text>
-          )}
-          
-          <Text style={[styles.snippet, { color: colors.textSecondary }]} numberOfLines={3}>
+          <Text style={[typography.bodySmall, styles.snippet, { color: colors.textSecondary }]} numberOfLines={3}>
             {review.content || 'No content available'}
           </Text>
 
-          {/* Tags */}
+          {/* Enhanced Tags */}
           {review.tags && review.tags.length > 0 && (
             <View style={styles.tagsContainer}>
-              {review.tags.slice(0, 2).map((tag: string, tagIndex: number) => (
+              {review.tags.slice(0, 3).map((tag: string, tagIndex: number) => (
                 <View 
                   key={tagIndex}
-                  style={[styles.tag, { backgroundColor: colors.chipBg, borderColor: colors.chipBorder }]}
+                  style={[styles.modernTag, { 
+                    backgroundColor: colors.primary + '15', 
+                    borderColor: colors.primary + '30' 
+                  }]}
                 >
-                  <Text style={[styles.tagText, { color: colors.chipText }]}>
-                    {tag}
+                  <Text style={[typography.caption, styles.tagText, { color: colors.primary }]}>
+                    #{tag}
                   </Text>
                 </View>
               ))}
-              {review.tags.length > 2 && (
-                <Text style={[styles.moreTagsText, { color: colors.textSecondary }]}>
-                  +{review.tags.length - 2}
-                </Text>
+              {review.tags.length > 3 && (
+                <View style={[styles.modernTag, { backgroundColor: colors.surface }]}>
+                  <Text style={[typography.caption, styles.moreTagsText, { color: colors.textTertiary }]}>
+                    +{review.tags.length - 3}
+                  </Text>
+                </View>
               )}
             </View>
           )}
 
-          {/* Stats */}
-          <View style={styles.stats} pointerEvents="box-none">
-            <TouchableOpacity 
-              style={styles.statItem}
-              onPress={handleLike}
-              accessibilityRole="button"
-              accessibilityLabel={`Like button, ${likeCount} likes${liked ? ', liked' : ''}`}
-              accessibilityHint="Double tap to like or unlike"
-              accessibilityState={{ selected: liked }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <ThumbsUp
-                size={14}
-                color={liked ? colors.primary : colors.textSecondary}
-                fill={liked ? colors.primary : "transparent"}
-              />
-              <Text style={[styles.statText, { color: liked ? colors.primary : colors.textSecondary }]}>
-                {likeCount}
-              </Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.statItem, { opacity: isSharing ? 0.6 : 1 }]}
-              onPress={handleShare}
-              disabled={isSharing}
-              accessibilityRole="button"
-              accessibilityLabel="Share review"
-              accessibilityHint="Double tap to share this review"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Share2 size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
-            
-            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel="0 comments">
-              <MessageCircle size={14} color={colors.textSecondary} />
-              <Text style={[styles.statText, { color: colors.textSecondary }]}>
-                0
-              </Text>
-            </View>
+        </View>
 
-            <View style={styles.statItem} accessibilityRole="text" accessibilityLabel={`Posted ${formatDate()}`}>
-              <Text style={[styles.dateText, { color: colors.textSecondary }]}>
-                {formatDate()}
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-
-        {/* Author info */}
-        {!review.isAnonymous && review.author && (
-          <View style={styles.authorInfo}>
-            <Text style={[styles.authorText, { color: colors.textSecondary }]}>
-              by {review.author.username}
+        {/* Bottom Action Bar */}
+        <View style={[styles.actionBar, { borderTopColor: colors.borderSubtle }]}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={handleLike}
+            accessibilityRole="button"
+            accessibilityLabel={`Like button, ${likeCount} likes${liked ? ', liked' : ''}`}
+            accessibilityState={{ selected: liked }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <ThumbsUp
+              size={16}
+              color={liked ? colors.primary : colors.textSecondary}
+              fill={liked ? colors.primary : "transparent"}
+            />
+            <Text style={[typography.caption, styles.actionText, { 
+              color: liked ? colors.primary : colors.textSecondary 
+            }]}>
+              {likeCount}
             </Text>
-            {review.author.isVerified && (
-              <Text style={styles.verifiedBadge}>✓</Text>
-            )}
-          </View>
-        )}
-      </View>
-    </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, { opacity: isSharing ? 0.6 : 1 }]}
+            onPress={handleShare}
+            disabled={isSharing}
+            accessibilityRole="button"
+            accessibilityLabel="Share review"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Share2 size={16} color={colors.textSecondary} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.actionButton}>
+            <MessageCircle size={16} color={colors.textSecondary} />
+            <Text style={[typography.caption, styles.actionText, { color: colors.textSecondary }]}>
+              0
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.spacer} />
+          
+          <Text style={[typography.caption, styles.dateText, { color: colors.textTertiary }]}>
+            {formatDate()}
+          </Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
-  authorInfo: {
-    alignItems: "center",
-    borderTopColor: "rgba(255, 255, 255, 0.1)",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    marginTop: 6,
-    paddingTop: 6,
-  },
-  authorText: {
-    fontSize: 11,
-    fontWeight: "500",
+  container: {
+    marginBottom: tokens.spacing.md,
+    paddingHorizontal: tokens.spacing.xs,
+    width: "100%",
   },
   card: {
-    borderRadius: 18,
+    borderRadius: BORDER_RADIUS.xl,
     overflow: "hidden",
-  },
-  categoryBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    position: "absolute",
-    right: 8,
-    top: 8,
-  },
-  categoryText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-  container: {
-    marginBottom: CARD_PADDING * 2,
-    paddingHorizontal: CARD_PADDING,
-    width: "100%",
-  },
-  content: {
-    padding: 12,
-  },
-  dateText: {
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  image: {
-    height: "100%",
-    width: "100%",
+    flex: 1,
   },
   imageContainer: {
     position: "relative",
     width: "100%",
   },
-  location: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  moreTagsText: {
-    alignSelf: "center",
-    fontSize: 10,
-    fontWeight: "500",
+  image: {
+    height: "100%",
+    width: "100%",
   },
   placeholderImage: {
     alignItems: "center",
@@ -351,75 +356,104 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   placeholderText: {
-    fontSize: 32,
-    fontWeight: "700",
+    fontSize: tokens.fontSize['3xl'],
+    fontWeight: tokens.fontWeight.bold,
   },
-  ratingIndicator: {
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  ratingBadge: {
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.full,
     flexDirection: "row",
-    left: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    left: tokens.spacing.xs,
+    paddingHorizontal: tokens.spacing.xs,
+    paddingVertical: tokens.spacing[0.5],
     position: "absolute",
-    top: 8,
+    top: tokens.spacing.xs,
+    ...SHADOWS.sm,
+  },
+  categoryChip: {
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing[0.5],
+    position: "absolute",
+    right: tokens.spacing.xs,
+    top: tokens.spacing.xs,
+    ...SHADOWS.sm,
+  },
+  categoryText: {
+    fontSize: tokens.fontSize.xs,
+    fontWeight: tokens.fontWeight.bold,
+    letterSpacing: tokens.letterSpacing.wide,
+    textTransform: 'uppercase',
   },
   ratingText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-    marginLeft: 4,
+    fontSize: tokens.fontSize.sm,
+    fontWeight: tokens.fontWeight.semibold,
+    marginLeft: tokens.spacing[0.5],
+  },
+  content: {
+    padding: tokens.spacing.md,
+    flex: 1,
+  },
+  title: {
+    marginBottom: tokens.spacing.xs,
+  },
+  targetUser: {
+    marginBottom: tokens.spacing.xs,
+  },
+  locationContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: tokens.spacing.xs,
+  },
+  locationText: {
+    marginLeft: tokens.spacing[0.5],
   },
   snippet: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  statItem: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  statText: {
-    fontSize: 12,
-    fontWeight: "500",
-    marginLeft: 4,
-  },
-  stats: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  tag: {
-    borderRadius: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  tagText: {
-    fontSize: 10,
-    fontWeight: "500",
+    lineHeight: tokens.lineHeight.sm,
+    marginBottom: tokens.spacing.sm,
   },
   tagsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 4,
-    marginBottom: 8,
+    gap: tokens.spacing.xs,
+    marginBottom: tokens.spacing.sm,
   },
-  targetUser: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 2,
+  modernTag: {
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: tokens.spacing.sm,
+    paddingVertical: tokens.spacing[0.5],
   },
-  title: {
-    fontSize: 15,
-    fontWeight: "600",
-    lineHeight: 20,
-    marginBottom: 4,
+  tagText: {
+    fontWeight: tokens.fontWeight.medium,
   },
-  verifiedBadge: {
-    color: "#10B981",
-    fontSize: 12,
-    marginLeft: 4,
+  moreTagsText: {
+    fontWeight: tokens.fontWeight.medium,
+  },
+  actionBar: {
+    alignItems: "center",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: "row",
+    paddingHorizontal: tokens.spacing.md,
+    paddingVertical: tokens.spacing.sm,
+  },
+  actionButton: {
+    alignItems: "center",
+    flexDirection: "row",
+    marginRight: tokens.spacing.md,
+  },
+  actionText: {
+    fontWeight: tokens.fontWeight.medium,
+    marginLeft: tokens.spacing[0.5],
+  },
+  spacer: {
+    flex: 1,
+  },
+  dateText: {
+    fontWeight: tokens.fontWeight.normal,
   },
 });
 

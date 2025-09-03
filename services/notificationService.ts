@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../utils/firebase';
 import { Notification } from '../types';
+import { isUserAuthenticated, getCurrentUserId, createAuthError } from '../utils/authUtils';
 
 const NOTIFICATIONS_COLLECTION = 'notifications';
 const USER_SETTINGS_COLLECTION = 'userSettings';
@@ -200,13 +201,32 @@ export class NotificationService {
 
   // Listen to notifications in real-time
   static subscribeToNotifications(userId: string, callback: (notifications: Notification[]) => void): () => void {
+    // Check authentication first
+    if (!isUserAuthenticated()) {
+      if (__DEV__) {
+        console.log('User not authenticated, returning empty notifications subscription');
+      }
+      callback([]);
+      return () => {}; // Return empty unsubscribe function
+    }
+
+    // Verify the userId matches the current user
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId || currentUserId !== userId) {
+      if (__DEV__) {
+        console.log('User ID mismatch or not authenticated, returning empty notifications');
+      }
+      callback([]);
+      return () => {};
+    }
+
     const q = query(
       collection(db, NOTIFICATIONS_COLLECTION),
       where('userId', '==', userId),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
-    
+
     return onSnapshot(q, (querySnapshot) => {
       const notifications = querySnapshot.docs.map(doc => ({
         id: doc.id,

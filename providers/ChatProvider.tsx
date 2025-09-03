@@ -89,6 +89,18 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       return;
     }
 
+    // Check if user is properly authenticated before making Firestore queries
+    if (!user.id || user.id === 'anonymous') {
+      if (__DEV__) {
+        console.log('User not properly authenticated, skipping chat rooms subscription');
+      }
+      setChatRooms([]);
+      setMessages([]);
+      setIsConnected(false);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     // Subscribe to chat rooms where user is a participant

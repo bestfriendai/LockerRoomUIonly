@@ -7,7 +7,9 @@ import {
   Platform,
   Dimensions,
   TextInput,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Keyboard,
+  TouchableWithoutFeedback
 } from 'react-native';
 import logger from '../../utils/logger';
 
@@ -175,6 +177,8 @@ const MessageInput = ({ value, onChangeText, onSend, onAttachment, disabled }: M
   const handleSend = useCallback(() => {
     if (value.trim() && !disabled) {
       onSend();
+      // Dismiss keyboard after sending
+      Keyboard.dismiss();
     }
   }, [value, onSend, disabled]);
 
@@ -357,45 +361,47 @@ export default function ChatRoomScreen() {
         />
 
         {/* Messages */}
-        <View style={(styles as any)?.messagesContainer}>
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
-                Loading messages...
-              </Text>
-            </View>
-          ) : processedMessages.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={{ textAlign: 'center' }}>
-                No Messages Yet
-              </Text>
-              <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
-                Be the first to start the conversation!
-              </Text>
-            </View>
-          ) : (
-            <FlashList
-              ref={scrollViewRef}
-              data={processedMessages}
-              renderItem={({ item }) => (
-                <MessageBubble
-                  message={item}
-                  isOwn={item.isOwn}
-                  showAvatar={item.showAvatar}
-                  showTimestamp={item.showTimestamp}
-                />
-              )}
-              estimatedItemSize={80}
-              contentContainerStyle={(styles as any)?.messagesList}
-              showsVerticalScrollIndicator={false}
-              keyExtractor={(item) => item._id}
-              maintainVisibleContentPosition={{
-                minIndexForVisible: 0,
-                autoscrollToTopThreshold: 10,
-              }}
-            />
-          )}
-        </View>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={(styles as any)?.messagesContainer}>
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+                  Loading messages...
+                </Text>
+              </View>
+            ) : processedMessages.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={{ textAlign: 'center' }}>
+                  No Messages Yet
+                </Text>
+                <Text style={{ color: colors.textSecondary, textAlign: 'center', marginTop: 8 }}>
+                  Be the first to start the conversation!
+                </Text>
+              </View>
+            ) : (
+              <FlashList
+                ref={scrollViewRef}
+                data={processedMessages}
+                renderItem={({ item }) => (
+                  <MessageBubble
+                    message={item}
+                    isOwn={item.isOwn}
+                    showAvatar={item.showAvatar}
+                    showTimestamp={item.showTimestamp}
+                  />
+                )}
+                estimatedItemSize={80}
+                contentContainerStyle={(styles as any)?.messagesList}
+                showsVerticalScrollIndicator={false}
+                keyExtractor={(item) => item._id}
+                maintainVisibleContentPosition={{
+                  minIndexForVisible: 0,
+                  autoscrollToTopThreshold: 10,
+                }}
+              />
+            )}
+          </View>
+        </TouchableWithoutFeedback>
 
         {/* Message Input */}
         <MessageInput

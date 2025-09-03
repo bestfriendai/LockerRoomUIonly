@@ -4,27 +4,8 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import logger from '../utils/logger';
-// Mock Geolocation for development (replace with react-native-geolocation-service in production)
-const mockGeolocation = {
-  getCurrentPosition: (success, error, options) => {
-    // Mock coordinates for San Francisco
-    setTimeout(() => {
-      success({
-        coords: {
-          latitude: 37.7749,
-          longitude: -122.4194,
-          accuracy: 10,
-        },
-        timestamp: Date.now(),
-      });
-    }, 1000);
-  },
-  requestPermission: () => Promise.resolve('granted'),
-};
-
-// Use mock geolocation for now (replace with actual implementation)
-const Geolocation = mockGeolocation;
 
 export class LocationService {
   static STORAGE_KEYS = {
@@ -39,22 +20,20 @@ export class LocationService {
    */
   static async requestLocationPermission() {
     try {
-      // For development, always return true
-      // In production, implement proper permission handling
       if (__DEV__) {
         __DEV__ && console.log('Requesting location permission...');
       }
-      
-      // Mock permission request
-      const result = await Geolocation.requestPermission();
-      const granted = result === 'granted';
-      
+
+      // Use Expo Location for real permission request
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      const granted = status === 'granted';
+
       // Store permission status
       await AsyncStorage.setItem(
-        this.STORAGE_KEYS.LOCATION_PERMISSIONS, 
+        this.STORAGE_KEYS.LOCATION_PERMISSIONS,
         JSON.stringify({ granted, timestamp: Date.now() })
       );
-      
+
       return granted;
     } catch (error) {
       if (__DEV__) {
@@ -69,37 +48,36 @@ export class LocationService {
    * @returns {Promise<{latitude: number, longitude: number, accuracy: number, timestamp: number}>} Current location coordinates
    */
   static async getCurrentLocation() {
-    return new Promise((resolve, reject) => {
+    try {
       if (__DEV__) {
         __DEV__ && console.log('Getting current location...');
       }
-      
-      Geolocation.getCurrentPosition(
-        (position) => {
-          const location = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy,
-            timestamp: position.timestamp,
-          };
-          if (__DEV__) {
-            __DEV__ && console.log('Current location obtained:', location);
-          }
-          resolve(location);
-        },
-        (error) => {
-          if (__DEV__) {
-            __DEV__ && console.error('Geolocation error:', error);
-          }
-          reject(error);
-        },
-        { 
-          enableHighAccuracy: true, 
-          timeout: 15000, 
-          maximumAge: 10000 
-        }
-      );
-    });
+
+      // Use Expo Location for real location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeout: 15000,
+        maximumAge: 10000
+      });
+
+      const result = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        accuracy: location.coords.accuracy,
+        timestamp: location.timestamp,
+      };
+
+      if (__DEV__) {
+        __DEV__ && console.log('Current location obtained:', result);
+      }
+
+      return result;
+    } catch (error) {
+      if (__DEV__) {
+        __DEV__ && console.error('Geolocation error:', error);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -113,44 +91,33 @@ export class LocationService {
       if (__DEV__) {
         __DEV__ && console.log(`Reverse geocoding: ${latitude}, ${longitude}`);
       }
-      
-      // For development, use a mock geocoding service
-      // In production, use Mapbox or Google Maps API
-      const mockLocations = [
-        {
-          name: 'San Francisco, CA, USA',
-          city: 'San Francisco',
-          region: 'California',
-          country: 'United States',
-          coordinates: [-122.4194, 37.7749],
-        },
-        {
-          name: 'New York, NY, USA',
-          city: 'New York',
-          region: 'New York',
-          country: 'United States',
-          coordinates: [-74.0060, 40.7128],
-        },
-        {
-          name: 'Los Angeles, CA, USA',
-          city: 'Los Angeles',
-          region: 'California',
-          country: 'United States',
-          coordinates: [-118.2437, 34.0522],
-        },
-      ];
-      
-      // Find closest mock location (simplified)
-      const closest = mockLocations[0]; // For demo, always return SF
-      
-      return {
-        name: closest.name,
-        city: closest.city,
-        region: closest.region,
-        country: closest.country,
-        coordinates: [longitude, latitude],
-        formatted: `${closest.city}, ${closest.region}`,
-      };
+
+      // Use Expo Location for real reverse geocoding
+      const reverseGeocode = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (reverseGeocode.length > 0) {
+        const address = reverseGeocode[0];
+        const result = {
+          name: `${address.city || address.subregion || address.region}, ${address.region || address.country}`,
+          city: address.city || address.subregion || '',
+          region: address.region || '',
+          state: address.region || '',
+          country: address.country || '',
+          coordinates: [longitude, latitude],
+          formatted: `${address.city || address.subregion || address.region}, ${address.region || address.country}`,
+        };
+
+        if (__DEV__) {
+          __DEV__ && console.log('Reverse geocoding result:', result);
+        }
+
+        return result;
+      }
+
+      return null;
     } catch (error) {
       if (__DEV__) {
         __DEV__ && console.error('Reverse geocoding error:', error);

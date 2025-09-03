@@ -19,7 +19,6 @@ import {
   Users,
   MessageCircle,
 } from "lucide-react-native";
-import { useAuth } from "../../providers/AuthProvider";
 
 const { width } = Dimensions.get("window");
 

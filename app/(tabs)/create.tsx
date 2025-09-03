@@ -10,7 +10,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
 } from 'react-native';
-import logger from '../../utils/logger';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Camera, Image as ImageIcon, X, ChevronDown, Check, Flag } from "lucide-react-native";
@@ -18,7 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
-import { Button } from "../../components/ui/Button";
+import { ModernButton } from "../../components/ui/ModernButton";
 import { Input } from "../../components/ui/Input";
 import Card from "../../components/ui/Card";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -26,6 +25,7 @@ import { db } from "../../utils/firebase";
 import { LocationSelector } from "../../components/LocationSelector";
 import { LocationService } from "../../services/locationService";
 import { createTypographyStyles } from "../../styles/typography";
+import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
 
 
 
@@ -386,20 +386,20 @@ export default function CreateReviewScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={typography.h2}>
+          {/* Modern Header */}
+          <View style={[styles.header, { backgroundColor: colors.surface }, SHADOWS.sm]}>
+            <Text style={typography.h1}>
               Create Review
             </Text>
-            <Text style={[typography.body, { marginTop: 4 }]}>
-              Share your experience with others
+            <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>
+              Share your experience with others anonymously
             </Text>
           </View>
 
           {/* Person Name */}
-          <Card style={styles.section}>
-            <Text style={typography.h2}>
-              Who are you reviewing?
+          <Card style={[styles.section, SHADOWS.sm]}>
+            <Text style={[typography.h3, { marginBottom: 12 }]}>
+              Who are you reviewing? *
             </Text>
             <Input
               placeholder="Enter person's name or username"
@@ -447,17 +447,17 @@ export default function CreateReviewScreen() {
             </View>
           </Card>
 
-          {/* Flag Selection */}
-          <Card style={styles.section}>
-            <Text style={typography.h2}>
+          {/* Enhanced Flag Selection */}
+          <Card style={[styles.section, SHADOWS.sm]}>
+            <Text style={[typography.h3, { marginBottom: 8 }]}>
               Flag Type *
             </Text>
-            <Text style={[typography.body, { marginBottom: 12 }]}>
-              Choose whether this is a positive (green flag) or negative (red flag) experience
+            <Text style={[typography.body, { marginBottom: 16, color: colors.textSecondary }]}>
+              Is this a positive (green) or negative (red) experience?
             </Text>
             {renderFlagOptions()}
             {errors.flag && (
-              <Text style={{ color: colors.error, marginTop: 8 }}>
+              <Text style={[typography.error, { marginTop: 12 }]}>
                 {errors.flag}
               </Text>
             )}
@@ -654,15 +654,19 @@ export default function CreateReviewScreen() {
             </Pressable>
           </Card>
 
-          {/* Submit Button */}
-          <Button
+          {/* Modern Submit Button */}
+          <ModernButton
+            variant="gradient"
+            size="lg"
             onPress={handleSubmit}
             loading={isSubmitting}
             disabled={isSubmitting}
             style={styles.submitButton}
+            fullWidth
+            accessibilityLabel="Submit review"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Review'}
-          </Button>
+            {isSubmitting ? 'Submitting Review...' : 'Submit Review'}
+          </ModernButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -681,26 +685,23 @@ const styles = StyleSheet.create({
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
   categoryChip: {
     alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: 2,
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  categoryEmoji: {
-    fontSize: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   characterCount: {
     alignItems: 'flex-end',
-    marginTop: 4,
+    marginTop: 8,
   },
   checkbox: {
     alignItems: 'center',
-    borderRadius: 4,
+    borderRadius: 6,
     borderWidth: 2,
     height: 24,
     justifyContent: 'center',
@@ -710,7 +711,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 32,
+    padding: 20,
+    borderRadius: BORDER_RADIUS.xl,
+    marginHorizontal: 4,
   },
   input: {
     marginBottom: 0,
@@ -718,128 +722,102 @@ const styles = StyleSheet.create({
   keyboardAvoid: {
     flex: 1,
   },
-  locationButton: {
-    paddingHorizontal: 12,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  locationInfo: {
-    flex: 1,
-    marginLeft: 8,
-  },
-  locationSuggestion: {
-    alignItems: 'center',
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    padding: 12,
-  },
-  locationSuggestions: {
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 8,
-    maxHeight: 200,
-  },
   locationSelector: {
     width: '100%',
   },
   mediaActions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 12,
   },
   mediaButton: {
     alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    height: 80,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 2,
+    height: 90,
     justifyContent: 'center',
-    width: 80,
+    width: 90,
   },
   mediaContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
   },
-   mediaItem: {
-     alignItems: 'center',
-     backgroundColor: 'rgba(0,0,0,0.05)',
-     borderRadius: 8,
-     height: 80,
-     justifyContent: 'center',
-     position: 'relative',
-     width: 80,
-   },
+  mediaItem: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: BORDER_RADIUS.lg,
+    height: 90,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 90,
+  },
   platformItem: {
     alignItems: 'center',
     borderBottomColor: 'rgba(0,0,0,0.1)',
     borderBottomWidth: StyleSheet.hairlineWidth,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 12,
+    padding: 16,
   },
   platformList: {
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
-    marginTop: 8,
-    maxHeight: 200,
+    marginTop: 12,
+    maxHeight: 240,
   },
   platformPicker: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
-    padding: 12,
+    padding: 16,
   },
   removeMediaButton: {
     alignItems: 'center',
-    borderRadius: 10,
-    height: 20,
+    borderRadius: 12,
+    height: 24,
     justifyContent: 'center',
     position: 'absolute',
-    right: -6,
-    top: -6,
-    width: 20,
+    right: -8,
+    top: -8,
+    width: 24,
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
+    padding: 20,
+    paddingBottom: 40,
   },
   scrollView: {
     flex: 1,
   },
   section: {
-    marginBottom: 16,
-    padding: 16,
-  },
-  sectionTitle: {
-    marginBottom: 12,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: BORDER_RADIUS.xl,
   },
   flagContainer: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
   },
   flagButton: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: 2,
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
-
   submitButton: {
-    marginTop: 8,
+    marginTop: 24,
+    marginHorizontal: 4,
   },
   textArea: {
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.lg,
     borderWidth: 1,
-    fontFamily: 'Inter_400Regular',
     fontSize: 16,
-    minHeight: 120,
-    padding: 12,
+    minHeight: 140,
+    padding: 16,
+    textAlignVertical: 'top',
   },
 });

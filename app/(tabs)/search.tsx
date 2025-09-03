@@ -137,7 +137,7 @@ export default function SearchScreen() {
       case 'rooms':
         const query = debouncedQuery.toLowerCase();
         results = chatRooms.filter(room =>
-          room.name || 'Unnamed Room'.toLowerCase().includes(query) ||
+          (room.name || 'Unnamed Room').toLowerCase().includes(query) ||
           room.description?.toLowerCase().includes(query)
         );
         break;
@@ -199,7 +199,7 @@ export default function SearchScreen() {
     searchInputRef.current?.focus();
   };
 
-  const renderSearchResult = useCallback(({ item, index }: { item: any; index: number }) => {
+  const renderSearchResult = useCallback(({ item, index: _index }: { item: any; index: number }) => {
     switch (activeTab) {
       case 'reviews':
         return (

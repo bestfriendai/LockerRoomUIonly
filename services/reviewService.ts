@@ -28,6 +28,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { db } from '../utils/firebase';
 import { Review, Comment, ReviewFilter } from '../types';
 import { toMillis } from '../utils/timestampHelpers';
+import { isUserAuthenticated, getCurrentUserId, createAuthError } from '../utils/authUtils';
 
 const REVIEWS_COLLECTION = 'reviews';
 const COMMENTS_COLLECTION = 'comments';
@@ -137,9 +138,17 @@ export class ReviewService {
     pageSize: number = this.PAGE_SIZE
   ): Promise<{ reviews: Review[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> {
     try {
+      // Check authentication first
+      if (!isUserAuthenticated()) {
+        if (__DEV__) {
+          console.log('User not authenticated, returning empty reviews');
+        }
+        return { reviews: [], lastDoc: null, hasMore: false };
+      }
+
       // Build cache key
       const cacheKey = this.buildCacheKey(filters, lastDoc);
-      
+
       // Check cache for first page
       if (!lastDoc) {
         const cached = await this.getCachedData(cacheKey);
@@ -538,6 +547,14 @@ export class ReviewService {
   // Search reviews with enhanced search
   static async searchReviews(searchTerm: string, filters: ReviewFilter = {}): Promise<Review[]> {
     try {
+      // Check authentication first
+      if (!isUserAuthenticated()) {
+        if (__DEV__) {
+          console.log('User not authenticated, returning empty search results');
+        }
+        return [];
+      }
+
       if (!searchTerm || searchTerm.length < 2) {
         return [];
       }
@@ -558,7 +575,7 @@ export class ReviewService {
 
       const q = query(collection(db, REVIEWS_COLLECTION), ...constraints);
       const snapshot = await getDocs(q);
-      
+
       const reviews = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
@@ -579,13 +596,22 @@ export class ReviewService {
 
   // Listen to reviews in real-time
   static subscribeToReviews(callback: (reviews: Review[]) => void): () => void {
+    // Check authentication first
+    if (!isUserAuthenticated()) {
+      if (__DEV__) {
+        console.log('User not authenticated, returning empty subscription');
+      }
+      callback([]);
+      return () => {}; // Return empty unsubscribe function
+    }
+
     const q = query(
       collection(db, REVIEWS_COLLECTION),
       where('deleted', '!=', true),
       orderBy('createdAt', 'desc'),
       limit(50)
     );
-    
+
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const reviews = querySnapshot.docs.map(doc => ({
         id: doc.id,

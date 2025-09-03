@@ -1,5 +1,6 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, getDocs } = require('firebase/firestore');
+const { getAuth, signInWithEmailAndPassword } = require('firebase/auth');
 require('dotenv').config({ path: '.env.local' });
 
 // Firebase configuration from environment variables
@@ -21,11 +22,21 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 async function checkReviews() {
   try {
     console.log('🔍 Checking Firestore reviews collection...');
-    
+
+    // Try to authenticate with demo credentials if available
+    try {
+      // You can replace these with actual test credentials or skip authentication
+      // For now, we'll try without authentication first
+      console.log('ℹ️  Attempting to read reviews without authentication...');
+    } catch (authError) {
+      console.log('⚠️  Authentication failed, trying without auth...');
+    }
+
     const reviewsCollection = collection(db, 'reviews');
     const reviewsSnapshot = await getDocs(reviewsCollection);
     
@@ -45,7 +56,7 @@ async function checkReviews() {
       console.log(`   Content: ${data.content ? data.content.substring(0, 50) + '...' : 'No content'}`);
       console.log(`   Rating: ${data.rating || 'No rating'}`);
       console.log(`   Category: ${data.category || 'No category'}`);
-      console.log(`   Author: ${data.author?.username || data.authorId || 'Anonymous'}`);
+      console.log(`   Author: ${data.authorId || 'Anonymous'}`);
       console.log(`   Created: ${data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : 'No date'}`);
       console.log(`   Location: ${data.location ? `${data.location.city}, ${data.location.state}` : 'No location'}`);
     });

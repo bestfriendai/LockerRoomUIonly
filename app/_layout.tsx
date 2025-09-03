@@ -1,6 +1,5 @@
 // Import TypeScript helpers first to prevent '__extends' undefined errors
 import 'tslib';
-import logger from '../utils/logger';
 
 import React, { useEffect } from "react";
 import { useFonts } from "expo-font";

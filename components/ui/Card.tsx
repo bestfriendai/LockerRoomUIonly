@@ -56,6 +56,7 @@ export const Card: React.FC<CardProps> = ({
       shadow,
       backgroundColor: colors.surface,
       borderColor: colors.border,
+      borderWidth: 'hairline',
       shadowColor: colors.black,
     }),
     padding: getPaddingValue(),
