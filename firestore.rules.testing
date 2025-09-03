@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // TEMPORARY TESTING RULES - DO NOT USE IN PRODUCTION
+    // These rules allow public read access for testing purposes
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Users collection - basic read access for testing
+    match /users/{userId} {
+      allow read: if true; // Temporary public read for testing
+      allow write: if isOwner(userId);
+    }
+    
+    // Reviews collection - public read access for testing
+    match /reviews/{reviewId} {
+      allow read: if true; // Temporary public read for testing
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+    
+    // Comments collection - public read access for testing
+    match /comments/{commentId} {
+      allow read: if true; // Temporary public read for testing
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+    
+    // Chat rooms - basic access
+    match /chatRooms/{roomId} {
+      allow read: if true; // Temporary public read for testing
+      allow write: if isSignedIn();
+    }
+    
+    // Messages - basic access
+    match /messages/{messageId} {
+      allow read: if true; // Temporary public read for testing
+      allow write: if isSignedIn();
+    }
+    
+    // Notifications - user-specific
+    match /notifications/{notificationId} {
+      allow read, write: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

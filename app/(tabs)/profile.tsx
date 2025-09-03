@@ -211,13 +211,13 @@ export default function ProfileScreen() {
 
     try {
       // Fetch reviews written by the user
-      const userReviewsQuery = query(collection(db, "reviews"), where("userId", "==", user.id));
+      const userReviewsQuery = query(collection(db, "reviews"), where("authorId", "==", user.id));
       const userReviewsSnapshot = await getDocs(userReviewsQuery);
       const userReviewsData = userReviewsSnapshot.docs.map(doc => ({ ...(doc as any).data(), id: doc.id } as Review));
       setUserReviews(userReviewsData);
 
       // Fetch reviews received by the user
-      const receivedReviewsQuery = query(collection(db, "reviews"), where("targetId", "==", user.id));
+      const receivedReviewsQuery = query(collection(db, "reviews"), where("targetUserId", "==", user.id));
       const receivedReviewsSnapshot = await getDocs(receivedReviewsQuery);
       const receivedReviewsData = receivedReviewsSnapshot.docs.map(doc => ({ ...(doc as any).data(), id: doc.id } as Review));
       setReceivedReviews(receivedReviewsData);

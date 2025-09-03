@@ -214,7 +214,7 @@ export const ReviewCard: React.FC<ReviewCardProps> = React.memo(({
                   color={colors.neutral[400]}
                 />
                 <Text style={styles.metaText}>
-                  {review.isAnonymous ? 'Anonymous' : review.userName || 'Unknown'}
+                  {review.isAnonymous ? 'Anonymous' : 'User'}
                 </Text>
               </View>
 

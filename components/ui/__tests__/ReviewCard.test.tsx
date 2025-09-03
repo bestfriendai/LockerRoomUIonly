@@ -122,8 +122,8 @@ describe('ReviewCard', () => {
       const { getByText } = render(
         <ReviewCard review={{ ...mockReview, isAnonymous: false }} />
       );
-      
-      expect(getByText('John Doe')).toBeTruthy();
+
+      expect(getByText('User')).toBeTruthy();
     });
 
     it('should render Anonymous when isAnonymous is true', () => {
@@ -350,8 +350,8 @@ describe('ReviewCard', () => {
       const { getByText } = render(
         <ReviewCard review={reviewWithoutUserName} />
       );
-      
-      expect(getByText('Unknown')).toBeTruthy();
+
+      expect(getByText('User')).toBeTruthy();
     });
 
     it('should handle undefined flag type', () => {

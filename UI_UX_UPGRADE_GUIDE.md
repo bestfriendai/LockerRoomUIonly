@@ -1849,7 +1849,7 @@ const ReviewCard = ({ review, index }) => {
               <View style={styles.metaItem}>
                 <Ionicons name="person-outline" size={14} color={colors.neutral[400]} />
                 <Text style={styles.metaText}>
-                  {review.isAnonymous ? 'Anonymous' : review.userName}
+                  {review.isAnonymous ? 'Anonymous' : 'User'}
                 </Text>
               </View>
               
