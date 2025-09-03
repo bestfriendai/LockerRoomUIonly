@@ -65,14 +65,14 @@ function testFirebaseConfig() {
       // Check services
       const services = ['firestore', 'hosting', 'storage'];
       services.forEach(service => {
-        const hasService = config.hasOwnProperty(service);
+        const hasService = Object.prototype.hasOwnProperty.call(config, service);
         addResult('Config', `${service} configured`, hasService,
           hasService ? `${service} configuration found` : `${service} not configured`,
           `Add ${service} configuration to firebase.json`);
       });
 
       // Check emulators
-      const hasEmulators = config.hasOwnProperty('emulators');
+      const hasEmulators = Object.prototype.hasOwnProperty.call(config, 'emulators');
       addResult('Config', 'Emulators configured', hasEmulators,
         hasEmulators ? 'Emulator configuration found' : 'Emulators not configured',
         'Add emulators configuration for local development');

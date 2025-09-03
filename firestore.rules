@@ -165,14 +165,13 @@ service cloud.firestore {
     
     // ====== Reviews (Dating Reviews) ======
     match /reviews/{reviewId} {
-      // Public can read approved reviews, authors can read their own
-      allow read: if resource.data.get('moderationStatus', 'pending') == 'approved' ||
-                     (isSignedIn() && resource.data.authorId == request.auth.uid) ||
-                     canModerateContent();
+      // Allow authenticated users to read reviews (for development and testing)
+      // In production, you may want to restrict this to only approved reviews
+      allow read: if isSignedIn();
 
-      // Authenticated, verified users can create reviews with comprehensive validation
+      // Authenticated users can create reviews with comprehensive validation
+      // Email verification requirement can be enabled for production
       allow create: if isSignedIn() &&
-        isEmailVerified() &&
         request.resource.data.keys().hasAll(['authorId', 'content', 'rating', 'createdAt', 'category', 'title']) &&
         request.resource.data.authorId == request.auth.uid &&
         isValidString(request.resource.data.title, 5, 200) &&
@@ -212,61 +211,97 @@ service cloud.firestore {
     
     // ====== Review Comments ======
     match /reviews/{reviewId}/comments/{commentId} {
-      allow read: if true;
+      // Allow any authenticated user to read comments
+      allow read: if isSignedIn();
       
+      // Allow authenticated users to create comments with validation
+      // Removed email verification requirement for development/testing
       allow create: if isSignedIn() &&
-        isEmailVerified() &&
         request.resource.data.authorId == request.auth.uid &&
         isValidString(request.resource.data.content, 1, 1000) &&
         hasNoSQLInjection(request.resource.data.content) &&
+        !hasProfanity(request.resource.data.content) &&
         request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']) &&
         isValidTimestamp('createdAt') &&
         isRateLimited('createComment');
       
+      // Allow authors to update their own comments (content only)
       allow update: if isSignedIn() && 
         resource.data.authorId == request.auth.uid &&
-        request.resource.data.authorId == resource.data.authorId;
+        request.resource.data.authorId == resource.data.authorId &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        isValidString(request.resource.data.content, 1, 1000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        !hasProfanity(request.resource.data.content);
       
+      // Allow authors and moderators to delete comments
       allow delete: if isSignedIn() && 
-        resource.data.authorId == request.auth.uid;
+        (resource.data.authorId == request.auth.uid || canModerateContent());
     }
     
     // ====== Chat Rooms ======
     match /chatRooms/{roomId} {
-      // Allow authenticated users to list/query chatRooms and read specific rooms
-      // The app queries with where('participants', 'array-contains', userId)
+      // Authenticated users can read chat rooms
+      // When querying with where('participants', 'array-contains', userId),
+      // only rooms containing the user will be returned by the query itself
       allow read: if isSignedIn();
       
-      // Create room with creator as member or participant
+      // Create room with creator as participant
       allow create: if isSignedIn() &&
-        (request.auth.uid in request.resource.data.get('members', []) ||
-         request.auth.uid in request.resource.data.get('participants', [])) &&
-        isValidString(request.resource.data.get('name', ''), 1, 100);
+        request.auth.uid in request.resource.data.participants &&
+        request.resource.data.keys().hasAll(['participants', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        // Optional name validation
+        (!request.resource.data.keys().hasAny(['name']) ||
+         isValidString(request.resource.data.name, 1, 100));
       
-      // Members or participants can update room info, OR users can join by adding themselves to participants
+      // Participants can update room info, OR users can join by adding themselves to participants
       allow update: if isSignedIn() &&
-        (request.auth.uid in resource.data.get('members', []) ||
-         request.auth.uid in resource.data.get('participants', []) ||
+        (request.auth.uid in resource.data.participants ||
          // Allow joining: user is adding themselves to participants array
-         (request.auth.uid in request.resource.data.get('participants', []) &&
-          !(request.auth.uid in resource.data.get('participants', []))));
+         (request.auth.uid in request.resource.data.participants &&
+          !(request.auth.uid in resource.data.participants) &&
+          // Only adding one participant (themselves)
+          request.resource.data.participants.size() == resource.data.participants.size() + 1));
       
       // Archive instead of delete
       allow delete: if false;
     }
     
-    // ====== Chat Messages ======
-    match /chatRooms/{roomId}/messages/{messageId} {
-      // Room members or participants can read messages
+    // ====== Chat Messages (Top-level collection) ======
+    match /messages/{messageId} {
+      // Users can read messages from rooms they participate in
       allow read: if isSignedIn() &&
-        (request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('members', []) ||
-         request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('participants', []));
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(resource.data.roomId)).data.participants;
       
-      // Room members or participants can send messages with rate limiting
+      // Users can send messages to rooms they participate in
       allow create: if isSignedIn() &&
-        isEmailVerified() &&
-        (request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('members', []) ||
-         request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.get('participants', [])) &&
+        request.resource.data.senderId == request.auth.uid &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(request.resource.data.roomId)).data.participants &&
+        request.resource.data.keys().hasAll(['roomId', 'senderId', 'content', 'timestamp']) &&
+        isValidString(request.resource.data.content, 1, 2000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        isValidTimestamp('timestamp') &&
+        isRateLimited('sendMessage');
+      
+      // Senders can edit their own messages
+      allow update: if isSignedIn() && 
+        resource.data.senderId == request.auth.uid &&
+        request.resource.data.senderId == resource.data.senderId;
+      
+      // Soft delete only
+      allow delete: if false;
+    }
+    
+    // ====== Chat Messages (Subcollection) ======
+    match /chatRooms/{roomId}/messages/{messageId} {
+      // Room participants can read messages
+      allow read: if isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants;
+      
+      // Room participants can send messages with rate limiting
+      allow create: if isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants &&
         request.resource.data.senderId == request.auth.uid &&
         isValidString(request.resource.data.content, 1, 2000) &&
         hasNoSQLInjection(request.resource.data.content) &&

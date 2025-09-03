@@ -10,9 +10,9 @@ import {
   Text as RNText
 } from 'react-native';
 import { useTheme } from '../../providers/ThemeProvider';
-import { SPACING } from '../../constants/spacing';
-import { BORDER_RADIUS } from '../../constants/shadows';
+import { BORDER_RADIUS, SHADOWS } from '../../constants/shadows';
 import { tokens } from '../../constants/tokens';
+import { createTypographyStyles } from '../../styles/typography';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -60,18 +60,18 @@ export const Input = forwardRef<TextInput, InputProps>((
     switch (size) {
       case 'sm':
         return {
-          paddingHorizontal: SPACING.sm,
-          paddingVertical: SPACING.xs,
+          paddingHorizontal: tokens.spacing.sm,
+          paddingVertical: tokens.spacing.xs,
         };
       case 'lg':
         return {
-          paddingHorizontal: SPACING.lg,
-          paddingVertical: SPACING.md,
+          paddingHorizontal: tokens.spacing.lg,
+          paddingVertical: tokens.spacing.md,
         };
       default: // md
         return {
-          paddingHorizontal: SPACING.md,
-          paddingVertical: SPACING.sm,
+          paddingHorizontal: tokens.spacing.md,
+          paddingVertical: tokens.spacing.sm,
         };
     }
   };
@@ -141,20 +141,22 @@ export const Input = forwardRef<TextInput, InputProps>((
     backgroundColor: getBackgroundColor(),
     minHeight: getMinHeight(),
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: props.multiline ? 'flex-start' : 'center',
     ...getPadding(),
+    ...(variant === 'default' && isFocused ? SHADOWS.sm : {}),
   };
+
+  const typography = createTypographyStyles(colors);
 
   const textInputStyles: TextStyle = {
     flex: 1,
     fontSize: tokens.fontSize.base,
     lineHeight: tokens.lineHeight.base,
     color: isDisabled ? colors.textDisabled : colors.text,
-    paddingHorizontal: (leftIcon || rightIcon) ? SPACING.xs : 0,
+    paddingHorizontal: (leftIcon || rightIcon) ? tokens.spacing.xs : 0,
     // Improve text input experience
     includeFontPadding: false,
-    textAlignVertical: multiline ? 'top' : 'center',
-    fontFamily: 'Inter',
+    textAlignVertical: props.multiline ? 'top' : 'center',
     fontWeight: tokens.fontWeight.normal as any,
   };
 
@@ -162,7 +164,11 @@ export const Input = forwardRef<TextInput, InputProps>((
     <View style={containerStyle}>
       {label && (
         <RNText
-          style={[styles.label, { marginBottom: SPACING.xs - 2, color: hasError ? colors.error : colors.textSecondary }]}
+          style={[typography.label, styles.label, { 
+            color: hasError ? colors.error : colors.textSecondary,
+            fontSize: tokens.fontSize.sm,
+            fontWeight: tokens.fontWeight.medium,
+          }]}
           accessibilityRole="text"
         >
           {label}
@@ -216,7 +222,9 @@ export const Input = forwardRef<TextInput, InputProps>((
       
       {(error || helperText) && (
         <RNText
-          style={[styles.helperText, { color: hasError ? colors.error : colors.textTertiary }]}
+          style={[typography.caption, styles.helperText, { 
+            color: hasError ? colors.error : colors.textTertiary 
+          }]}
           accessibilityRole="text"
           accessibilityLiveRegion={hasError ? "assertive" : "polite"}
         >
@@ -231,13 +239,15 @@ Input.displayName = 'Input';
 
 const styles = StyleSheet.create({
   helperText: {
-    marginTop: SPACING.xs,
+    marginTop: tokens.spacing.xs,
   },
   iconContainer: {
     alignItems: 'center',
     justifyContent: 'center',
+    width: 24,
+    height: 24,
   },
   label: {
-    marginBottom: SPACING.xs,
+    marginBottom: tokens.spacing.xs,
   },
 });

@@ -185,8 +185,8 @@ export const getImageElementProps = (
   if (isDecorative) {
     return {
       accessibilityElementsHidden: true,
-      importantForAccessibility: 'no-hide-descendants',
-    } as any;
+      importantForAccessibility: 'no-hide-descendants' as any, // React Native specific prop
+    } as AccessibilityProps & { accessibilityElementsHidden: boolean; importantForAccessibility: string };
   }
   
   return {

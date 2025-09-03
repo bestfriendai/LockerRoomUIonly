@@ -10,7 +10,6 @@ import {
   Pressable,
   Text,
 } from 'react-native';
-import logger from '../../utils/logger';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail, Lock } from 'lucide-react-native';
 import { useTheme } from '../../providers/ThemeProvider';

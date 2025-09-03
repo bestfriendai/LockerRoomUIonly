@@ -197,7 +197,7 @@ const checklist = [
 
 let totalChecks = 0;
 let passedChecks = 0;
-let failedChecks = [];
+const failedChecks = [];
 
 checklist.forEach(category => {
   console.log(`\n📂 ${category.name}`);

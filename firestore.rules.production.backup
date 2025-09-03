@@ -1,0 +1,433 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ====== Helper Functions ======
+    // ====== Moderation Functions ======
+    function isModerator() {
+      return isSignedIn() && 
+             request.auth.token.roles != null && 
+             request.auth.token.roles.moderator == true;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             request.auth.token.roles != null && 
+             request.auth.token.roles.admin == true;
+    }
+    
+    function canModerateContent() {
+      return isModerator() || isAdmin();
+    }
+    
+    function isValidModerationAction() {
+      let validStatuses = ['approved', 'rejected', 'pending', 'flagged'];
+      return request.resource.data.moderationStatus in validStatuses;
+    }
+    
+    function hasValidModerationFields() {
+      return request.resource.data.keys().hasAll(['moderationStatus', 'moderatedAt', 'moderatedBy']);
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+    
+    function hasAppCheck() {
+      return request.auth.token.firebase != null && 
+             request.auth.token.firebase.app_check != null;
+    }
+
+    function isValidString(value, minLength, maxLength) {
+      return value is string &&
+             value.size() >= minLength &&
+             value.size() <= maxLength &&
+             !value.matches('.*<script.*>.*</script>.*') && // No script tags
+             !value.matches('.*javascript:.*'); // No javascript URLs
+    }
+    
+    function isRateLimited(action) {
+      let lastAction = get(/databases/$(database)/documents/rateLimits/$(request.auth.uid)/actions/$(action));
+      let rateLimitDuration = action == 'createReview' ? duration.value(5, 'm') :
+                             action == 'sendMessage' ? duration.value(1, 's') :
+                             action == 'createComment' ? duration.value(30, 's') :
+                             action == 'createReport' ? duration.value(10, 'm') :
+                             duration.value(1, 'm');
+      return !exists(lastAction.data) ||
+             request.time > lastAction.data.timestamp + rateLimitDuration;
+    }
+    
+    function hasNoSQLInjection(value) {
+      return !value.matches('.*[\\$\\{\\}\\[\\]].*'); // Block common injection patterns
+    }
+    
+    function hasProfanity(text) {
+      // Enhanced profanity detection (simplified for production)
+      // In production, consider using Firebase Extensions for content moderation
+      return text.matches('(?i).*(hate|violence|harassment|spam|abuse|threat|kill|die|suicide|drug|illegal|scam|fraud|phishing).*');
+    }
+
+    function hasValidContentLength(content, minLength, maxLength) {
+      return content is string &&
+             content.size() >= minLength &&
+             content.size() <= maxLength &&
+             content.trim().size() > 0; // Not just whitespace
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+             email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+
+    function isValidPhoneNumber(phone) {
+      return phone is string &&
+             phone.matches('^\\+?[1-9]\\d{1,14}$'); // E.164 format
+    }
+    
+    function isValidTimestamp(field) {
+      return request.resource.data[field] == request.time;
+    }
+    
+    function isValidReview() {
+      return isSignedIn() &&
+        isEmailVerified() && // Require email verification
+        request.resource.data.keys().hasAll(['title', 'content', 'authorId', 'createdAt', 'category', 'rating']) &&
+        request.resource.data.authorId == request.auth.uid &&
+        isValidString(request.resource.data.title, 1, 200) &&
+        hasNoSQLInjection(request.resource.data.title) &&
+        !hasProfanity(request.resource.data.title) && // Check for profanity in title
+        isValidString(request.resource.data.content, 10, 5000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        !hasProfanity(request.resource.data.content) && // Check for profanity in content
+        isValidString(request.resource.data.category, 1, 50) &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5 &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createReview'); // Rate limit review creation
+    }
+
+
+
+    // ====== User Profiles ======
+    match /users/{userId} {
+      // Anyone authenticated can read basic profile info (excluding sensitive fields)
+      allow read: if isSignedIn();
+
+      // Users can only create their own profile with validation
+      allow create: if isOwner(userId) &&
+        isEmailVerified() &&
+        request.resource.data.keys().hasAll(['email', 'createdAt', 'anonymousUsername']) &&
+        request.resource.data.email == request.auth.token.email &&
+        isValidEmail(request.resource.data.email) &&
+        isValidString(request.resource.data.get('anonymousUsername', ''), 3, 30) &&
+        hasNoSQLInjection(request.resource.data.anonymousUsername) &&
+        !hasProfanity(request.resource.data.anonymousUsername) &&
+        isValidTimestamp('createdAt') &&
+        // Optional fields validation
+        (!request.resource.data.keys().hasAny(['displayName']) ||
+         isValidString(request.resource.data.displayName, 1, 50)) &&
+        (!request.resource.data.keys().hasAny(['bio']) ||
+         hasValidContentLength(request.resource.data.bio, 0, 500)) &&
+        (!request.resource.data.keys().hasAny(['phoneNumber']) ||
+         isValidPhoneNumber(request.resource.data.phoneNumber));
+
+      // Users can only update their own profile with validation
+      allow update: if isOwner(userId) &&
+        // Cannot change immutable fields
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        // Validate updated fields
+        (!request.resource.data.keys().hasAny(['displayName']) ||
+         isValidString(request.resource.data.displayName, 1, 50)) &&
+        (!request.resource.data.keys().hasAny(['bio']) ||
+         hasValidContentLength(request.resource.data.bio, 0, 500)) &&
+        (!request.resource.data.keys().hasAny(['anonymousUsername']) ||
+         (isValidString(request.resource.data.anonymousUsername, 3, 30) &&
+          hasNoSQLInjection(request.resource.data.anonymousUsername) &&
+          !hasProfanity(request.resource.data.anonymousUsername)));
+
+      // Soft delete only through cloud functions
+      allow delete: if false;
+    }
+    
+    // ====== User Private Data ======
+    match /users/{userId}/private/{document=**} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // ====== Reviews (Dating Reviews) ======
+    match /reviews/{reviewId} {
+      // Public can read approved reviews, authors can read their own
+      allow read: if resource.data.get('moderationStatus', 'pending') == 'approved' ||
+                     (isSignedIn() && resource.data.authorId == request.auth.uid) ||
+                     canModerateContent();
+
+      // Authenticated, verified users can create reviews with comprehensive validation
+      allow create: if isSignedIn() &&
+        isEmailVerified() &&
+        request.resource.data.keys().hasAll(['authorId', 'content', 'rating', 'createdAt', 'category', 'title']) &&
+        request.resource.data.authorId == request.auth.uid &&
+        isValidString(request.resource.data.title, 5, 200) &&
+        hasNoSQLInjection(request.resource.data.title) &&
+        !hasProfanity(request.resource.data.title) &&
+        hasValidContentLength(request.resource.data.content, 50, 5000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        !hasProfanity(request.resource.data.content) &&
+        isValidString(request.resource.data.category, 1, 50) &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5 &&
+        isValidTimestamp('createdAt') &&
+        // Set default moderation status
+        request.resource.data.get('moderationStatus', 'pending') == 'pending' &&
+        // Optional location validation
+        (!request.resource.data.keys().hasAny(['location']) ||
+         isValidString(request.resource.data.location, 2, 100)) &&
+        isRateLimited('createReview');
+
+      // Authors can update their own reviews (limited fields), allow engagement updates
+      allow update: if isSignedIn() &&
+        ((resource.data.authorId == request.auth.uid &&
+          request.resource.data.authorId == resource.data.authorId &&
+          // Cannot change immutable fields
+          request.resource.data.createdAt == resource.data.createdAt &&
+          request.resource.data.rating == resource.data.rating &&
+          // Can only update specific fields
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'title', 'category', 'updatedAt'])) ||
+         // Allow engagement updates (views, likes, etc.)
+         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views', 'likes', 'dislikes', 'shares'])));
+
+      // Authors can delete their own reviews, moderators can delete any
+      allow delete: if isSignedIn() &&
+        (resource.data.authorId == request.auth.uid || canModerateContent());
+    }
+    
+    // ====== Review Comments ======
+    match /reviews/{reviewId}/comments/{commentId} {
+      allow read: if true;
+      
+      allow create: if isSignedIn() &&
+        isEmailVerified() &&
+        request.resource.data.authorId == request.auth.uid &&
+        isValidString(request.resource.data.content, 1, 1000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        request.resource.data.keys().hasAll(['content', 'authorId', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createComment');
+      
+      allow update: if isSignedIn() && 
+        resource.data.authorId == request.auth.uid &&
+        request.resource.data.authorId == resource.data.authorId;
+      
+      allow delete: if isSignedIn() && 
+        resource.data.authorId == request.auth.uid;
+    }
+    
+    // ====== Chat Rooms ======
+    match /chatRooms/{roomId} {
+      // Authenticated users can read chat rooms
+      // When querying with where('participants', 'array-contains', userId),
+      // only rooms containing the user will be returned by the query itself
+      allow read: if isSignedIn();
+      
+      // Create room with creator as participant
+      allow create: if isSignedIn() &&
+        request.auth.uid in request.resource.data.participants &&
+        request.resource.data.keys().hasAll(['participants', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        // Optional name validation
+        (!request.resource.data.keys().hasAny(['name']) ||
+         isValidString(request.resource.data.name, 1, 100));
+      
+      // Participants can update room info, OR users can join by adding themselves to participants
+      allow update: if isSignedIn() &&
+        (request.auth.uid in resource.data.participants ||
+         // Allow joining: user is adding themselves to participants array
+         (request.auth.uid in request.resource.data.participants &&
+          !(request.auth.uid in resource.data.participants) &&
+          // Only adding one participant (themselves)
+          request.resource.data.participants.size() == resource.data.participants.size() + 1));
+      
+      // Archive instead of delete
+      allow delete: if false;
+    }
+    
+    // ====== Chat Messages (Top-level collection) ======
+    match /messages/{messageId} {
+      // Users can read messages from rooms they participate in
+      allow read: if isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(resource.data.roomId)).data.participants;
+      
+      // Users can send messages to rooms they participate in
+      allow create: if isSignedIn() &&
+        request.resource.data.senderId == request.auth.uid &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(request.resource.data.roomId)).data.participants &&
+        request.resource.data.keys().hasAll(['roomId', 'senderId', 'content', 'timestamp']) &&
+        isValidString(request.resource.data.content, 1, 2000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        isValidTimestamp('timestamp') &&
+        isRateLimited('sendMessage');
+      
+      // Senders can edit their own messages
+      allow update: if isSignedIn() && 
+        resource.data.senderId == request.auth.uid &&
+        request.resource.data.senderId == resource.data.senderId;
+      
+      // Soft delete only
+      allow delete: if false;
+    }
+    
+    // ====== Chat Messages (Subcollection) ======
+    match /chatRooms/{roomId}/messages/{messageId} {
+      // Room participants can read messages
+      allow read: if isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants;
+      
+      // Room participants can send messages with rate limiting
+      allow create: if isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants &&
+        request.resource.data.senderId == request.auth.uid &&
+        isValidString(request.resource.data.content, 1, 2000) &&
+        hasNoSQLInjection(request.resource.data.content) &&
+        request.resource.data.keys().hasAll(['content', 'senderId', 'createdAt']) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('sendMessage');
+      
+      // Senders can edit their own messages
+      allow update: if isSignedIn() && 
+        resource.data.senderId == request.auth.uid &&
+        request.resource.data.senderId == resource.data.senderId;
+      
+      // Soft delete only
+      allow delete: if false;
+    }
+    
+    // ====== Notifications ======
+    match /notifications/{notificationId} {
+      // Allow authenticated users to read all notifications (will be filtered client-side)
+      allow read: if isSignedIn();
+      
+      // Allow authenticated users to create notifications
+      allow create: if isSignedIn();
+      
+      // Users can update notifications
+      allow update: if isSignedIn();
+      
+      // Users can delete notifications
+      allow delete: if isSignedIn();
+    }
+    
+    // Legacy nested notifications path
+    match /notifications/{userId}/items/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isOwner(userId);
+      
+      // Users can create their own notifications (for testing)
+      allow create: if isOwner(userId);
+      
+      // Users can mark notifications as read
+      allow update: if isOwner(userId) && 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt']);
+      
+      // Users can delete their own notifications
+      allow delete: if isOwner(userId);
+    }
+    
+    // ====== Content Reports ======
+    match /reports/{reportId} {
+      // Only admins can read reports (via Cloud Functions)
+      allow read: if false;
+      
+      // Authenticated, verified users can report content with rate limiting
+      allow create: if isSignedIn() &&
+        isEmailVerified() &&
+        request.resource.data.reporterId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['type', 'targetId', 'reason', 'createdAt']) &&
+        isValidString(request.resource.data.type, 1, 20) &&
+        isValidString(request.resource.data.targetId, 1, 100) &&
+        isValidString(request.resource.data.reason, 10, 500) &&
+        hasNoSQLInjection(request.resource.data.reason) &&
+        isValidTimestamp('createdAt') &&
+        isRateLimited('createReport');
+      
+      // No updates or deletes allowed
+      allow update, delete: if false;
+    }
+    
+    // ====== User Settings ======
+    match /userSettings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // ====== Public Data ======
+    match /public/{document=**} {
+      // Anyone can read public data
+      allow read: if true;
+      // Only admin via Cloud Functions can write
+      allow write: if false;
+    }
+    
+    // ====== Rate Limiting ======
+    match /rateLimits/{userId}/actions/{action} {
+      // Users can read their own rate limit data
+      allow read: if isOwner(userId);
+      
+      // System functions can write rate limit data
+      allow write: if false; // Managed by Cloud Functions
+    }
+    
+    // ====== User Reputation ======
+    match /users/{userId}/reputation/{reputationId} {
+      // Users can read their own reputation
+      allow read: if isOwner(userId);
+      
+      // Only system or moderators can create/update reputation
+      allow create, update: if false; // Managed by Cloud Functions
+      
+      // No direct deletion
+      allow delete: if false;
+    }
+
+    // ====== Security Audit Logs ======
+    match /auditLogs/{logId} {
+      // Only system functions can write audit logs
+      allow read: if canModerateContent();
+      allow write: if false; // Managed by Cloud Functions
+    }
+
+    // ====== Security Events ======
+    match /securityEvents/{eventId} {
+      // Only admins can read security events
+      allow read: if isAdmin();
+      allow write: if false; // Managed by Cloud Functions
+    }
+
+    // ====== User Sessions ======
+    match /userSessions/{sessionId} {
+      // Users can read their own sessions
+      allow read: if isSignedIn() &&
+        resource.data.userId == request.auth.uid;
+      // System manages sessions
+      allow write: if false;
+    }
+
+    // ====== Content Moderation Queue ======
+    match /moderationQueue/{itemId} {
+      // Only moderators can access moderation queue
+      allow read, write: if canModerateContent();
+    }
+
+    // ====== Deny All Other Access ======
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

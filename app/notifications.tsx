@@ -7,11 +7,10 @@ import {
   ScrollView,
   RefreshControl
 } from 'react-native';
-import logger from '../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Bell, Heart, MessageCircle, Users, Star, Calendar, Trash2, MoreHorizontal } from "lucide-react-native";
+import { ArrowLeft, Bell, Heart, MessageCircle, Star, Trash2, MoreHorizontal } from "lucide-react-native";
 import { useTheme } from "../providers/ThemeProvider";
 import { useAuth } from "../providers/AuthProvider";
 import { useNotifications } from "../providers/NotificationProvider";

@@ -10,17 +10,17 @@ import {
   RefreshControl,
   Text
 } from 'react-native';
-import logger from '../../utils/logger';
-
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MapPin, Search, Bell, Target, Navigation, Edit3 } from "lucide-react-native";
 import * as Location from 'expo-location';
 import { MasonryFlashList } from "@shopify/flash-list";
 import MasonryReviewCard from "../../components/MasonryReviewCard";
+import { ModernButton } from "../../components/ui/ModernButton";
 import { useTheme } from "../../providers/ThemeProvider";
+import { useAuth } from "../../providers/AuthProvider";
 import { Review } from "../../types";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import { FILTER_CATEGORIES } from "../../constants/categories";
 import { LocationSelector } from "../../components/LocationSelector";
@@ -28,6 +28,7 @@ import { LocationService } from "../../services/locationService";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
 import { DiscoverFeedSkeleton } from "../../components/ui/LoadingSkeletons";
+import { SHADOWS } from "../../constants/shadows";
 
 const RADIUS_OPTIONS = [5, 10, 15, 25, 50, 100]; // miles
 
@@ -71,7 +72,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const typography = createTypographyStyles(colors);
-  // const { user } = useAuth(); // Not currently used
+  const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [refreshing, setRefreshing] = useState(false);
@@ -112,13 +113,20 @@ export default function HomeScreen() {
         return;
       }
 
-      const reviewsCollection = collection(db, "reviews");
-      const reviewsSnapshot = await getDocs(reviewsCollection);
-      const reviewsList = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc as any).data() } as Review));
+      // Enhanced query with proper ordering
+      const reviewsQuery = query(
+        collection(db, "reviews"),
+        orderBy("createdAt", "desc")
+      );
+      const reviewsSnapshot = await getDocs(reviewsQuery);
+      const reviewsList = reviewsSnapshot.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data() 
+      } as Review));
       setReviews(reviewsList);
     } catch (error) {
       if (__DEV__) {
-        __DEV__ && console.error("Error fetching reviews: ", error);
+        console.error("Error fetching reviews: ", error);
       }
       // Set empty reviews instead of showing alert
       setReviews([]);
@@ -462,7 +470,7 @@ export default function HomeScreen() {
     }
   }, [locationInput]);
 
-  const renderReviewItem = useCallback(({ item, index }: { item: Review; index: number }) => (
+  const renderReviewItem = useCallback(({ item, index: _index }: { item: Review; index: number }) => (
     <View style={{ marginBottom: 16 }}>
       <MasonryReviewCard
         review={item}
@@ -480,23 +488,23 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      {/* App Header */}
+      {/* Modern App Header */}
       <View style={styles.locationHeader}>
         <Text style={typography.h1}>
-          LockerRoom Talk App
+          LockerRoom Talk
         </Text>
         <View style={styles.headerActions}>
           <Pressable
             onPress={() => router.push("/search")}
-            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }]}
+            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }, SHADOWS.sm]}
           >
-            <Search size={18} color={colors.text} strokeWidth={1.5} />
+            <Search size={20} color={colors.text} strokeWidth={1.5} />
           </Pressable>
           <Pressable
             onPress={() => router.push("/notifications")}
-            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }]}
+            style={[styles.headerButton, { backgroundColor: colors.surfaceElevated }, SHADOWS.sm]}
           >
-            <Bell size={18} color={colors.text} strokeWidth={1.5} />
+            <Bell size={20} color={colors.text} strokeWidth={1.5} />
           </Pressable>
         </View>
       </View>
@@ -510,14 +518,16 @@ export default function HomeScreen() {
         />
 
         {selectedLocationData && (
-          <Text style={[typography.caption, { marginTop: 8, textAlign: 'center' }]}>
-            {selectedLocationData.type === 'global'
-              ? 'Showing reviews from everywhere'
-              : selectedLocationData.type === 'current'
-              ? `Showing reviews within ${searchRadius} miles of your location`
-              : `Showing reviews within ${searchRadius} miles of ${(selectedLocationData as any)?.data.name}`
-            }
-          </Text>
+          <View style={[styles.locationInfo, { backgroundColor: colors.surface }]}>
+            <Text style={[typography.caption, { textAlign: 'center', color: colors.textSecondary }]}>
+              {selectedLocationData.type === 'global'
+                ? '🌍 Showing reviews from everywhere'
+                : selectedLocationData.type === 'current'
+                ? `📍 Within ${searchRadius} miles of your location`
+                : `📍 Within ${searchRadius} miles of ${(selectedLocationData as any)?.data.name}`
+              }
+            </Text>
+          </View>
         )}
       </View>
 
@@ -556,39 +566,24 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
 
-      {/* Filter Toggle */}
+      {/* Enhanced Filter Toggle */}
       <View style={styles.filterToggle}>
-        <Pressable
+        <ModernButton
+          variant={useRadiusFilter ? "gradient" : "outline"}
+          size="sm"
           onPress={() => setUseRadiusFilter(!useRadiusFilter)}
-          style={[
-            styles.filterButton,
-            {
-              backgroundColor: useRadiusFilter ? colors.primary : colors.surfaceElevated,
-            }
-          ]}
+          icon={<Target size={16} color={useRadiusFilter ? colors.white : colors.primary} strokeWidth={1.5} />}
         >
-          <Target
-            size={16}
-            color={useRadiusFilter ? colors.surface : colors.text}
-            strokeWidth={1.5}
-          />
-          <Text style={[
-            typography.body,  
-            {
-              color: useRadiusFilter ? colors.surface : colors.text,
-              marginLeft: 6
-            }
-          ]}>
-            Radius Filter
-          </Text>
-        </Pressable>
-        {/* Quick radius selector trigger */}
-        <Pressable
+          Radius Filter
+        </ModernButton>
+        <ModernButton
+          variant="ghost"
+          size="sm"
           onPress={() => setShowRadiusModal(true)}
-          style={[styles.filterButton, { marginLeft: 8, backgroundColor: colors.surfaceElevated }]}
+          style={{ marginLeft: 12 }}
         >
-          <Text style={typography.body}>{searchRadius} mi</Text>
-        </Pressable>
+          {searchRadius} mi
+        </ModernButton>
       </View>
     </View>
   );
@@ -760,122 +755,108 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  filterButton: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    borderRadius: 16,
-    flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
   filterToggle: {
-    marginBottom: 8,
+    marginBottom: 16,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 4,
   },
   header: {
-    paddingBottom: 16,
+    paddingBottom: 24,
     paddingHorizontal: 16,
   },
   headerActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 12,
   },
   headerButton: {
     alignItems: "center",
-    borderRadius: 20,
-    height: 40,
+    borderRadius: 24,
+    height: 48,
     justifyContent: "center",
-    width: 40,
+    width: 48,
   },
   listContent: {
     paddingBottom: 100,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   locationHeader: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 16,
+    marginBottom: 24,
   },
   locationContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   locationSelector: {
-    // Additional styles for location selector if needed
+    marginBottom: 8,
   },
   locationInfo: {
     alignItems: "center",
-    flexDirection: "row",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginTop: 8,
   },
   modalContent: {
-    borderRadius: 16,
-    padding: 20,
-    width: "80%",
+    borderRadius: 20,
+    padding: 24,
+    width: "85%",
+    maxWidth: 400,
   },
   modalOverlay: {
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
     flex: 1,
     justifyContent: "center",
   },
-  modalTitle: {
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  radiusButton: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
   radiusOption: {
-    borderRadius: 8,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: {
-    marginBottom: 20,
+    borderRadius: 12,
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   titleContainer: {
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   locationButton: {
     alignItems: "center",
-    borderRadius: 16,
+    borderRadius: 20,
     flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   locationOption: {
     alignItems: "center",
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: "row",
     marginBottom: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   manualLocationContainer: {
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   locationInput: {
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     flex: 1,
     fontSize: 16,
     marginLeft: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   confirmButton: {
     alignItems: "center",
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
 });

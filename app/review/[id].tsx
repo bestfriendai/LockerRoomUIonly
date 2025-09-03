@@ -491,7 +491,7 @@ export default function ReviewDetailScreen() {
                     <Text style={{ color: colors.textSecondary, marginHorizontal: 8 }}>•</Text>
                     <MapPin size={12} color={colors.textSecondary} strokeWidth={1.5} />
                     <Text style={{ color: colors.textSecondary, marginLeft: 4 }}>
-                      {review.location}
+                      {typeof review.location === 'string' ? review.location : review.location?.city || review.location?.name || 'Unknown location'}
                     </Text>
                   </>
                 )}

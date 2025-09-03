@@ -13,7 +13,6 @@ import {
   Alert,
   Text
 } from 'react-native';
-import logger from '../../utils/logger';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Check } from "lucide-react-native";
 import * as Sentry from "sentry-expo";
@@ -24,7 +23,6 @@ import AnimatedPressable from "../../components/ui/AnimatedPressable";
 // Removed problematic import - using inline validation instead
 import type {
   SignUpFormData,
-  ValidationResult,
   AuthError,
   AuthFormState,
   FirebaseAuthErrorCode

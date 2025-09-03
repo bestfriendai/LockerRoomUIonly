@@ -27,7 +27,7 @@ export const useDebounce = <T>(value: T, delay: number): T => {
 /**
  * Throttle hook for frequent events
  */
-export const useThrottle = <T extends (...args: any[]) => any>(
+export const useThrottle = <T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number
 ): T => {
@@ -54,27 +54,11 @@ export const runAfterInteractions = (callback: () => void): void => {
 /**
  * Hook to run effect after interactions
  */
-export const useAfterInteractions = (callback: () => void, deps: any[] = []) => {
+export const useAfterInteractions = (callback: () => void, deps: React.DependencyList = []) => {
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(callback);
     return () => task.cancel();
   }, deps);
-};
-
-/**
- * Lazy component loader with error boundary
- */
-export const createLazyComponent = <T extends React.ComponentType<any>>(
-  importFunc: () => Promise<{ default: T }>,
-  fallback?: React.ComponentType
-) => {
-  const LazyComponent = React.lazy(importFunc);
-  
-  return React.forwardRef<any, React.ComponentProps<T>>((props, ref) => (
-    <React.Suspense fallback={fallback ? <fallback /> : null}>
-      <LazyComponent {...props} ref={ref} />
-    </React.Suspense>
-  ));
 };
 
 /**
@@ -95,11 +79,6 @@ export const useImagePreload = (sources: string[]) => {
           setFailedImages(prev => new Set(prev).add(source));
         };
         img.src = source;
-      } else {
-        // For React Native, we can use Image.prefetch
-        // Image.prefetch(source)
-        //   .then(() => setLoadedImages(prev => new Set(prev).add(source)))
-        //   .catch(() => setFailedImages(prev => new Set(prev).add(source)));
       }
     };
 
@@ -143,7 +122,7 @@ export const usePerformanceMonitor = (componentName: string) => {
 /**
  * Memoized style creator
  */
-export const createMemoizedStyles = <T extends Record<string, any>>(
+export const createMemoizedStyles = <T extends Record<string, unknown>>(
   styleCreator: () => T
 ): T => {
   const styles = useRef<T | null>(null);
@@ -156,60 +135,13 @@ export const createMemoizedStyles = <T extends Record<string, any>>(
 };
 
 /**
- * Optimized list item component
- */
-export const createOptimizedListItem = <T>(
-  ItemComponent: React.ComponentType<{ item: T; index: number }>
-) => {
-  return React.memo(ItemComponent, (prevProps, nextProps) => {
-    // Custom comparison logic for list items
-    return (
-      prevProps.item === nextProps.item &&
-      prevProps.index === nextProps.index
-    );
-  });
-};
-
-/**
- * Bundle size optimization helpers
- */
-export const optimizeBundle = {
-  // Selective icon imports
-  getIconComponent: (iconName: string, iconSet: 'Ionicons' | 'MaterialIcons' = 'Ionicons') => {
-    // This would be implemented with dynamic imports in a real scenario
-    // For now, return a placeholder
-    return null;
-  },
-
-  // Lazy load heavy components
-  lazyLoadComponent: (componentPath: string) => {
-    return React.lazy(() => import(componentPath));
-  },
-
-  // Optimize images
-  getOptimizedImageUri: (uri: string, width?: number, height?: number) => {
-    // In a real app, this would integrate with image optimization services
-    // like Cloudinary, ImageKit, etc.
-    return uri;
-  }
-};
-
-/**
  * Memory management utilities
  */
 export const memoryUtils = {
-  // Clear component cache
-  clearComponentCache: () => {
-    // Implementation would depend on the caching strategy used
-    if (__DEV__) {
-      console.log('[Performance] Component cache cleared');
-    }
-  },
-
   // Monitor memory usage (development only)
   logMemoryUsage: (label: string) => {
     if (__DEV__ && Platform.OS === 'web' && 'memory' in performance) {
-      const memory = (performance as any).memory;
+      const memory = (performance as unknown as { memory: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
       console.log(`[Memory] ${label}:`, {
         used: `${(memory.usedJSHeapSize / 1048576).toFixed(2)} MB`,
         total: `${(memory.totalJSHeapSize / 1048576).toFixed(2)} MB`,

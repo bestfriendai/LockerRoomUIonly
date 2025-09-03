@@ -14,6 +14,7 @@ import { useTheme } from "../../providers/ThemeProvider";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import type { Route } from "@react-navigation/native";
 import { createTypographyStyles } from "../../styles/typography";
+import ErrorBoundary from "../../components/ErrorBoundary";
 
 type MyTabBarProps = BottomTabBarProps;
 
@@ -128,7 +129,8 @@ export default function TabLayout() {
   const typography = createTypographyStyles(colors);
   
   return (
-    <Tabs
+    <ErrorBoundary level="page" retryable={true} showGoHome={true}>
+      <Tabs
       tabBar={(props) => <MyTabBar {...props} />}
       screenOptions={{
         headerShown: true,
@@ -199,6 +201,7 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </ErrorBoundary>
   );
 }
 

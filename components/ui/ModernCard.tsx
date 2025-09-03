@@ -8,9 +8,10 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../providers/ThemeProvider';
-import { spacing, borderRadius, shadows } from '../../utils/spacing';
-import { createSpringAnimation } from '../../utils/animations';
+import { BORDER_RADIUS, SHADOWS } from '../../constants/shadows';
+import { tokens } from '../../constants/tokens';
 
 interface ModernCardProps {
   variant?: 'elevated' | 'glass' | 'gradient' | 'neumorphic' | 'outline' | 'flat';
@@ -18,9 +19,9 @@ interface ModernCardProps {
   onPress?: () => void;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
-  padding?: keyof typeof spacing | number;
-  shadow?: keyof typeof shadows;
-  borderRadius?: keyof typeof borderRadius | number;
+  padding?: keyof typeof tokens.spacing | number;
+  shadow?: keyof typeof SHADOWS;
+  borderRadius?: keyof typeof BORDER_RADIUS | number;
   disabled?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -47,14 +48,26 @@ export const ModernCard: React.FC<ModernCardProps> = ({
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
 
+  const handlePress = () => {
+    if (disabled || !onPress) return;
+    // Haptic feedback for better UX
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   const handlePressIn = () => {
     if (disabled || !onPress) return;
     
     Animated.parallel([
-      createSpringAnimation(scaleAnim, 0.98),
+      Animated.spring(scaleAnim, {
+        toValue: 0.97,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 8,
+      }),
       Animated.timing(opacityAnim, {
-        toValue: 0.9,
-        duration: 150,
+        toValue: 0.85,
+        duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
@@ -64,10 +77,15 @@ export const ModernCard: React.FC<ModernCardProps> = ({
     if (disabled || !onPress) return;
     
     Animated.parallel([
-      createSpringAnimation(scaleAnim, 1),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 200,
+        friction: 8,
+      }),
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 150,
+        duration: 100,
         useNativeDriver: true,
       }),
     ]).start();
@@ -77,21 +95,21 @@ export const ModernCard: React.FC<ModernCardProps> = ({
     if (typeof padding === 'number') {
       return padding;
     }
-    return spacing[padding] || spacing.lg;
+    return tokens.spacing[padding] || tokens.spacing.lg;
   };
 
   const getBorderRadiusValue = () => {
     if (typeof borderRadiusProp === 'number') {
       return borderRadiusProp;
     }
-    return borderRadius[borderRadiusProp] || borderRadius.xl;
+    return BORDER_RADIUS[borderRadiusProp] || BORDER_RADIUS.xl;
   };
 
   const getShadowStyle = () => {
     if (variant === 'flat' || variant === 'outline') {
       return {};
     }
-    return shadows[shadow] || shadows.md;
+    return SHADOWS[shadow] || SHADOWS.md;
   };
 
   const getCardContent = () => {
@@ -112,14 +130,17 @@ export const ModernCard: React.FC<ModernCardProps> = ({
       case 'glass':
         return (
           <BlurView 
-            intensity={20} 
+            intensity={30} 
+            tint={isDark ? 'dark' : 'light'}
             style={[
               baseStyle,
               styles.glassCard,
               { borderColor: colors.border }
             ]}
           >
-            <View style={styles.glassOverlay} />
+            <View style={[styles.glassOverlay, { 
+              backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.1)' 
+            }]} />
             <View style={contentStyle}>
               {children}
             </View>
@@ -225,7 +246,7 @@ export const ModernCard: React.FC<ModernCardProps> = ({
         ]}
       >
         <TouchableOpacity
-          onPress={onPress}
+          onPress={handlePress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           disabled={disabled}

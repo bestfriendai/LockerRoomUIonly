@@ -7,53 +7,137 @@ jest.mock('react-native-reanimated', () => {
   return Reanimated;
 });
 
-// Mock Animated API - using a safer approach
+// Mock React Native TurboModuleRegistry to prevent DevMenu errors
+jest.mock('react-native/Libraries/TurboModule/TurboModuleRegistry', () => ({
+  getEnforcing: jest.fn(() => ({})),
+  get: jest.fn(() => ({})),
+}));
+
+// Mock DevMenu specifically
+jest.mock('react-native/src/private/devmenu/DevMenu', () => ({}));
+
+// Mock Platform constants
+jest.mock('react-native/Libraries/Utilities/Platform', () => ({
+  OS: 'ios',
+  select: jest.fn((obj) => obj.ios || obj.default),
+  constants: {
+    getConstants: jest.fn(() => ({
+      model: 'iPhone',
+      systemName: 'iOS',
+      systemVersion: '14.0',
+    })),
+  },
+}));
+
+// Mock Animated API - using a safer approach  
 jest.mock('react-native', () => {
   const RN = jest.requireActual('react-native');
+  
+  // Create a mock for Animated that doesn't depend on platform constants
+  const MockAnimated = {
+    View: RN.View,
+    Text: RN.Text,
+    ScrollView: RN.ScrollView,
+    timing: jest.fn(() => ({
+      start: jest.fn(),
+    })),
+    spring: jest.fn(() => ({
+      start: jest.fn(),
+    })),
+    Value: jest.fn().mockImplementation((value) => ({
+      setValue: jest.fn(),
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      _value: value,
+      _offset: 0,
+    })),
+    ValueXY: jest.fn().mockImplementation(() => ({
+      x: { setValue: jest.fn(), addListener: jest.fn(), removeListener: jest.fn() },
+      y: { setValue: jest.fn(), addListener: jest.fn(), removeListener: jest.fn() },
+    })),
+    decay: jest.fn(() => ({ start: jest.fn() })),
+    sequence: jest.fn(() => ({ start: jest.fn() })),
+    parallel: jest.fn(() => ({ start: jest.fn() })),
+    loop: jest.fn(() => ({ start: jest.fn() })),
+    event: jest.fn(),
+  };
+
   return {
     ...RN,
-    Animated: {
-      ...RN.Animated,
-      timing: jest.fn(() => ({
-        start: jest.fn(),
-      })),
-      spring: jest.fn(() => ({
-        start: jest.fn(),
-      })),
-      Value: jest.fn(() => ({
-        setValue: jest.fn(),
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-      })),
+    // Mock TurboModuleRegistry at the module level
+    TurboModuleRegistry: {
+      getEnforcing: jest.fn(() => ({})),
+      get: jest.fn(() => ({})),
     },
+    Platform: {
+      OS: 'ios',
+      select: jest.fn((obj) => obj.ios || obj.default),
+      constants: {
+        getConstants: jest.fn(() => ({
+          model: 'iPhone',
+          systemName: 'iOS', 
+          systemVersion: '14.0',
+        })),
+      },
+    },
+    Animated: MockAnimated,
   };
 });
 
 // Mock Firebase
 jest.mock('firebase/app', () => ({
-  initializeApp: jest.fn(),
+  initializeApp: jest.fn(() => ({
+    name: '[DEFAULT]',
+    options: {},
+  })),
 }));
 
 jest.mock('firebase/auth', () => ({
-  getAuth: jest.fn(),
-  signInWithEmailAndPassword: jest.fn(),
-  createUserWithEmailAndPassword: jest.fn(),
-  signOut: jest.fn(),
+  getAuth: jest.fn(() => ({
+    currentUser: null,
+  })),
+  signInWithEmailAndPassword: jest.fn(() => Promise.resolve({
+    user: { uid: 'test-uid', email: 'test@example.com' },
+  })),
+  createUserWithEmailAndPassword: jest.fn(() => Promise.resolve({
+    user: { uid: 'test-uid', email: 'test@example.com' },
+  })),
+  signOut: jest.fn(() => Promise.resolve()),
   onAuthStateChanged: jest.fn(),
 }));
 
 jest.mock('firebase/firestore', () => ({
-  getFirestore: jest.fn(),
-  collection: jest.fn(),
-  doc: jest.fn(),
-  addDoc: jest.fn(),
-  getDocs: jest.fn(),
-  updateDoc: jest.fn(),
-  deleteDoc: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
-  orderBy: jest.fn(),
-  limit: jest.fn(),
+  getFirestore: jest.fn(() => ({
+    _delegate: {},
+    app: {},
+  })),
+  collection: jest.fn(() => ({
+    id: 'test-collection',
+    path: 'test-collection',
+  })),
+  doc: jest.fn(() => ({
+    id: 'test-doc',
+    path: 'test-collection/test-doc',
+  })),
+  addDoc: jest.fn(() => Promise.resolve({
+    id: 'new-doc-id',
+  })),
+  getDocs: jest.fn(() => Promise.resolve({
+    docs: [],
+    empty: true,
+    size: 0,
+  })),
+  updateDoc: jest.fn(() => Promise.resolve()),
+  deleteDoc: jest.fn(() => Promise.resolve()),
+  query: jest.fn(() => ({})),
+  where: jest.fn(() => ({})),
+  orderBy: jest.fn(() => ({})),
+  limit: jest.fn(() => ({})),
+  Timestamp: jest.fn().mockImplementation((seconds, nanoseconds = 0) => ({
+    seconds,
+    nanoseconds,
+    toDate: () => new Date(seconds * 1000),
+  })),
 }));
 
 // Mock Expo modules

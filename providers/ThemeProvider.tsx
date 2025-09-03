@@ -31,8 +31,10 @@ type ColorRole =
   | 'black'
   | 'info'
   | 'chipBg'
+  | 'chipBgActive'
   | 'chipBorder'
   | 'chipText'
+  | 'chipTextActive'
   | 'divider'
   | 'errorContainer'
   | 'card'
@@ -154,8 +156,10 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Additional colors
     info: '#3B82F6',
     chipBg: isDark ? Colors.uiDark.surface : '#F3F4F6',
+    chipBgActive: Colors.primary[500],
     chipBorder: isDark ? Colors.uiDark.border : '#E5E7EB',
     chipText: isDark ? Colors.textDark.secondary : '#374151',
+    chipTextActive: Colors.white,
     divider: isDark ? Colors.uiDark.border : '#E5E7EB',
     errorContainer: isDark ? '#7F1D1D' : '#FEE2E2',
     card: isDark ? Colors.uiDark.surfaceHover : Colors.ui.surface,

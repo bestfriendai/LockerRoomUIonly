@@ -63,10 +63,29 @@ export const isValidUsername = (username: string): { isValid: boolean; error?: s
   return { isValid: true };
 };
 
+interface ReviewFormData {
+  targetName?: string;
+  categories?: string[];
+  title?: string;
+  content?: string;
+  rating?: number;
+  platform?: string;
+  location?: any;
+  media?: any[];
+  isAnonymous?: boolean;
+  tags?: string[];
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: Record<string, string>;
+  sanitized: ReviewFormData;
+}
+
 // Enhanced review form validation with sanitization
-export const validateReviewForm = (data: any): { isValid: boolean; errors: Record<string, string>; sanitized: any } => {
+export const validateReviewForm = (data: ReviewFormData): ValidationResult => {
   const errors: Record<string, string> = {};
-  const sanitized: any = {};
+  const sanitized: ReviewFormData = {};
   
   // Sanitize and validate targetName
   sanitized.targetName = sanitizeInput(data.targetName);

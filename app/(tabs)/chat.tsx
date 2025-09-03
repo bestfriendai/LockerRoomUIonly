@@ -8,7 +8,6 @@ import {
   RefreshControl,
   Text,
 } from 'react-native';
-import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,14 +15,15 @@ import { Search, Plus, MessageCircle, Users, Lock, Globe, Crown, Clock, MoreVert
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
-import { Button } from "../../components/ui/Button";
+import { ModernButton } from "../../components/ui/ModernButton";
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where } from "firebase/firestore";
 import { db } from "../../utils/firebase";
 import type { ChatRoom } from "../../types/index";
-import { toMillis } from "../../utils/timestampHelpers";
+import { toMillis, formatRelativeTime } from "../../utils/timestampHelpers";
 import { createTypographyStyles } from "../../styles/typography";
 import { EmptyState } from "../../components/EmptyState";
 import { ChatRoomSkeleton } from "../../components/ui/LoadingSkeletons";
+import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
 
 type ChatTab = 'all' | 'my_rooms' | 'joined';
 
@@ -48,20 +48,7 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
 
   const formatTime = (timestamp: unknown) => {
     if (!timestamp) return '';
-
-    const date = toMillis(timestamp as string | number | Date | null | undefined);
-    if (!date) return '';
-    
-    const now = Date.now();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
-
-    if (diffInHours < 1) {
-      return `${Math.floor(diffInHours * 60)}m`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h`;
-    } else {
-      return `${Math.floor(diffInHours / 24)}d`;
-    }
+    return formatRelativeTime(timestamp);
   };
 
   const handleJoinPress = () => {
@@ -87,7 +74,8 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
         {
           backgroundColor: pressed ? colors.surfaceElevated : colors.card,
           borderColor: colors.border,
-        }
+        },
+        SHADOWS.sm
       ]}
     >
       <View style={styles.roomHeader}>
@@ -154,24 +142,27 @@ const ChatRoomItem = React.memo(({ room, onPress, onJoin, onLeave, isJoined, isM
 
         <View style={styles.roomActions}>
           {!isMember && (
-            <Button
+            <ModernButton
+              variant="gradient"
               size="sm"
               onPress={handleJoinPress}
               style={styles.joinButton}
             >
               Join
-            </Button>
+            </ModernButton>
           )}
           {isMember && !isOwner && (
-            <Button
+            <ModernButton
+              variant="outline"
               size="sm"
               onPress={handleJoinPress}
               style={styles.leaveButton}
+              textStyle={{ color: colors.error }}
             >
               Leave
-            </Button>
+            </ModernButton>
           )}
-          <Pressable style={styles.moreButton}>
+          <Pressable style={[styles.moreButton, { backgroundColor: colors.surface }, SHADOWS.sm]}>
             <MoreVertical size={16} color={colors.textSecondary} strokeWidth={1.5} />
           </Pressable>
         </View>
@@ -462,24 +453,25 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      {/* Modern Header */}
+      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }, SHADOWS.sm]}>
         <View style={styles.headerTop}>
           <Text style={typography.h1}>
             Chat Rooms
           </Text>
-          <Button
+          <ModernButton
+            variant="gradient"
             size="sm"
             onPress={handleCreateRoom}
-            leftIcon={<Plus size={16} color={colors.primary} strokeWidth={1.5} />}
+            icon={<Plus size={18} color={colors.white} strokeWidth={1.5} />}
           >
             Create
-          </Button>
+          </ModernButton>
         </View>
 
-        {/* Search Bar */}
-        <View style={[styles.searchBar, { backgroundColor: colors.surfaceElevated }]}>
-          <Search size={18} color={colors.textSecondary} strokeWidth={1.5} />
+        {/* Enhanced Search Bar */}
+        <View style={[styles.searchBar, { backgroundColor: colors.surfaceElevated }, SHADOWS.sm]}>
+          <Search size={20} color={colors.textSecondary} strokeWidth={1.5} />
           <TextInput
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search rooms..."
@@ -563,22 +555,25 @@ const styles = StyleSheet.create({
   },
   header: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
   },
   headerTop: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   listContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20,
   },
   roomItem: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 12,
+    borderRadius: BORDER_RADIUS.lg,
+    marginBottom: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
   roomHeader: {
     alignItems: 'flex-start',
@@ -587,7 +582,7 @@ const styles = StyleSheet.create({
   },
   roomInfo: {
     flex: 1,
-    marginRight: 12,
+    marginRight: 16,
   },
   roomTitleRow: {
     alignItems: 'center',
@@ -595,20 +590,16 @@ const styles = StyleSheet.create({
   },
   roomIcon: {
     alignItems: 'center',
-    borderRadius: 99,
-    height: 24,
+    borderRadius: BORDER_RADIUS.full,
+    height: 28,
     justifyContent: 'center',
-    marginRight: 8,
-    width: 24,
-  },
-  roomName: {
-    flexShrink: 1,
-    marginRight: 8,
+    marginRight: 12,
+    width: 28,
   },
   roomMeta: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginTop: 8,
+    marginTop: 12,
   },
   memberCount: {
     alignItems: 'center',
@@ -617,47 +608,50 @@ const styles = StyleSheet.create({
   lastMessage: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginLeft: 16,
+    marginLeft: 20,
   },
   lastMessageContent: {
-    marginTop: 8,
+    marginTop: 12,
   },
   roomActions: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: 8,
   },
   joinButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   leaveButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   moreButton: {
-    marginLeft: 4,
-    padding: 4,
+    padding: 8,
+    borderRadius: BORDER_RADIUS.md,
   },
   searchBar: {
     alignItems: 'center',
-    borderRadius: 99,
+    borderRadius: BORDER_RADIUS.full,
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    marginLeft: 12,
+    marginLeft: 16,
   },
   tab: {
     alignItems: 'center',
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
   },
 });

@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   Platform,
   Pressable,
   TouchableOpacity,

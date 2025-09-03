@@ -10,11 +10,9 @@ import {
   Dimensions,
   ActivityIndicator,
   Modal,
-  Share,
   Animated,
   RefreshControl
 } from 'react-native';
-import logger from '../../utils/logger';
 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -25,16 +23,12 @@ import {
   Activity,
   MessageCircle,
   Heart,
-  Eye,
   Calendar,
-  MapPin,
   LogOut,
   Share as ShareIcon,
   User as UserIcon,
   Shield,
   Trophy,
-  Target,
-  Zap,
   RefreshCw,
   ChevronRight,
   Award,
@@ -42,15 +36,18 @@ import {
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "../../providers/ThemeProvider";
 import { useAuth } from "../../providers/AuthProvider";
+import { ModernButton } from "../../components/ui/ModernButton";
 import { Button } from "../../components/ui/Button";
-import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
 import ReviewCard from "../../components/ReviewCard";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../../utils/firebase";
-import type { Review, User } from "../../types";
-import { generateAnonymousUsername, generateMultipleUsernames } from "../../services/usernameGenerator";
+import type { Review } from "../../types";
 import { toMillis, formatDate } from "../../utils/timestampHelpers";
+import { SHADOWS, BORDER_RADIUS } from "../../constants/shadows";
+import { createTypographyStyles } from "../../styles/typography";
+import { generateMultipleUsernames } from "../../services/usernameGenerator";
+import { generateMultipleUsernames } from "../../services/usernameGenerator";
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -66,13 +63,15 @@ interface StatCardProps {
 
 const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
   const { colors } = useTheme();
+  const typography = createTypographyStyles(colors);
 
   const baseStyle = [
     styles.statCard,
     {
       backgroundColor: colors.card,
       borderColor: colors.border,
-    }
+    },
+    SHADOWS.md
   ];
 
   const pressableStyle = ({ pressed }: { pressed: boolean }) => [
@@ -80,7 +79,8 @@ const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
     {
       backgroundColor: pressed ? colors.surfaceElevated : colors.card,
       borderColor: colors.border,
-    }
+    },
+    SHADOWS.md
   ];
 
   if (onPress) {
@@ -89,14 +89,14 @@ const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
         <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
           {icon}
         </View>
-        <Text style={styles.statValue}>
+        <Text style={[typography.h2, styles.statValue]}>
            {value}
          </Text>
-         <Text style={styles.statTitle}>
+         <Text style={[typography.caption, styles.statTitle]}>
           {title}
         </Text>
         {subtitle && (
-          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+          <Text style={[typography.caption, { color: colors.textTertiary, textAlign: 'center' }]}>
             {subtitle}
           </Text>
         )}
@@ -109,14 +109,14 @@ const StatCard = ({ icon, value, title, subtitle, onPress }: StatCardProps) => {
       <View style={[styles.statIcon, { backgroundColor: colors.primary + '20' }]}>
         {icon}
       </View>
-      <Text style={styles.statValue}>
+      <Text style={[typography.h2, styles.statValue]}>
         {value}
       </Text>
-      <Text style={styles.statTitle}>
+      <Text style={[typography.caption, styles.statTitle]}>
         {title}
       </Text>
       {subtitle && (
-        <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>
+        <Text style={[typography.caption, { color: colors.textTertiary, textAlign: 'center' }]}>
           {subtitle}
         </Text>
       )}
@@ -192,6 +192,7 @@ export default function ProfileScreen() {
   const { user, signOut, updateUser } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
   const tabIndicatorAnim = useRef(new Animated.Value(0)).current;
+  const typography = createTypographyStyles(colors);
 
   // Anonymous username management states
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -546,30 +547,32 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Header */}
+        {/* Modern Header */}
         <View style={styles.header}>
           <View style={styles.headerActions}>
-            <Button
+            <ModernButton
+              variant="outline"
               size="sm"
               onPress={handleShare}
-              leftIcon={<ShareIcon size={16} color={colors.primary} strokeWidth={1.5} />}
+              icon={<ShareIcon size={16} color={colors.primary} strokeWidth={1.5} />}
             >
               Share
-            </Button>
-            <Button
+            </ModernButton>
+            <ModernButton
+              variant="ghost"
               size="sm"
               onPress={handleSettings}
-              leftIcon={<Settings size={16} color={colors.primary} strokeWidth={1.5} />}
+              icon={<Settings size={16} color={colors.primary} strokeWidth={1.5} />}
             >
               Settings
-            </Button>
+            </ModernButton>
           </View>
         </View>
 
-        {/* Anonymous Profile Header */}
-        <View style={styles.profileSection}>
+        {/* Enhanced Anonymous Profile Header */}
+        <View style={[styles.profileSection, { backgroundColor: colors.surface }, SHADOWS.sm]}>
           <View style={[styles.anonymousAvatar, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
-            <UserIcon size={40} color={colors.primary} strokeWidth={1.5} />
+            <UserIcon size={48} color={colors.primary} strokeWidth={1.5} />
           </View>
 
           <View style={styles.usernameContainer}>
@@ -578,55 +581,60 @@ export default function ProfileScreen() {
               onPress={handleUsernameEdit}
               disabled={isGeneratingUsernames}
             >
-              <Text style={[styles.username, { color: colors.text }]}>
+              <Text style={[typography.h1, styles.username, { color: colors.text }]}>
                 {user?.name || 'Anonymous User'}
               </Text>
-              <Edit3 size={16} color={colors.primary} strokeWidth={1.5} style={{ marginLeft: 8 }} />
+              <Edit3 size={18} color={colors.primary} strokeWidth={1.5} style={{ marginLeft: 12 }} />
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.anonymousBadge, { backgroundColor: colors.success + '20' }]}>
-            <Shield size={14} color={colors.success} strokeWidth={1.5} />
-            <Text style={{ color: colors.success, marginLeft: 4, fontWeight: '500' }}>
+          <View style={[styles.anonymousBadge, { backgroundColor: colors.success + '20' }, SHADOWS.sm]}>
+            <Shield size={16} color={colors.success} strokeWidth={1.5} />
+            <Text style={[typography.caption, { color: colors.success, marginLeft: 6, fontWeight: '600' }]}>
               Anonymous User
             </Text>
           </View>
 
-          <Text style={{ color: colors.textSecondary, marginTop: 8 }}>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: 12 }]}>
             Member since {user?.createdAt ? formatDate(user.createdAt) : 'Recently'}
           </Text>
 
           {user?.bio && (
-            <Text style={{ color: colors.text, textAlign: 'center', marginTop: 12, lineHeight: 20 }}>
+            <Text style={[typography.body, { color: colors.text, textAlign: 'center', marginTop: 16, lineHeight: 24 }]}>
               {user.bio}
             </Text>
           )}
 
-          <Button
+          <ModernButton
+            variant="outline"
+            size="md"
             onPress={() => router.push('/profile/edit')}
             style={styles.editButton}
-            leftIcon={<Edit3 size={16} color={colors.primary} strokeWidth={1.5} />}
+            icon={<Edit3 size={18} color={colors.primary} strokeWidth={1.5} />}
           >
             Edit Profile
-          </Button>
+          </ModernButton>
         </View>
 
-        {/* Anonymous Stats */}
+        {/* Enhanced Anonymous Stats */}
         <View style={styles.statsSection}>
           <StatCard
-            title="Reviews"
+            title="Reviews Written"
             value={user?.reviewCount || 0}
-            icon={<Star size={20} color={colors.primary} strokeWidth={1.5} />}
+            subtitle="Total reviews"
+            icon={<Star size={24} color={colors.primary} strokeWidth={1.5} />}
           />
           <StatCard
             title="Helpful Votes"
             value={user?.helpfulVotes || 0}
-            icon={<Heart size={20} color={colors.primary} strokeWidth={1.5} />}
+            subtitle="Community appreciation"
+            icon={<Heart size={24} color={colors.primary} strokeWidth={1.5} />}
           />
           <StatCard
             title="Reputation"
             value={user?.reputationScore || 0}
-            icon={<Trophy size={20} color={colors.primary} strokeWidth={1.5} />}
+            subtitle={`Level ${Math.floor((user?.reputationScore || 0) / 100) + 1}`}
+            icon={<Trophy size={24} color={colors.primary} strokeWidth={1.5} />}
           />
         </View>
 
@@ -727,14 +735,18 @@ export default function ProfileScreen() {
           {renderTabContent()}
         </View>
 
-        {/* Sign Out Button */}
-        <Button
+        {/* Modern Sign Out Button */}
+        <ModernButton
+          variant="outline"
+          size="lg"
           onPress={handleSignOut}
-          style={styles.signOutButton}
-          leftIcon={<LogOut size={16} color={colors.error} strokeWidth={1.5} />}
+          style={[styles.signOutButton, { borderColor: colors.error }]}
+          icon={<LogOut size={18} color={colors.error} strokeWidth={1.5} />}
+          textStyle={{ color: colors.error }}
+          fullWidth
         >
           Sign Out
-        </Button>
+        </ModernButton>
       </ScrollView>
 
       {/* Username Edit Modal */}
@@ -834,8 +846,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   editButton: {
-    marginTop: 16,
-    paddingHorizontal: 24,
+    marginTop: 24,
+    paddingHorizontal: 32,
   },
   emptyState: {
     alignItems: 'center',
@@ -861,8 +873,11 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: BORDER_RADIUS.xl,
   },
   scrollContent: {
     paddingBottom: 32,
@@ -871,23 +886,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   signOutButton: {
-    marginHorizontal: 16,
-    marginTop: 24,
+    marginHorizontal: 20,
+    marginTop: 32,
   },
   statCard: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: BORDER_RADIUS.xl,
     borderWidth: StyleSheet.hairlineWidth,
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   statIcon: {
     alignItems: 'center',
-    borderRadius: 20,
-    height: 40,
+    borderRadius: 24,
+    height: 48,
     justifyContent: 'center',
-    marginBottom: 8,
-    width: 40,
+    marginBottom: 12,
+    width: 48,
   },
   statTitle: {
     textAlign: 'center',
@@ -897,8 +912,8 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
+    gap: 16,
+    marginBottom: 32,
     paddingHorizontal: 16,
   },
   tab: {
@@ -934,13 +949,13 @@ const styles = StyleSheet.create({
   },
   // Anonymous profile styles
   anonymousAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    marginBottom: 16,
+    borderWidth: 3,
+    marginBottom: 20,
   },
   usernameContainer: {
     alignItems: 'center',
@@ -953,10 +968,10 @@ const styles = StyleSheet.create({
   anonymousBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.full,
+    marginBottom: 12,
   },
   // Modal styles
   modalContainer: {
