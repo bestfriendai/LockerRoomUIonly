@@ -2,8 +2,8 @@
 
 ## 🗂️ **Directory Structure Overview**
 
-```
-MockTrae/
+```text
+LockerRoomUIonly/
 ├── 📱 app/                          # Expo Router app directory
 │   ├── (tabs)/                      # Tab navigation screens
 │   │   ├── index.tsx               # Home/Reviews screen
@@ -87,9 +87,9 @@ MockTrae/
 │   ├── metro.config.js             # Metro bundler config
 │   └── tsconfig.json               # TypeScript config
 ├── 🌍 Environment Configuration
-│   ├── .env.local                  # Local environment
-│   ├── .env.development            # Development environment
-│   └── .env.production.template    # Production template
+│   ├── .env.local                  # Local-only (gitignored)
+│   ├── .env.development            # Local-only (gitignored)
+│   └── .env.production.template    # Template (tracked)
 └── 📄 Documentation Files
     ├── README.md                   # Project README
     ├── FIREBASE_IMPLEMENTATION_REPORT.md

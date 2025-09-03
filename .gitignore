@@ -29,27 +29,24 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# Environment files (ignore all .env files except templates)
+.env*
+!.env.production.template
+!.env.example
 
 # typescript
 *.tsbuildinfo
 .codersinflow
 .vscode
 node_modules
-.env
 .venv
 .codex
 out
-dist
 *.vsix
 .claude
 CLAUDE.md
-.git
 *.log
 *.tmp
 __pycache__
 *.pyc
-.env.local
 .next
-.github

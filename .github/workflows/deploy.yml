@@ -1,0 +1,157 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_web:
+        description: 'Deploy web application'
+        required: true
+        default: 'true'
+        type: boolean
+      deploy_mobile:
+        description: 'Build mobile applications'
+        required: true
+        default: 'false'
+        type: boolean
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        run: npm run lint
+        
+      - name: Run type checking
+        run: npm run type-check
+        
+      - name: Run security tests
+        run: node scripts/test-security.js
+
+  deploy-firebase:
+    name: Deploy Firebase
+    needs: test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Deploy Firestore rules
+        run: firebase deploy --only firestore:rules --token ${{ secrets.FIREBASE_TOKEN }}
+        
+      - name: Deploy Firestore indexes
+        run: firebase deploy --only firestore:indexes --token ${{ secrets.FIREBASE_TOKEN }}
+
+  deploy-web:
+    name: Deploy Web Application
+    needs: [test, deploy-firebase]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.deploy_web == 'true' || github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build web application
+        run: npm run build:web:prod
+        env:
+          NODE_ENV: production
+          
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+        
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+
+  build-mobile:
+    name: Build Mobile Applications
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event.inputs.deploy_mobile == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build iOS app
+        run: eas build --platform ios --profile production --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          
+      - name: Build Android app
+        run: eas build --platform android --profile production --non-interactive
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  notify:
+    name: Notify Deployment Status
+    needs: [deploy-firebase, deploy-web, build-mobile]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Notify success
+        if: needs.deploy-firebase.result == 'success' && (needs.deploy-web.result == 'success' || needs.deploy-web.result == 'skipped') && (needs.build-mobile.result == 'success' || needs.build-mobile.result == 'skipped')
+        run: |
+          echo "🎉 Deployment completed successfully!"
+          echo "Firebase: ${{ needs.deploy-firebase.result }}"
+          echo "Web: ${{ needs.deploy-web.result }}"
+          echo "Mobile: ${{ needs.build-mobile.result }}"
+          
+      - name: Notify failure
+        if: needs.deploy-firebase.result == 'failure' || needs.deploy-web.result == 'failure' || needs.build-mobile.result == 'failure'
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Firebase: ${{ needs.deploy-firebase.result }}"
+          echo "Web: ${{ needs.deploy-web.result }}"
+          echo "Mobile: ${{ needs.build-mobile.result }}"
+          exit 1
